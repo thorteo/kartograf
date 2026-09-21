@@ -43,9 +43,11 @@ std::optional<Hotkey> parseHotkey(std::string_view text);
 /// the key. parseHotkey(formatHotkey(h)) == h for every valid h.
 std::string formatHotkey(const Hotkey& hotkey);
 
-/// The default overlay toggle. Alt+M is deliberately not bound by Escape from
-/// Tarkov and is reachable with the left hand while the right stays on the
-/// mouse.
+/// The default key that opens the map: F5.
+///
+/// Registered globally, so while the overlay runs it stops reaching every other
+/// application. That is the price of a bare function key and the reason
+/// --toggle-key exists.
 Hotkey defaultToggleHotkey();
 
 /// True when the combination is one we should refuse to bind: either it has no

@@ -73,7 +73,14 @@ TEST_CASE("the default toggle is bindable") {
     const auto toggle = defaultToggleHotkey();
     CHECK(toggle.valid());
     CHECK_FALSE(isReservedCombination(toggle));
-    CHECK(formatHotkey(toggle) == "Alt+M");
+    CHECK(formatHotkey(toggle) == "F5");
+    CHECK(toggle.modifiers == kNone);
+
+    // It has to survive a round trip through the settings text, since that is
+    // how a rebinding will be stored.
+    const auto reparsed = parseHotkey(formatHotkey(toggle));
+    REQUIRE(reparsed.has_value());
+    CHECK(*reparsed == toggle);
 }
 
 TEST_CASE("refuses combinations that would not reach us or would hurt") {

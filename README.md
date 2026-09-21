@@ -25,7 +25,10 @@ hooking. That is a hard design constraint, not a current limitation:
 - Automatic floor switching on multi-level maps
 - Active quest objectives, with the keys you need to bring
 - Raid timer and in-game clock
-- Transparent, click-through, rebindable toggle hotkey, excluded from screen capture
+- Transparent and see-through, click-through, excluded from screen capture
+- **F5** opens the map, **Alt+N** makes the overlay clickable, **Alt+H** shows the
+  detail panel. All rebindable — note a bare function key is claimed globally while
+  the overlay runs, so F5 will not reload a browser page until it exits
 
 ## Requirements
 

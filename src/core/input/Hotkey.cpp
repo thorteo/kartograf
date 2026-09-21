@@ -173,7 +173,11 @@ std::string formatHotkey(const Hotkey& hotkey) {
 }
 
 Hotkey defaultToggleHotkey() {
-    return Hotkey{kAlt, 'M'};
+    // F5: one key, reachable without letting go of movement, and not bound by
+    // Escape from Tarkov. Note it is claimed globally while the overlay runs,
+    // so it stops reaching other applications -- a browser will not reload on
+    // F5 until the overlay exits. --toggle-key overrides it.
+    return Hotkey{kNone, 0x74};  // VK_F5
 }
 
 bool isReservedCombination(const Hotkey& hotkey) {

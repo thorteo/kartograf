@@ -84,10 +84,12 @@ frame — those frames come out of the game's budget.
 
 ## Threading model
 
-We chose C++ knowing the compiler will not catch data races, so the design compensates:
-shared mutable state lives in exactly one place, `core/game/RaidState`, guarded by one
-mutex, and is only ever published as an immutable snapshot to the render thread.
-Watcher threads push events through a queue; they never touch render state directly.
+We chose C++ knowing the compiler will not catch data races, so the design compensates.
+Every component that crosses threads (`RaidState`, `QuestProgressStore`, the tile, SVG,
+icon and data stores) owns its state behind exactly one mutex, hands readers an
+immutable snapshot or a copy, never calls into another component while holding its
+lock, and discards superseded background work by generation rather than cancelling it.
+The render thread never mutates shared state except through a component's API.
 See `docs/adr/0004-threading-model.md` and `0005` before adding a thread or a shared
 field.
 

@@ -60,6 +60,7 @@ add_library(tarkov_core STATIC
     src/core/data/TaskModel.cpp
     src/core/data/MapIds.cpp
     src/core/data/QuestProgress.cpp
+    src/core/data/MapFeatures.cpp
     ${TARKOV_EMBEDDED_MAP_IDS}
     src/core/map/TileMath.cpp
     src/core/map/SvgRenderer.cpp
@@ -152,8 +153,9 @@ if(WIN32)
         src/platform/win32/GameDataWatcher.cpp
         src/platform/win32/HttpClient.cpp
         src/platform/win32/TileStore.cpp
-        src/platform/win32/TaskRepository.cpp
+        src/platform/win32/TarkovDataRepository.cpp
         src/platform/win32/SvgMapStore.cpp
+        src/platform/win32/IconStore.cpp
         src/platform/win32/ImGuiLayer.cpp
         third_party/imgui/backends/imgui_impl_win32.cpp
         third_party/imgui/backends/imgui_impl_dx11.cpp

@@ -75,8 +75,13 @@ records what that means concretely, in the order we intend to earn it.
 - [ ] Objective markers on the map, filtered to the current map
 - [ ] Active-quest list with distance and bearing to each objective
 - [ ] **Required keys surfaced per objective** — which key to bring, before the raid
-- [ ] Quest progress tracking, source to be decided (TarkovTracker sync, log-derived,
-      or manual — this is still an open question)
+- [x] **Quest progress from the game's own logs.** Starts and completions are read
+      from `push-notifications_000.log`, imported from every session still on disk,
+      persisted (the game keeps ~5 days), and extended by inference through quest
+      prerequisites. Markers show only active quests; a panel allows corrections.
+- [x] Extracts (by faction), transits, PMC and boss spawns, with icons
+- [ ] UI strings in Russian through a locale table (currently English, with Russian
+      data — CLAUDE.md requires this and it is not done)
 
 ## M3 — Beyond TarkovQuestie
 
@@ -131,7 +136,7 @@ in either direction surfaces.
 
 ## Open questions
 
-- Quest progress source — TarkovTracker API, log-derived, manual, or all three
+- Whether to add TarkovTracker sync on top of log-derived progress
 - How many objectives actually have `zones` populated in the API; this determines how
   much of M2 has real map data behind it
 - Whether raster tiles or the layered SVG maps give the better result

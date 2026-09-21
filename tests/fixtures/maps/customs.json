@@ -1,0 +1,1778 @@
+{
+ "data": {
+  "maps": {
+   "56f40101d2720b2a4d8b45d6": {
+    "id": "56f40101d2720b2a4d8b45d6",
+    "name": "56f40101d2720b2a4d8b45d6 Name",
+    "normalizedName": "customs",
+    "raidDuration": 35,
+    "extracts": [
+     {
+      "id": "d201ff0c1b0ee85652fd0ab8adb5cbf52772aa62",
+      "name": "Old Azs Gate",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 300.51,
+       "y": 3.47,
+       "z": -198.52
+      },
+      "outline": [
+       {
+        "x": 310.83,
+        "y": 1.06,
+        "z": -206.71
+       },
+       {
+        "x": 310.83,
+        "y": 1.06,
+        "z": -190.33
+       },
+       {
+        "x": 290.19,
+        "y": 1.06,
+        "z": -190.33
+       },
+       {
+        "x": 290.19,
+        "y": 1.06,
+        "z": -206.71
+       }
+      ],
+      "top": 5.87,
+      "bottom": 1.06
+     },
+     {
+      "id": "882d9a3ce947335f4634e07a415815a99bf2f24c",
+      "name": "Crossroads",
+      "faction": "shared",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": -334.8,
+       "y": 2.19,
+       "z": -87.98
+      },
+      "outline": [
+       {
+        "x": -323.51,
+        "y": -0.68,
+        "z": -97.41
+       },
+       {
+        "x": -323.51,
+        "y": -0.68,
+        "z": -78.55
+       },
+       {
+        "x": -346.09,
+        "y": -0.68,
+        "z": -78.55
+       },
+       {
+        "x": -346.09,
+        "y": -0.68,
+        "z": -97.41
+       }
+      ],
+      "top": 5.06,
+      "bottom": -0.68
+     },
+     {
+      "id": "74190c6df1e1b733729ccec56dc3dd82d1e01683",
+      "name": "Administration Gate",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 664.71,
+       "y": 2.88,
+       "z": -55.33
+      },
+      "outline": [
+       {
+        "x": 676.17,
+        "y": 0.15,
+        "z": -66.03
+       },
+       {
+        "x": 676.17,
+        "y": 0.15,
+        "z": -44.64
+       },
+       {
+        "x": 653.24,
+        "y": 0.15,
+        "z": -44.64
+       },
+       {
+        "x": 653.24,
+        "y": 0.15,
+        "z": -66.03
+       }
+      ],
+      "top": 5.61,
+      "bottom": 0.15
+     },
+     {
+      "id": "1e7baccc265b49195aead2e783779cbca83d73f3",
+      "name": "Old Road Gate",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 181.77,
+       "y": 1.5,
+       "z": 214.01
+      },
+      "outline": [
+       {
+        "x": 188.51,
+        "y": -2.11,
+        "z": 207.19
+       },
+       {
+        "x": 188.51,
+        "y": -2.11,
+        "z": 220.83
+       },
+       {
+        "x": 175.03,
+        "y": -2.11,
+        "z": 220.83
+       },
+       {
+        "x": 175.03,
+        "y": -2.11,
+        "z": 207.19
+       }
+      ],
+      "top": 5.11,
+      "bottom": -2.11
+     },
+     {
+      "id": "aa56e9228b8452533873eeffa11b587007f49429",
+      "name": "RUAF Roadblock",
+      "faction": "pmc",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": -10.25,
+       "y": 1.92,
+       "z": -138.45
+      },
+      "outline": [
+       {
+        "x": 0.95,
+        "y": -1.75,
+        "z": -146.92
+       },
+       {
+        "x": 0.95,
+        "y": -1.75,
+        "z": -129.98
+       },
+       {
+        "x": -21.45,
+        "y": -1.75,
+        "z": -129.98
+       },
+       {
+        "x": -21.45,
+        "y": -1.75,
+        "z": -146.92
+       }
+      ],
+      "top": 5.59,
+      "bottom": -1.75
+     },
+     {
+      "id": "ad8fc418508df45199927afc5ea8c981337ecd64",
+      "name": "RUAF Roadblock_scav",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": -9.44,
+       "y": 1.65,
+       "z": -138.74
+      },
+      "outline": [
+       {
+        "x": 3.21,
+        "y": -0.76,
+        "z": -148.37
+       },
+       {
+        "x": 3.21,
+        "y": -0.76,
+        "z": -129.12
+       },
+       {
+        "x": -22.08,
+        "y": -0.76,
+        "z": -129.12
+       },
+       {
+        "x": -22.08,
+        "y": -0.76,
+        "z": -148.37
+       }
+      ],
+      "top": 4.05,
+      "bottom": -0.76
+     },
+     {
+      "id": "6eee3e566de0b079cd76f204d297ba954b301e8c",
+      "name": "Sniper Roadblock",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 15.08,
+       "y": 0.14,
+       "z": 126.29
+      },
+      "outline": [
+       {
+        "x": 23.08,
+        "y": -2.85,
+        "z": 120.03
+       },
+       {
+        "x": 23.08,
+        "y": -2.85,
+        "z": 132.55
+       },
+       {
+        "x": 7.08,
+        "y": -2.85,
+        "z": 132.55
+       },
+       {
+        "x": 7.08,
+        "y": -2.85,
+        "z": 120.03
+       }
+      ],
+      "top": 3.13,
+      "bottom": -2.85
+     },
+     {
+      "id": "c9e36de4f1b9f73f4698b5ba46135a1e0aafb434",
+      "name": "Factory Shacks",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 205.59,
+       "y": 3.72,
+       "z": 3.31
+      },
+      "outline": [
+       {
+        "x": 213.99,
+        "y": 1.31,
+        "z": -2.2
+       },
+       {
+        "x": 213.99,
+        "y": 1.31,
+        "z": 8.82
+       },
+       {
+        "x": 197.19,
+        "y": 1.31,
+        "z": 8.82
+       },
+       {
+        "x": 197.19,
+        "y": 1.31,
+        "z": -2.2
+       }
+      ],
+      "top": 6.12,
+      "bottom": 1.31
+     },
+     {
+      "id": "f865b04a5d4c6b10d92f8783b51b0b486f55cf79",
+      "name": "Warehouse 4",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 341.57,
+       "y": 3.55,
+       "z": -25.85
+      },
+      "outline": [
+       {
+        "x": 349.89,
+        "y": 1.14,
+        "z": -31.16
+       },
+       {
+        "x": 349.89,
+        "y": 1.14,
+        "z": -20.54
+       },
+       {
+        "x": 333.25,
+        "y": 1.14,
+        "z": -20.54
+       },
+       {
+        "x": 333.25,
+        "y": 1.14,
+        "z": -31.16
+       }
+      ],
+      "top": 5.95,
+      "bottom": 1.14
+     },
+     {
+      "id": "efaa0c60d405aeadbddbe9c43b6007c68b2b511a",
+      "name": "Custom_scav_pmc",
+      "faction": "shared",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 100.56,
+       "y": -4.98,
+       "z": -44.42
+      },
+      "outline": [
+       {
+        "x": 88.86,
+        "y": -6.33,
+        "z": -43.91
+       },
+       {
+        "x": 111.07,
+        "y": -6.33,
+        "z": -39.26
+       },
+       {
+        "x": 112.26,
+        "y": -6.33,
+        "z": -44.93
+       },
+       {
+        "x": 90.05,
+        "y": -6.33,
+        "z": -49.58
+       }
+      ],
+      "top": -3.63,
+      "bottom": -6.33
+     },
+     {
+      "id": "7d762806017db548eb61efe7344cc7c2bd8e3c74",
+      "name": "customs_sniper_exit",
+      "faction": "pmc",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 139.13,
+       "y": 3.8,
+       "z": -324.62
+      },
+      "outline": [
+       {
+        "x": 119.33,
+        "y": -2.85,
+        "z": -389.32
+       },
+       {
+        "x": 79.68,
+        "y": -2.85,
+        "z": -356.93
+       },
+       {
+        "x": 158.93,
+        "y": -2.85,
+        "z": -259.91
+       },
+       {
+        "x": 198.58,
+        "y": -2.85,
+        "z": -292.3
+       }
+      ],
+      "top": 10.45,
+      "bottom": -2.85
+     },
+     {
+      "id": "5deca07c61a4ba88f0b41bf337546099126f9139",
+      "name": "Railroad To Military Base",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 489.06,
+       "y": 3.95,
+       "z": 221.39
+      },
+      "outline": [
+       {
+        "x": 498.52,
+        "y": 0.96,
+        "z": 213.24
+       },
+       {
+        "x": 498.52,
+        "y": 0.96,
+        "z": 229.54
+       },
+       {
+        "x": 479.59,
+        "y": 0.96,
+        "z": 229.54
+       },
+       {
+        "x": 479.59,
+        "y": 0.96,
+        "z": 213.24
+       }
+      ],
+      "top": 6.94,
+      "bottom": 0.96
+     },
+     {
+      "id": "3e408d979f4a2085e6b706724b907798453ebdcf",
+      "name": "Railroad To Port",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": -149.11,
+       "y": -0.63,
+       "z": 46.68
+      },
+      "outline": [
+       {
+        "x": -135.74,
+        "y": -5.31,
+        "z": 40.62
+       },
+       {
+        "x": -135.74,
+        "y": -5.31,
+        "z": 52.75
+       },
+       {
+        "x": -162.48,
+        "y": -5.31,
+        "z": 52.75
+       },
+       {
+        "x": -162.48,
+        "y": -5.31,
+        "z": 40.62
+       }
+      ],
+      "top": 4.05,
+      "bottom": -5.31
+     },
+     {
+      "id": "7efc47fbcb66de74947a7f4c5275e1c1161fbad7",
+      "name": "Warehouse 17",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 50.74,
+       "y": 2.14,
+       "z": -69.82
+      },
+      "outline": [
+       {
+        "x": 52.55,
+        "y": 0.63,
+        "z": -72.24
+       },
+       {
+        "x": 52.55,
+        "y": 0.63,
+        "z": -67.4
+       },
+       {
+        "x": 48.93,
+        "y": 0.63,
+        "z": -67.4
+       },
+       {
+        "x": 48.93,
+        "y": 0.63,
+        "z": -72.24
+       }
+      ],
+      "top": 3.65,
+      "bottom": 0.63
+     },
+     {
+      "id": "eed82bd27cacd23d8a82d7d72525d6fa55ced535",
+      "name": "EXFIL_ZB013",
+      "faction": "pmc",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 200.98,
+       "y": -1.15,
+       "z": -153.09
+      },
+      "outline": [
+       {
+        "x": 200.08,
+        "y": -2.78,
+        "z": -156.58
+       },
+       {
+        "x": 198.96,
+        "y": -2.78,
+        "z": -150.1
+       },
+       {
+        "x": 201.87,
+        "y": -2.78,
+        "z": -149.59
+       },
+       {
+        "x": 203,
+        "y": -2.78,
+        "z": -156.08
+       }
+      ],
+      "top": 0.48,
+      "bottom": -2.78
+     },
+     {
+      "id": "ebe790f5d5718b4635e3b323002e3b9de1acc189",
+      "name": "ZB-1011",
+      "faction": "pmc",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 621.5,
+       "y": -2.07,
+       "z": -128.6
+      },
+      "outline": [
+       {
+        "x": 633.05,
+        "y": -4.25,
+        "z": -133.07
+       },
+       {
+        "x": 633.05,
+        "y": -4.25,
+        "z": -124.14
+       },
+       {
+        "x": 609.94,
+        "y": -4.25,
+        "z": -124.14
+       },
+       {
+        "x": 609.94,
+        "y": -4.25,
+        "z": -133.07
+       }
+      ],
+      "top": 0.11,
+      "bottom": -4.25
+     },
+     {
+      "id": "29ed785816cd1f7d8cd4e26382befac520406ff0",
+      "name": "Military Checkpoint",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 652.08,
+       "y": 1,
+       "z": -27.42
+      },
+      "outline": [
+       {
+        "x": 655.37,
+        "y": -1.17,
+        "z": -32.56
+       },
+       {
+        "x": 655.37,
+        "y": -1.17,
+        "z": -22.28
+       },
+       {
+        "x": 648.8,
+        "y": -1.17,
+        "z": -22.28
+       },
+       {
+        "x": 648.8,
+        "y": -1.17,
+        "z": -32.56
+       }
+      ],
+      "top": 3.18,
+      "bottom": -1.17
+     },
+     {
+      "id": "027a5fa92aac238f7856cedd9c31b09712139282",
+      "name": "Railroad To Tarkov",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": -163.47,
+       "y": 3.39,
+       "z": -217.45
+      },
+      "outline": [
+       {
+        "x": -151.68,
+        "y": -0.22,
+        "z": -223.85
+       },
+       {
+        "x": -151.68,
+        "y": -0.22,
+        "z": -211.05
+       },
+       {
+        "x": -175.25,
+        "y": -0.22,
+        "z": -211.05
+       },
+       {
+        "x": -175.25,
+        "y": -0.22,
+        "z": -223.85
+       }
+      ],
+      "top": 7,
+      "bottom": -0.22
+     },
+     {
+      "id": "5bde7f40bc968c3b62dd846d134e7a3efb43db2c",
+      "name": "Shack",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 644.88,
+       "y": 2.4,
+       "z": 126.87
+      },
+      "outline": [
+       {
+        "x": 649.37,
+        "y": 0.22,
+        "z": 122.42
+       },
+       {
+        "x": 649.37,
+        "y": 0.22,
+        "z": 131.32
+       },
+       {
+        "x": 640.38,
+        "y": 0.22,
+        "z": 131.32
+       },
+       {
+        "x": 640.38,
+        "y": 0.22,
+        "z": 122.42
+       }
+      ],
+      "top": 4.58,
+      "bottom": 0.22
+     },
+     {
+      "id": "5d5b59053a654215db3392039afac3266a6813bb",
+      "name": "Trailer Park",
+      "faction": "pmc",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": -313.72,
+       "y": -1.72,
+       "z": -233.28
+      },
+      "outline": [
+       {
+        "x": -296.37,
+        "y": -11.7,
+        "z": -249.09
+       },
+       {
+        "x": -296.37,
+        "y": -11.7,
+        "z": -217.47
+       },
+       {
+        "x": -331.07,
+        "y": -11.7,
+        "z": -217.47
+       },
+       {
+        "x": -331.07,
+        "y": -11.7,
+        "z": -249.09
+       }
+      ],
+      "top": 8.26,
+      "bottom": -11.7
+     },
+     {
+      "id": "75231a4542e0b910f7b303b5e65ca04951aad3cd",
+      "name": "Dorms V-Ex",
+      "faction": "pmc",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "transferItem": {
+       "item": "5449016a4bdc2d6f028b456f",
+       "count": 20000
+      },
+      "position": {
+       "x": 181.08,
+       "y": -0.71,
+       "z": 213.25
+      },
+      "outline": [
+       {
+        "x": 177.48,
+        "y": -2.52,
+        "z": 212.39
+       },
+       {
+        "x": 180.47,
+        "y": -2.4,
+        "z": 216.95
+       },
+       {
+        "x": 184.63,
+        "y": -2.55,
+        "z": 214.24
+       },
+       {
+        "x": 181.64,
+        "y": -2.67,
+        "z": 209.67
+       }
+      ],
+      "top": 1.25,
+      "bottom": -2.67
+     },
+     {
+      "id": "c7ab47fb02c34de3b44843b2ac4ba2502d82c056",
+      "name": "Old Gas Station",
+      "faction": "pmc",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 309.5,
+       "y": -2.18,
+       "z": -174.32
+      },
+      "outline": [
+       {
+        "x": 312.81,
+        "y": -4.36,
+        "z": -178.54
+       },
+       {
+        "x": 312.81,
+        "y": -4.36,
+        "z": -170.1
+       },
+       {
+        "x": 306.19,
+        "y": -4.36,
+        "z": -170.1
+       },
+       {
+        "x": 306.19,
+        "y": -4.36,
+        "z": -178.54
+       }
+      ],
+      "top": 0,
+      "bottom": -4.36
+     },
+     {
+      "id": "500734adcba6b80cc42b3ca3f4884f89aceffca0",
+      "name": "Beyond Fuel Tank",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 539.39,
+       "y": 11.82,
+       "z": 200.34
+      },
+      "outline": [
+       {
+        "x": 545.67,
+        "y": 9.64,
+        "z": 196.33
+       },
+       {
+        "x": 545.67,
+        "y": 9.64,
+        "z": 204.35
+       },
+       {
+        "x": 533.12,
+        "y": 9.64,
+        "z": 204.35
+       },
+       {
+        "x": 533.12,
+        "y": 9.64,
+        "z": 196.33
+       }
+      ],
+      "top": 14,
+      "bottom": 9.64
+     },
+     {
+      "id": "82b4454b4972577a7582e77a6535ca29906d1e41",
+      "name": "Factory Far Corner",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": 652.45,
+       "y": 3.2,
+       "z": -160.49
+      },
+      "outline": [
+       {
+        "x": 660.86,
+        "y": 0.8,
+        "z": -173.46
+       },
+       {
+        "x": 660.86,
+        "y": 0.8,
+        "z": -147.52
+       },
+       {
+        "x": 644.05,
+        "y": 0.8,
+        "z": -147.52
+       },
+       {
+        "x": 644.05,
+        "y": 0.8,
+        "z": -173.46
+       }
+      ],
+      "top": 5.61,
+      "bottom": 0.8
+     },
+     {
+      "id": "eb56c5fd9da70b243b461c43f51f388195558d13",
+      "name": "customs_secret_voron_boat",
+      "faction": "pmc",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "transferItem": {
+       "item": "675aaab74bca0b001d02f356",
+       "count": 1
+      },
+      "position": {
+       "x": -41.51,
+       "y": -12.63,
+       "z": 122.67
+      },
+      "outline": [
+       {
+        "x": -47.15,
+        "y": -14.13,
+        "z": 113.69
+       },
+       {
+        "x": -50.49,
+        "y": -14.13,
+        "z": 128.31
+       },
+       {
+        "x": -35.87,
+        "y": -14.13,
+        "z": 131.65
+       },
+       {
+        "x": -32.53,
+        "y": -14.13,
+        "z": 117.03
+       }
+      ],
+      "top": -11.13,
+      "bottom": -14.13
+     },
+     {
+      "id": "ef0ba1b94dc5dc72bc03b7469f16da2bb8c5ab77",
+      "name": "Trailer Park Workers Shack",
+      "faction": "scav",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "position": {
+       "x": -248.54,
+       "y": 2.55,
+       "z": -232.99
+      },
+      "outline": [
+       {
+        "x": -243.62,
+        "y": -0.74,
+        "z": -240
+       },
+       {
+        "x": -243.62,
+        "y": -0.74,
+        "z": -225.99
+       },
+       {
+        "x": -253.47,
+        "y": -0.74,
+        "z": -225.99
+       },
+       {
+        "x": -253.47,
+        "y": -0.74,
+        "z": -240
+       }
+      ],
+      "top": 5.84,
+      "bottom": -0.74
+     },
+     {
+      "id": "d83b786e095e965f71a2ebcc242d32259343f8a4",
+      "name": "customs_secret_voron_bunker",
+      "faction": "pmc",
+      "switch": "ae4bdfc1fc5b30100701158b56ae4d20840e0550",
+      "switches": [
+       "ae4bdfc1fc5b30100701158b56ae4d20840e0550"
+      ],
+      "transferItem": {
+       "item": "675aaab74bca0b001d02f356",
+       "count": 1
+      },
+      "position": {
+       "x": 463.18,
+       "y": -1.46,
+       "z": -112.36
+      },
+      "outline": [
+       {
+        "x": 457.84,
+        "y": -2.96,
+        "z": -114.03
+       },
+       {
+        "x": 458.64,
+        "y": -2.96,
+        "z": -109.09
+       },
+       {
+        "x": 468.52,
+        "y": -2.96,
+        "z": -110.69
+       },
+       {
+        "x": 467.72,
+        "y": -2.96,
+        "z": -115.63
+       }
+      ],
+      "top": 0.04,
+      "bottom": -2.96
+     }
+    ],
+    "transits": [
+     {
+      "id": "9",
+      "description": "CUS_TRANSIT_9_DESC",
+      "map": "5704e5fad2720bc05b8b4567",
+      "position": {
+       "x": 650.64,
+       "y": 1.59,
+       "z": 124.94
+      },
+      "outline": [
+       {
+        "x": 639.89,
+        "y": 0.26,
+        "z": 122.77
+       },
+       {
+        "x": 640.5,
+        "y": 0.26,
+        "z": 129.12
+       },
+       {
+        "x": 661.4,
+        "y": 0.26,
+        "z": 127.1
+       },
+       {
+        "x": 660.79,
+        "y": 0.26,
+        "z": 120.76
+       }
+      ],
+      "top": 2.92,
+      "bottom": 0.26
+     },
+     {
+      "id": "10",
+      "description": "CUS_TRANSIT_10_DESC",
+      "map": "55f2d3fd4bdc2d5f408b4567",
+      "position": {
+       "x": 354.31,
+       "y": 2.31,
+       "z": -190.1
+      },
+      "outline": [
+       {
+        "x": 347.62,
+        "y": 0.98,
+        "z": -194.55
+       },
+       {
+        "x": 346.48,
+        "y": 0.98,
+        "z": -188.28
+       },
+       {
+        "x": 361,
+        "y": 0.98,
+        "z": -185.65
+       },
+       {
+        "x": 362.14,
+        "y": 0.98,
+        "z": -191.92
+       }
+      ],
+      "top": 3.64,
+      "bottom": 0.98
+     },
+     {
+      "id": "11",
+      "description": "CUS_TRANSIT_11_DESC",
+      "map": "5714dbc024597771384a510d",
+      "position": {
+       "x": -334.22,
+       "y": 2.11,
+       "z": -211.95
+      },
+      "outline": [
+       {
+        "x": -338.53,
+        "y": 0.78,
+        "z": -221.34
+       },
+       {
+        "x": -338.45,
+        "y": 0.78,
+        "z": -202.53
+       },
+       {
+        "x": -329.9,
+        "y": 0.78,
+        "z": -202.56
+       },
+       {
+        "x": -329.98,
+        "y": 0.78,
+        "z": -221.37
+       }
+      ],
+      "top": 3.44,
+      "bottom": 0.78
+     },
+     {
+      "id": "42",
+      "description": "CUS_TRANSIT_42_DESC",
+      "map": "5704e554d2720bac5b8b456e",
+      "position": {
+       "x": 20.94,
+       "y": -0.58,
+       "z": 139.61
+      },
+      "outline": [
+       {
+        "x": 18.87,
+        "y": -2.73,
+        "z": 133.33
+       },
+       {
+        "x": 19.79,
+        "y": -2.73,
+        "z": 146.11
+       },
+       {
+        "x": 23.02,
+        "y": -2.73,
+        "z": 145.88
+       },
+       {
+        "x": 22.09,
+        "y": -2.73,
+        "z": 133.1
+       }
+      ],
+      "top": 1.57,
+      "bottom": -2.73
+     }
+    ],
+    "spawns": [
+     {
+      "position": {
+       "x": 571.41,
+       "y": 1.49,
+       "z": -53.4799957
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "0327c5d1-cc7f-432f-92dc-f95fb4719f1b"
+     },
+     {
+      "position": {
+       "x": 584.06,
+       "y": 9.66,
+       "z": 146.22
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "06305c94-bdc3-4355-b2df-4b9060f54ed2"
+     },
+     {
+      "position": {
+       "x": -220.212,
+       "y": 1.0710001,
+       "z": -141.936
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "0a780428-48e0-4268-9ef8-0a7f999cc632"
+     },
+     {
+      "position": {
+       "x": 181.1043,
+       "y": -0.1127597,
+       "z": 178.053787
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot",
+       "boss"
+      ],
+      "zoneName": "ZoneDormitory"
+     },
+     {
+      "position": {
+       "x": 288.068,
+       "y": 1.718,
+       "z": -201.166
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "0bfe7760-902e-4b79-8722-7ce2ad0a970c"
+     },
+     {
+      "position": {
+       "x": 286.3263,
+       "y": 1.49224031,
+       "z": -52.3192139
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot",
+       "boss"
+      ],
+      "zoneName": "ZoneCustoms"
+     },
+     {
+      "position": {
+       "x": 531.88,
+       "y": 9.52,
+       "z": 195.790009
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "0f054aeb-dae4-4de4-8f19-e96baac1def6"
+     },
+     {
+      "position": {
+       "x": 34.1792679,
+       "y": 1.08854008,
+       "z": -49.5179977
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "boss"
+      ],
+      "zoneName": "ZoneBrige"
+     },
+     {
+      "position": {
+       "x": 546.888,
+       "y": 2.208,
+       "z": 45.5639954
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "0fd52df3-8419-4644-917f-efd18d99c85a"
+     },
+     {
+      "position": {
+       "x": 574,
+       "y": 1.46,
+       "z": -114.85
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "105e161c-c1ad-4004-8c02-f3c95164a75e"
+     },
+     {
+      "position": {
+       "x": -195.952,
+       "y": 1.458,
+       "z": -234.646
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "11e7dc8d-ee50-4800-a400-a2f2761b6e9f"
+     },
+     {
+      "position": {
+       "x": 587.85,
+       "y": 8.89,
+       "z": 141.949982
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "158ea18b-12e5-4495-8774-0cb185ce83ba"
+     },
+     {
+      "position": {
+       "x": -223.232,
+       "y": 1.118,
+       "z": -147.516
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "15a5b4ce-8d57-41b8-8f2b-bcf806a8e803"
+     },
+     {
+      "position": {
+       "x": 99.53001,
+       "y": 1.38884091,
+       "z": -66.62
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot",
+       "boss"
+      ],
+      "zoneName": "ZoneScavBase"
+     },
+     {
+      "position": {
+       "x": 208.2033,
+       "y": 1.78224027,
+       "z": -116.860214
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot",
+       "boss"
+      ],
+      "zoneName": "ZoneGasStation"
+     },
+     {
+      "position": {
+       "x": 570.06,
+       "y": 1.49,
+       "z": -54.9799957
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "1a39d596-25e4-4b63-b6da-325aa8409576"
+     },
+     {
+      "position": {
+       "x": 174.652283,
+       "y": -0.12775971,
+       "z": 152.706787
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot",
+       "boss"
+      ],
+      "zoneName": "ZoneDormitory"
+     },
+     {
+      "position": {
+       "x": -132.9,
+       "y": -1.66999984,
+       "z": 39.8999939
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "1b636e5b-ae6d-4df3-93ea-159f5a2437fd"
+     },
+     {
+      "position": {
+       "x": -151.782,
+       "y": 1.258,
+       "z": -129.81601
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "1b9fddbc-f667-4344-98ef-3d198229bd41"
+     },
+     {
+      "position": {
+       "x": 363.248,
+       "y": 12.698,
+       "z": 155.594
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "1c26a886-b1f5-490e-8fdd-153d991dc393"
+     },
+     {
+      "position": {
+       "x": -130.65,
+       "y": -2.11,
+       "z": 38.9100037
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "1d0f26c8-85e5-42d0-b115-7d8f325f97d4"
+     },
+     {
+      "position": {
+       "x": 100.598007,
+       "y": 1.168,
+       "z": -110.826004
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "1d80614c-e211-42d5-b661-8e2bb1aeae79"
+     },
+     {
+      "position": {
+       "x": -183.647,
+       "y": 1.60172462,
+       "z": -190.065
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot",
+       "boss"
+      ],
+      "zoneName": "ZoneCustoms"
+     },
+     {
+      "position": {
+       "x": -131.27,
+       "y": -2.09,
+       "z": 42.6900024
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "1fb2eba7-250e-4fd1-ba2a-75fb3d640ed7"
+     },
+     {
+      "position": {
+       "x": 525.62,
+       "y": 8.88,
+       "z": 199
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "20495255-3094-4add-8744-14efc6e05308"
+     },
+     {
+      "position": {
+       "x": 317.338,
+       "y": 1.128,
+       "z": -78.756
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "2051eb7b-3ae8-49b8-adcb-c13f0ddc7972"
+     },
+     {
+      "position": {
+       "x": 195.336288,
+       "y": 1.78624034,
+       "z": -126.129227
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot",
+       "boss"
+      ],
+      "zoneName": "ZoneGasStation"
+     },
+     {
+      "position": {
+       "x": -309.95,
+       "y": 0.99,
+       "z": -94.51
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "253e504c-4d28-4aa0-926d-14dcbdeebc1c"
+     },
+     {
+      "position": {
+       "x": -147.872,
+       "y": 1.678,
+       "z": -135.636
+      },
+      "sides": [
+       "pmc"
+      ],
+      "categories": [
+       "player"
+      ],
+      "zoneName": "27aa4110-1b16-4454-b505-35026255b7f9"
+     },
+     {
+      "position": {
+       "x": 125.176292,
+       "y": 1.32224035,
+       "z": -146.1392
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot",
+       "boss"
+      ],
+      "zoneName": "ZoneCustoms"
+     },
+     {
+      "position": {
+       "x": 569.0529,
+       "y": 1.46199012,
+       "z": -54.5297432
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot"
+      ],
+      "zoneName": "ZoneFactorySide"
+     },
+     {
+      "position": {
+       "x": -319.650024,
+       "y": 1.01148736,
+       "z": -185.94
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot"
+      ],
+      "zoneName": "ZoneCustoms"
+     },
+     {
+      "position": {
+       "x": 363.140869,
+       "y": 1.32006574,
+       "z": -109.224533
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "botpmc"
+      ],
+      "zoneName": "ZoneGasStation"
+     },
+     {
+      "position": {
+       "x": 188.06,
+       "y": 1.289891,
+       "z": -1.38000488
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot"
+      ],
+      "zoneName": "ZoneCrossRoad"
+     },
+     {
+      "position": {
+       "x": 60.68301,
+       "y": 4.448909,
+       "z": -67.65
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot"
+      ],
+      "zoneName": "ZoneTankSquare"
+     },
+     {
+      "position": {
+       "x": 29.8222656,
+       "y": 1.11054,
+       "z": -29.4749985
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot"
+      ],
+      "zoneName": "ZoneBrige"
+     },
+     {
+      "position": {
+       "x": 52.6250076,
+       "y": 4.46792269,
+       "z": -52.7560043
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot"
+      ],
+      "zoneName": "ZoneTankSquare"
+     },
+     {
+      "position": {
+       "x": 420.47,
+       "y": 1.14899969,
+       "z": 22.5500011
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot"
+      ],
+      "zoneName": "ZoneBlockPost"
+     },
+     {
+      "position": {
+       "x": 5.87000275,
+       "y": 1.37882686,
+       "z": -90.5099945
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot"
+      ],
+      "zoneName": "ZoneWade"
+     },
+     {
+      "position": {
+       "x": -179.40802,
+       "y": 1.42873216,
+       "z": -235.034
+      },
+      "sides": [
+       "scav"
+      ],
+      "categories": [
+       "player",
+       "bot"
+      ],
+      "zoneName": "ZoneCustoms"
+     }
+    ]
+   }
+  }
+ }
+}

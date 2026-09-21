@@ -38,8 +38,9 @@
 #include "platform/win32/ImGuiLayer.h"
 #include "platform/win32/OverlayWindow.h"
 #include "core/map/SvgPlacement.h"
+#include "platform/win32/IconStore.h"
 #include "platform/win32/SvgMapStore.h"
-#include "platform/win32/TaskRepository.h"
+#include "platform/win32/TarkovDataRepository.h"
 #include "platform/win32/TileStore.h"
 #include "ui/Hud.h"
 #include "ui/MapView.h"
@@ -168,7 +169,7 @@ void drawStatus(unsigned long long nowMillis) {
 }
 
 std::filesystem::path progressFile() {
-    return tarkov::win32::TaskRepository::defaultCacheRoot().parent_path() /
+    return tarkov::win32::TarkovDataRepository::defaultCacheRoot().parent_path() /
            "progress.json";
 }
 
@@ -345,12 +346,18 @@ int main(int argc, char** argv) {
     win32::TileStore tiles;
     tiles.start(overlay.device());
 
+    win32::IconStore icons;
+    icons.start(overlay.device(),
+                {"quest_objective", "quest_item", "player-position", "extract_pmc",
+                 "extract_scav", "extract_shared", "extract_transit", "spawn_pmc",
+                 "spawn_boss"});
+
     win32::SvgMapStore abstractMaps;
     abstractMaps.start(overlay.device(),
                        [](const std::string& line) { g_status.add(line); });
 
     const data::MapIdTable mapIds = data::MapIdTable::parse(data::kMapIdsJson);
-    win32::TaskRepository quests;
+    win32::TarkovDataRepository quests;
     quests.start("regular", argumentValue(argc, argv, "--lang").empty()
                                 ? std::string("ru")
                                 : argumentValue(argc, argv, "--lang"),
@@ -419,6 +426,8 @@ int main(int argc, char** argv) {
     bool questPlacesFiltered = false;
     int activeQuestCount = 0;
     std::vector<ui::QuestListEntry> questEntries;
+    ui::MapOverlays overlaysForMap;
+    const void* overlaysFeaturesFrom = nullptr;
     std::string lastRaidMode;
 
     std::shared_ptr<const game::RaidSnapshot> lastSnapshot;
@@ -528,8 +537,10 @@ int main(int argc, char** argv) {
         // upload count is part of what makes a frame necessary.
         const int uploaded = tiles.pump();
         const bool abstractUploaded = abstractMaps.pump();
+        const bool iconsUploaded = icons.pump();
         const bool needsFrame = interactive || stateChanged || secondTicked ||
                                 forceRedraw || uploaded > 0 || abstractUploaded ||
+                                iconsUploaded ||
                                 pendingTiles;
 
         if (!needsFrame) {
@@ -593,6 +604,54 @@ int main(int argc, char** argv) {
                     tiles.setMap(variant->key, variant->tilePath, layerTemplates);
                 }
                 const auto questData = quests.tasks();
+                const auto features = quests.mapFeatures();
+                if (overlaysFeaturesFrom != features.get() ||
+                    questPlacesFor != variant->key) {
+                    overlaysFeaturesFrom = features.get();
+                    overlaysForMap.extracts.clear();
+                    overlaysForMap.spawns.clear();
+                    overlaysForMap.transits.clear();
+                    for (const auto id : mapIds.idsFor(snapshot->mapNormalized)) {
+                        const auto it = features->find(id);
+                        if (it == features->end()) {
+                            continue;
+                        }
+                        for (const auto& extract : it->second.extracts) {
+                            ui::MapPoint point;
+                            point.world = extract.position;
+                            point.label = extract.name;
+                            point.top = extract.top;
+                            point.bottom = extract.bottom;
+                            point.icon =
+                                extract.faction == data::ExtractFaction::Pmc
+                                    ? ui::MarkerIcon::ExtractPmc
+                                : extract.faction == data::ExtractFaction::Scav
+                                    ? ui::MarkerIcon::ExtractScav
+                                    : ui::MarkerIcon::ExtractShared;
+                            overlaysForMap.extracts.push_back(std::move(point));
+                        }
+                        for (const auto* spawn : data::notableSpawns(it->second)) {
+                            ui::MapPoint point;
+                            point.world = spawn->position;
+                            point.label = spawn->boss ? "boss spawn" : "PMC spawn";
+                            point.icon = spawn->boss ? ui::MarkerIcon::SpawnBoss
+                                                     : ui::MarkerIcon::SpawnPmc;
+                            overlaysForMap.spawns.push_back(std::move(point));
+                        }
+                        for (const auto& transit : it->second.transits) {
+                            ui::MapPoint point;
+                            point.world = transit.position;
+                            const auto target = mapIds.drawnAs(transit.targetMapId);
+                            point.label = transit.description.empty()
+                                              ? "transit to " +
+                                                    std::string(target ? *target : "?")
+                                              : transit.description;
+                            point.icon = ui::MarkerIcon::Transit;
+                            overlaysForMap.transits.push_back(std::move(point));
+                        }
+                    }
+                    forceRedraw = true;
+                }
                 const std::uint64_t revision = progress.revision();
                 if (questPlacesFor != variant->key ||
                     questPlacesFrom != questData.get() ||
@@ -651,7 +710,25 @@ int main(int argc, char** argv) {
                         return reinterpret_cast<ImTextureID>(
                             tiles.acquire({layer, zoom, x, y}));
                     },
-                    questPlaces,
+                    [&] {
+                        overlaysForMap.quests = questPlaces;
+                        overlaysForMap.icons = [&icons](ui::MarkerIcon icon) -> ImTextureID {
+                            const char* name = "";
+                            switch (icon) {
+                                case ui::MarkerIcon::QuestObjective: name = "quest_objective"; break;
+                                case ui::MarkerIcon::QuestItem: name = "quest_item"; break;
+                                case ui::MarkerIcon::Player: name = "player-position"; break;
+                                case ui::MarkerIcon::ExtractPmc: name = "extract_pmc"; break;
+                                case ui::MarkerIcon::ExtractScav: name = "extract_scav"; break;
+                                case ui::MarkerIcon::ExtractShared: name = "extract_shared"; break;
+                                case ui::MarkerIcon::Transit: name = "extract_transit"; break;
+                                case ui::MarkerIcon::SpawnPmc: name = "spawn_pmc"; break;
+                                case ui::MarkerIcon::SpawnBoss: name = "spawn_boss"; break;
+                            }
+                            return reinterpret_cast<ImTextureID>(icons.get(name));
+                        };
+                        return std::cref(overlaysForMap);
+                    }(),
                     [&abstractMaps, variant](const geo::Vec2& imageMin,
                                              const geo::Vec2& imageMax, int w,
                                              int h) -> ui::AbstractMapImage {
@@ -715,6 +792,7 @@ int main(int argc, char** argv) {
 
     watcher.stop();
     quests.stop();
+    icons.stop();
     abstractMaps.stop();
     tiles.stop();
     UnregisterHotKey(nullptr, kMapHotkeyId);

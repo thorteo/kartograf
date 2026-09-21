@@ -23,7 +23,9 @@ hooking. That is a hard design constraint, not a current limitation:
 - Live position and heading on the correct map, detected automatically from the game's
   own logs
 - Automatic floor switching on multi-level maps
-- Active quest objectives, with the keys you need to bring
+- Your active quests' objectives, from the game's own logs — no account linking
+- Extracts by faction, transits, and PMC and boss spawns, with the same icons as tarkov.dev
+- Abstract vector maps by default, satellite tiles where no drawing exists
 - Raid timer and in-game clock
 - Transparent and see-through, click-through, excluded from screen capture
 - **F5** opens the map, **Alt+N** makes the overlay clickable, **Alt+H** shows the
@@ -42,10 +44,20 @@ hooking. That is a hard design constraint, not a current limitation:
   continuous GPS. The UI always shows how old the last fix is. Getting a live position
   would require reading game memory, which this project will not do.
 
-## Data
+## Data and credits
 
-Quest, map and item data come from [tarkov.dev](https://tarkov.dev), as do the map
-tiles. No game assets are bundled.
+Quest, map, extract and spawn data come from [tarkov.dev](https://tarkov.dev)'s JSON
+API, as do the map tiles and the abstract vector maps. Quest progress is read from the
+game's own logs.
+
+Map marker icons are the ones tarkov.dev's interactive map uses; their repository
+history records them as taken from the
+[Escape from Tarkov Wiki](https://escapefromtarkov.fandom.com/), whose content is
+licensed CC BY-SA. They are downloaded at runtime and cached, not distributed with this
+program.
+
+No game assets are bundled. Vendored code: Dear ImGui, nlohmann/json, stb_image,
+lunasvg and plutovg (all MIT or public domain), doctest for tests.
 
 ## Documentation
 

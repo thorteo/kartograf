@@ -75,26 +75,70 @@ void drawPlayerMarker(ImDrawList* draw, const ImVec2& at, double headingDegrees,
     }
 }
 
-void drawQuestMarker(ImDrawList* draw, const ImVec2& at, bool questItem,
-                     bool optional, bool onLevel) {
-    const float alpha = onLevel ? 1.0f : 0.35f;
-    const ImU32 fill = optional ? rgba(0.62f, 0.68f, 0.82f, alpha)
-                                : rgba(0.96f, 0.82f, 0.36f, alpha);
-    const ImU32 edge = rgba(0.05f, 0.06f, 0.05f, alpha * 0.9f);
+ImU32 fallbackColour(MarkerIcon icon, float alpha) {
+    switch (icon) {
+        case MarkerIcon::QuestObjective: return rgba(0.96f, 0.82f, 0.36f, alpha);
+        case MarkerIcon::QuestItem: return rgba(0.62f, 0.78f, 0.36f, alpha);
+        case MarkerIcon::Player: return rgba(0.72f, 0.88f, 0.45f, alpha);
+        case MarkerIcon::ExtractPmc: return rgba(0.25f, 0.85f, 0.55f, alpha);
+        case MarkerIcon::ExtractScav: return rgba(0.95f, 0.62f, 0.20f, alpha);
+        case MarkerIcon::ExtractShared: return rgba(0.25f, 0.85f, 0.85f, alpha);
+        case MarkerIcon::Transit: return rgba(0.90f, 0.30f, 0.25f, alpha);
+        case MarkerIcon::SpawnPmc: return rgba(0.95f, 0.90f, 0.30f, alpha);
+        case MarkerIcon::SpawnBoss: return rgba(0.95f, 0.95f, 0.95f, alpha);
+    }
+    return rgba(1.0f, 1.0f, 1.0f, alpha);
+}
 
-    if (questItem) {
-        // A diamond: a possible spawn, not a fixed destination.
-        const float r = 7.0f;
-        const ImVec2 points[4] = {{at.x, at.y - r},
-                                  {at.x + r, at.y},
-                                  {at.x, at.y + r},
+/// Draws an icon centred on `at`, or a vector stand-in of the same colour if
+/// the icon has not been downloaded (or cannot be: offline first run).
+void drawIcon(ImDrawList* draw, const IconProvider& icons, MarkerIcon icon,
+              const ImVec2& at, float size, float alpha) {
+    const ImTextureID texture = icons ? icons(icon) : 0;
+    const float half = size / 2.0f;
+    if (texture != 0) {
+        draw->AddImage(texture, ImVec2(at.x - half, at.y - half),
+                       ImVec2(at.x + half, at.y + half), ImVec2(0.0f, 0.0f),
+                       ImVec2(1.0f, 1.0f), rgba(1.0f, 1.0f, 1.0f, alpha));
+        return;
+    }
+    const ImU32 fill = fallbackColour(icon, alpha);
+    const ImU32 edge = rgba(0.05f, 0.06f, 0.05f, alpha * 0.9f);
+    const float r = half * 0.6f;
+    if (icon == MarkerIcon::QuestItem) {
+        const ImVec2 points[4] = {{at.x, at.y - r}, {at.x + r, at.y}, {at.x, at.y + r},
                                   {at.x - r, at.y}};
         draw->AddConvexPolyFilled(points, 4, fill);
         draw->AddPolyline(points, 4, edge, 1.5f, ImDrawFlags_Closed);
     } else {
-        draw->AddCircleFilled(at, 6.0f, fill);
-        draw->AddCircle(at, 6.0f, edge, 0, 1.5f);
+        draw->AddCircleFilled(at, r, fill);
+        draw->AddCircle(at, r, edge, 0, 1.5f);
     }
+}
+
+/// Draws the player arrow rotated to the heading. The icon points up, and a
+/// bearing of 0 is up, so the rotation is the heading itself.
+void drawRotatedIcon(ImDrawList* draw, ImTextureID texture, const ImVec2& at,
+                     float size, double headingDegrees, float alpha) {
+    const float radians = static_cast<float>(headingDegrees * 3.14159265358979 / 180.0);
+    const float c = std::cos(radians);
+    const float s = std::sin(radians);
+    const float h = size / 2.0f;
+    const auto corner = [&](float x, float y) {
+        return ImVec2(at.x + x * c - y * s, at.y + x * s + y * c);
+    };
+    draw->AddImageQuad(texture, corner(-h, -h), corner(h, -h), corner(h, h),
+                       corner(-h, h), ImVec2(0, 0), ImVec2(1, 0), ImVec2(1, 1),
+                       ImVec2(0, 1), rgba(1.0f, 1.0f, 1.0f, alpha));
+}
+
+/// The ring that grows as a fix ages: how far the player could have gone since.
+void drawAgeRing(ImDrawList* draw, const ImVec2& at, double ageSeconds) {
+    if (ageSeconds <= 20.0) {
+        return;
+    }
+    const float radius = 18.0f + static_cast<float>(std::min(ageSeconds, 120.0)) * 0.35f;
+    draw->AddCircle(at, radius, markerColour(ageSeconds), 0, 1.5f);
 }
 
 }  // namespace
@@ -138,7 +182,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                           const game::RaidSnapshot& snapshot,
                           std::int64_t nowMillis, bool interactive,
                           const TileTextureProvider& tiles,
-                          const std::vector<QuestPlace>& quests,
+                          const MapOverlays& overlays,
                           const AbstractMapProvider& abstractMap) {
     MapViewResult result;
 
@@ -360,76 +404,139 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                       rgba(0.45f, 0.50f, 0.42f, 0.55f), 0.0f, 1.5f);
     }
 
-    // Quest markers, under the player so the player is never hidden by one.
-    if (state.showQuests && !quests.empty()) {
-        const double playerElevation =
-            snapshot.fix.valid ? snapshot.fix.world.y : 0.0;
+    // Points of interest, drawn bottom to top by importance: spawns, extracts,
+    // transits, quests, then the player, so the player is never hidden.
+    {
+        const double playerElevation = snapshot.fix.valid ? snapshot.fix.world.y : 0.0;
         const ImVec2 mouse = ImGui::GetIO().MousePos;
-        const QuestPlace* hovered = nullptr;
-        ImVec2 hoveredAt{};
 
-        for (const auto& place : quests) {
+        struct Hover {
+            std::string title;
+            std::string detail;
+            std::string note;
+            ImVec2 at;
+            float distanceSq = 1e30f;
+        } hover;
+
+        const auto toScreen = [&](const geo::Vec3& world, ImVec2& out) {
             const auto screen =
-                map::baseToScreen(state.viewport, projection.toImage(place.world));
+                map::baseToScreen(state.viewport, projection.toImage(world));
             if (screen.x < -32.0 || screen.y < -32.0 ||
                 screen.x > state.viewport.screenWidth + 32.0 ||
                 screen.y > state.viewport.screenHeight + 32.0) {
-                continue;  // Off screen; nothing to draw or hit-test.
+                return false;  // Off screen: nothing to draw or hit-test.
             }
-            const ImVec2 at(origin.x + static_cast<float>(screen.x),
-                            origin.y + static_cast<float>(screen.y));
+            out = ImVec2(origin.x + static_cast<float>(screen.x),
+                         origin.y + static_cast<float>(screen.y));
+            return true;
+        };
+        const auto onLevel = [&](const std::optional<double>& top,
+                                 const std::optional<double>& bottom) {
+            if (!state.dimOtherFloors || !snapshot.fix.valid) {
+                return true;
+            }
+            if (bottom && playerElevation < *bottom) return false;
+            if (top && playerElevation > *top) return false;
+            return true;
+        };
+        const auto consider = [&](const ImVec2& at, const std::string& title,
+                                  const std::string& detail, const std::string& note) {
+            if (!interactive) {
+                return;
+            }
+            const float dx = mouse.x - at.x;
+            const float dy = mouse.y - at.y;
+            const float d = dx * dx + dy * dy;
+            if (d < 14.0f * 14.0f && d < hover.distanceSq) {
+                hover = Hover{title, detail, note, at, d};
+            }
+        };
 
-            const bool onLevel = !state.dimOtherFloors || !snapshot.fix.valid ||
-                                 place.onSameLevelAs(playerElevation);
-            drawQuestMarker(draw, at, place.isQuestItem, place.optional, onLevel);
+        const auto drawPoints = [&](const std::vector<MapPoint>& points, float size) {
+            for (const auto& point : points) {
+                ImVec2 at;
+                if (!toScreen(point.world, at)) {
+                    continue;
+                }
+                const bool level = onLevel(point.top, point.bottom);
+                drawIcon(draw, overlays.icons, point.icon, at, size, level ? 1.0f : 0.4f);
+                consider(at, point.label, {}, level ? std::string{} : "other floor");
+            }
+        };
 
-            if (interactive) {
-                const float dx = mouse.x - at.x;
-                const float dy = mouse.y - at.y;
-                if (dx * dx + dy * dy < 12.0f * 12.0f) {
-                    hovered = &place;
-                    hoveredAt = at;
+        if (state.showSpawns) drawPoints(overlays.spawns, 16.0f);
+        if (state.showExtracts) drawPoints(overlays.extracts, 24.0f);
+        if (state.showTransits) drawPoints(overlays.transits, 24.0f);
+
+        if (state.showQuests) {
+            for (const auto& place : overlays.quests) {
+                ImVec2 at;
+                if (!toScreen(place.world, at)) {
+                    continue;
+                }
+                const bool level = place.onSameLevelAs(playerElevation) ||
+                                   !state.dimOtherFloors || !snapshot.fix.valid;
+                const MarkerIcon icon =
+                    place.isQuestItem ? MarkerIcon::QuestItem : MarkerIcon::QuestObjective;
+                // Optional objectives are drawn smaller rather than in a
+                // different colour, so the icon keeps its meaning.
+                const float size = place.optional ? 16.0f : 22.0f;
+                drawIcon(draw, overlays.icons, icon, at, size, level ? 1.0f : 0.4f);
+                std::string note;
+                if (place.optional) note = "optional";
+                if (place.isQuestItem) {
+                    note += note.empty() ? "" : ", ";
+                    note += "one of several possible spawns";
+                }
+                if (!level) {
+                    note += note.empty() ? "" : ", ";
+                    note += "other floor";
+                }
+                consider(at, place.taskName, place.detail, note);
+            }
+        }
+
+        if (snapshot.fix.valid) {
+            ImVec2 at;
+            if (toScreen(snapshot.fix.world, at)) {
+                const double heading =
+                    projection.toImageHeading(snapshot.fix.headingDegrees);
+                const double age = snapshot.fix.ageSeconds(nowMillis);
+                const ImTextureID arrow =
+                    overlays.icons ? overlays.icons(MarkerIcon::Player) : 0;
+                if (arrow != 0) {
+                    drawRotatedIcon(draw, arrow, at, 30.0f, heading,
+                                    age < 60.0 ? 1.0f : 0.55f);
+                    drawAgeRing(draw, at, age);
+                } else {
+                    drawPlayerMarker(draw, at, heading, age);
                 }
             }
         }
 
-        if (hovered != nullptr) {
-            ImGui::SetNextWindowPos(ImVec2(hoveredAt.x + 14.0f, hoveredAt.y + 14.0f));
+        if (hover.distanceSq < 1e29f && !hover.title.empty()) {
+            ImGui::SetNextWindowPos(ImVec2(hover.at.x + 16.0f, hover.at.y + 16.0f));
             ImGui::SetNextWindowBgAlpha(0.92f);
-            if (ImGui::Begin("tarkov-help-quest-tip", nullptr,
+            if (ImGui::Begin("tarkov-help-tip", nullptr,
                              ImGuiWindowFlags_NoDecoration |
                                  ImGuiWindowFlags_AlwaysAutoResize |
                                  ImGuiWindowFlags_NoSavedSettings |
-                                 ImGuiWindowFlags_NoNav |
-                                 ImGuiWindowFlags_NoMove |
+                                 ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove |
                                  ImGuiWindowFlags_NoFocusOnAppearing)) {
-                ImGui::TextUnformatted(hovered->taskName.c_str());
-                if (!hovered->detail.empty()) {
+                ImGui::TextUnformatted(hover.title.c_str());
+                if (!hover.detail.empty()) {
                     ImGui::PushTextWrapPos(420.0f);
                     ImGui::TextColored(ImVec4(0.72f, 0.74f, 0.68f, 1.0f), "%s",
-                                       hovered->detail.c_str());
+                                       hover.detail.c_str());
                     ImGui::PopTextWrapPos();
                 }
-                if (hovered->optional) {
-                    ImGui::TextColored(ImVec4(0.62f, 0.68f, 0.82f, 1.0f), "optional");
-                }
-                if (hovered->isQuestItem) {
-                    ImGui::TextColored(ImVec4(0.72f, 0.74f, 0.68f, 1.0f),
-                                       "one of several possible spawns");
+                if (!hover.note.empty()) {
+                    ImGui::TextColored(ImVec4(0.55f, 0.57f, 0.52f, 1.0f), "%s",
+                                       hover.note.c_str());
                 }
             }
             ImGui::End();
         }
-    }
-
-    if (snapshot.fix.valid) {
-        const auto base = projection.toImage(snapshot.fix.world);
-        const auto screen = map::baseToScreen(state.viewport, base);
-        const ImVec2 at(origin.x + static_cast<float>(screen.x),
-                        origin.y + static_cast<float>(screen.y));
-
-        const double heading = projection.toImageHeading(snapshot.fix.headingDegrees);
-        drawPlayerMarker(draw, at, heading, snapshot.fix.ageSeconds(nowMillis));
     }
 
     // Interaction. Only while the overlay actually receives input; with
@@ -479,6 +586,16 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                                    kMaxOpacity, "opacity %.2f")) {
                 result.wantsRedraw = true;
             }
+            ImGui::Checkbox("quests", &state.showQuests);
+            ImGui::SameLine();
+            ImGui::Checkbox("extracts", &state.showExtracts);
+            ImGui::Checkbox("transits", &state.showTransits);
+            ImGui::SameLine();
+            ImGui::Checkbox("spawns", &state.showSpawns);
+            if (ImGui::IsItemEdited()) {
+                result.wantsRedraw = true;
+            }
+            ImGui::Separator();
             if (map.layers.empty()) {
                 ImGui::TextDisabled("no upper floors");
             } else {
@@ -524,9 +641,9 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
         }
 
         char questText[48] = "";
-        if (!quests.empty()) {
+        if (!overlays.quests.empty()) {
             std::snprintf(questText, sizeof(questText), "   %d objectives",
-                          static_cast<int>(quests.size()));
+                          static_cast<int>(overlays.quests.size()));
         }
         const char* renderer = drewAbstract ? "abstract" : "satellite";
         std::snprintf(text, sizeof(text), "%s (%s)   %s%s%s   %s%s%s",

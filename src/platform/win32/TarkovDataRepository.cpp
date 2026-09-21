@@ -1,4 +1,4 @@
-#include "platform/win32/TaskRepository.h"
+#include "platform/win32/TarkovDataRepository.h"
 
 #include <windows.h>
 
@@ -62,9 +62,9 @@ bool writeTextFile(const fs::path& path, const std::string& text) {
 
 }  // namespace
 
-TaskRepository::~TaskRepository() { stop(); }
+TarkovDataRepository::~TarkovDataRepository() { stop(); }
 
-fs::path TaskRepository::defaultCacheRoot() {
+fs::path TarkovDataRepository::defaultCacheRoot() {
     PWSTR raw = nullptr;
     if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &raw))) {
         fs::path path(raw);
@@ -74,17 +74,17 @@ fs::path TaskRepository::defaultCacheRoot() {
     return fs::temp_directory_path() / "tarkov-help" / "data";
 }
 
-fs::path TaskRepository::cacheDir(const std::string& mode) const {
+fs::path TarkovDataRepository::cacheDir(const std::string& mode) const {
     return cacheRoot_ / mode;
 }
 
-void TaskRepository::say(const std::string& message) const {
+void TarkovDataRepository::say(const std::string& message) const {
     if (logger_) {
         logger_(message);
     }
 }
 
-bool TaskRepository::start(std::string gameMode, std::string language,
+bool TarkovDataRepository::start(std::string gameMode, std::string language,
                            Logger logger) {
     logger_ = std::move(logger);
     language_ = std::move(language);
@@ -95,11 +95,11 @@ bool TaskRepository::start(std::string gameMode, std::string language,
         wantedMode_ = std::move(gameMode);
     }
     stopping_.store(false, std::memory_order_relaxed);
-    worker_ = std::thread(&TaskRepository::run, this);
+    worker_ = std::thread(&TarkovDataRepository::run, this);
     return true;
 }
 
-void TaskRepository::stop() {
+void TarkovDataRepository::stop() {
     if (!worker_.joinable()) {
         return;
     }
@@ -108,7 +108,7 @@ void TaskRepository::stop() {
     worker_.join();
 }
 
-void TaskRepository::setGameMode(std::string gameMode) {
+void TarkovDataRepository::setGameMode(std::string gameMode) {
     {
         const std::lock_guard<std::mutex> lock(mutex_);
         if (wantedMode_ == gameMode) {
@@ -119,7 +119,7 @@ void TaskRepository::setGameMode(std::string gameMode) {
     wake_.notify_one();
 }
 
-void TaskRepository::refresh() {
+void TarkovDataRepository::refresh() {
     {
         const std::lock_guard<std::mutex> lock(mutex_);
         if (fetching_) {
@@ -130,12 +130,18 @@ void TaskRepository::refresh() {
     wake_.notify_one();
 }
 
-std::shared_ptr<const data::TaskSet> TaskRepository::tasks() const {
+std::shared_ptr<const data::TaskSet> TarkovDataRepository::tasks() const {
     const std::lock_guard<std::mutex> lock(mutex_);
     return published_;
 }
 
-TaskRepository::Status TaskRepository::status() const {
+std::shared_ptr<const TarkovDataRepository::MapFeatureSet>
+TarkovDataRepository::mapFeatures() const {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    return publishedMaps_;
+}
+
+TarkovDataRepository::Status TarkovDataRepository::status() const {
     const std::lock_guard<std::mutex> lock(mutex_);
     Status status;
     status.haveData = !published_->tasks.empty();
@@ -145,13 +151,15 @@ TaskRepository::Status TaskRepository::status() const {
     return status;
 }
 
-void TaskRepository::publish(data::TaskSet set, long long writtenAtUnix) {
+void TarkovDataRepository::publish(data::TaskSet set, MapFeatureSet features,
+                                   long long writtenAtUnix) {
     const std::lock_guard<std::mutex> lock(mutex_);
     published_ = std::make_shared<const data::TaskSet>(std::move(set));
+    publishedMaps_ = std::make_shared<const MapFeatureSet>(std::move(features));
     writtenAtUnix_ = writtenAtUnix;
 }
 
-bool TaskRepository::loadFromCache(const std::string& mode) {
+bool TarkovDataRepository::loadFromCache(const std::string& mode) {
     const fs::path dir = cacheDir(mode);
     const std::string body = readTextFile(dir / "tasks.json");
     if (body.empty()) {
@@ -169,6 +177,13 @@ bool TaskRepository::loadFromCache(const std::string& mode) {
         return false;
     }
 
+    // Map features are optional: an old cache from before they were fetched
+    // still gives quests, and the next refresh fills in the rest.
+    const data::TaskLocale mapLocale =
+        data::TaskLocale::parse(readTextFile(dir / ("maps_" + language_ + ".json")));
+    MapFeatureSet features =
+        data::parseMapFeatures(readTextFile(dir / "maps.json"), mapLocale);
+
     long long writtenAt = 0;
     const std::string stamp = readTextFile(dir / "tasks.updated");
     if (!stamp.empty()) {
@@ -176,12 +191,12 @@ bool TaskRepository::loadFromCache(const std::string& mode) {
     }
 
     const std::size_t count = set.tasks.size();
-    publish(std::move(set), writtenAt);
+    publish(std::move(set), std::move(features), writtenAt);
     say("quests: " + std::to_string(count) + " loaded from cache");
     return true;
 }
 
-bool TaskRepository::downloadAndCache(const std::string& mode) {
+bool TarkovDataRepository::downloadAndCache(const std::string& mode) {
     HttpClient client;
     if (!client.open(L"tarkov-help/0.1")) {
         return false;
@@ -216,8 +231,33 @@ bool TaskRepository::downloadAndCache(const std::string& mode) {
         return false;
     }
 
+    // The maps document is large (8.5 MB, mostly loot positions we do not
+    // draw) but it is fetched rarely and is the only source of extracts and
+    // spawns. A failure here costs those layers, not the quests.
+    std::string mapsBody;
+    std::string mapsLocaleBody;
+    const auto mapsResponse = client.get(base + "/maps", 64u * 1024 * 1024);
+    if (mapsResponse.ok) {
+        mapsBody.assign(mapsResponse.body.begin(), mapsResponse.body.end());
+        const auto mapsLocale =
+            client.get(base + "/maps_" + language_, 16u * 1024 * 1024);
+        if (mapsLocale.ok) {
+            mapsLocaleBody.assign(mapsLocale.body.begin(), mapsLocale.body.end());
+        }
+    } else {
+        say("maps: extract and spawn data could not be downloaded");
+    }
+    MapFeatureSet features = data::parseMapFeatures(
+        mapsBody, data::TaskLocale::parse(mapsLocaleBody));
+
     const fs::path dir = cacheDir(mode);
     const long long writtenAt = nowUnix();
+    if (!mapsBody.empty()) {
+        writeTextFile(dir / "maps.json", mapsBody);
+    }
+    if (!mapsLocaleBody.empty()) {
+        writeTextFile(dir / ("maps_" + language_ + ".json"), mapsLocaleBody);
+    }
     writeTextFile(dir / "tasks.json", body);
     if (!localeBody.empty()) {
         writeTextFile(dir / ("tasks_" + language_ + ".json"), localeBody);
@@ -225,12 +265,14 @@ bool TaskRepository::downloadAndCache(const std::string& mode) {
     writeTextFile(dir / "tasks.updated", std::to_string(writtenAt));
 
     const std::size_t count = set.tasks.size();
-    publish(std::move(set), writtenAt);
-    say("quests: " + std::to_string(count) + " downloaded");
+    const std::size_t mapCount = features.size();
+    publish(std::move(set), std::move(features), writtenAt);
+    say("quests: " + std::to_string(count) + " and " + std::to_string(mapCount) +
+        " maps downloaded");
     return true;
 }
 
-void TaskRepository::run() {
+void TarkovDataRepository::run() {
     std::string loadedMode;
 
     while (!stopping_.load(std::memory_order_relaxed)) {
@@ -254,8 +296,17 @@ void TaskRepository::run() {
 
         if (!wantRefresh) {
             const auto current = status();
-            if (!current.haveData ||
-                (current.ageSeconds >= 0 && current.ageSeconds > kMaxAgeSeconds)) {
+            bool mapsMissing = false;
+            {
+                const std::lock_guard<std::mutex> lock(mutex_);
+                mapsMissing = publishedMaps_->empty();
+            }
+            // Refresh when there is nothing, when its age is unknown, when it
+            // is old, or when a cache from before map data existed lacks it.
+            // An unknown age must count as stale: treating it as fresh is how
+            // an older cache once kept extracts from ever being downloaded.
+            if (!current.haveData || current.ageSeconds < 0 ||
+                current.ageSeconds > kMaxAgeSeconds || mapsMissing) {
                 wantRefresh = true;
             }
         }

@@ -59,6 +59,41 @@ struct QuestPlace {
     bool onSameLevelAs(double elevation) const;
 };
 
+/// Which icon a marker uses. The icons themselves are tarkov.dev's, fetched at
+/// runtime; until one arrives, a vector shape in the same colour stands in.
+enum class MarkerIcon {
+    QuestObjective,
+    QuestItem,
+    Player,
+    ExtractPmc,
+    ExtractScav,
+    ExtractShared,
+    Transit,
+    SpawnPmc,
+    SpawnBoss,
+};
+
+/// Supplies an icon texture, or 0 while it is not available.
+using IconProvider = std::function<ImTextureID(MarkerIcon)>;
+
+/// A fixed point of interest: an extract, a spawn, a transit.
+struct MapPoint {
+    geo::Vec3 world;
+    MarkerIcon icon = MarkerIcon::ExtractShared;
+    std::string label;
+    std::optional<double> top;
+    std::optional<double> bottom;
+};
+
+/// Everything drawn over the map besides the player.
+struct MapOverlays {
+    std::vector<QuestPlace> quests;
+    std::vector<MapPoint> extracts;
+    std::vector<MapPoint> spawns;
+    std::vector<MapPoint> transits;
+    IconProvider icons;
+};
+
 /// Everything the map view remembers between frames.
 struct MapViewState {
     /// Prefer the abstract vector drawing over photographic tiles.
@@ -70,6 +105,11 @@ struct MapViewState {
 
     /// Draw quest markers. Off hides them without losing the data.
     bool showQuests = true;
+    bool showExtracts = true;
+    bool showTransits = true;
+    /// Off by default: even filtered to player and boss spawns these are
+    /// dozens of markers, useful at the start of a raid and noise after.
+    bool showSpawns = false;
     /// Fade markers that are not on the player's floor rather than hiding them:
     /// knowing an objective is directly above you is useful.
     bool dimOtherFloors = true;
@@ -117,7 +157,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                           const game::RaidSnapshot& snapshot,
                           std::int64_t nowMillis, bool interactive,
                           const TileTextureProvider& tiles,
-                          const std::vector<QuestPlace>& quests = {},
+                          const MapOverlays& overlays = {},
                           const AbstractMapProvider& abstractMap = {});
 
 }  // namespace tarkov::ui

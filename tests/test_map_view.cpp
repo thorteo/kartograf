@@ -221,3 +221,39 @@ TEST_CASE("the fix age reads at a glance") {
     CHECK(formatFixAge(200.0) == "3m20s");
     CHECK(formatFixAge(-5.0) == "0s");
 }
+
+TEST_CASE("overlay layers follow their toggles") {
+    test::HeadlessImGui imgui(1600.0f, 900.0f);
+    const auto& map = customsVariant();
+    RecordingTiles tiles;
+
+    ui::MapOverlays overlays;
+    const geo::Vec3 nearPlayer{236.21, 4.43, 165.98};
+    overlays.extracts.push_back({nearPlayer, ui::MarkerIcon::ExtractPmc, "exit", {}, {}});
+    overlays.spawns.push_back({nearPlayer, ui::MarkerIcon::SpawnBoss, "boss", {}, {}});
+
+    std::set<ui::MarkerIcon> asked;
+    overlays.icons = [&asked](ui::MarkerIcon icon) -> ImTextureID {
+        asked.insert(icon);
+        return 0;  // Not downloaded: exercises the vector fallback.
+    };
+
+    ui::MapViewState state;  // spawns default to off
+    imgui.frame([&] {
+        ui::drawMapView(state, map, snapshotAt(236.21, 4.43, 165.98), 1000, false,
+                        tiles.provider(), overlays);
+    });
+    CHECK(asked.count(ui::MarkerIcon::ExtractPmc) == 1);
+    CHECK(asked.count(ui::MarkerIcon::SpawnBoss) == 0);
+    CHECK(asked.count(ui::MarkerIcon::Player) == 1);
+
+    asked.clear();
+    state.showSpawns = true;
+    state.showExtracts = false;
+    imgui.frame([&] {
+        ui::drawMapView(state, map, snapshotAt(236.21, 4.43, 165.98), 2000, false,
+                        tiles.provider(), overlays);
+    });
+    CHECK(asked.count(ui::MarkerIcon::SpawnBoss) == 1);
+    CHECK(asked.count(ui::MarkerIcon::ExtractPmc) == 0);
+}

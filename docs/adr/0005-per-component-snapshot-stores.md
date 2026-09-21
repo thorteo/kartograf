@@ -11,7 +11,7 @@ reader would trust a rule the code already breaks.
 
 Since 0004, several components have grown their own cross-thread state, each for a
 good reason: `TileStore` and `SvgMapStore` (worker threads rasterise and decode,
-the render thread uploads), `TaskRepository` (downloads in the background), and
+the render thread uploads), `TarkovDataRepository` (downloads in the background), and
 `QuestProgressStore` (the log watcher writes, the UI reads and also writes manual
 corrections). Folding these into `RaidState` would couple unrelated lifetimes — raid
 state resets on every map load, quest progress must survive forever.

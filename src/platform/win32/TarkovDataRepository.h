@@ -8,21 +8,23 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <map>
 #include <thread>
 
+#include "core/data/MapFeatures.h"
 #include "core/data/TaskModel.h"
 
 namespace tarkov::win32 {
 
-/// Keeps the quest data on disk and in memory.
+/// Keeps tarkov.dev's quest and map data on disk and in memory.
 ///
-/// Downloads once from tarkov.dev's JSON API, writes it beside a timestamp, and
-/// serves it from the cache afterwards. Quest data is not compiled into the
+/// Downloads the task and map documents with their locales from the JSON API,
+/// writes them beside a timestamp, and serves them from the cache afterwards. Quest data is not compiled into the
 /// binary because it changes every wipe, and a stale marker is worse than none.
 ///
 /// Threading follows ADR 0004: one worker writes, readers take an immutable
 /// snapshot.
-class TaskRepository {
+class TarkovDataRepository {
 public:
     using Logger = std::function<void(const std::string&)>;
 
@@ -34,11 +36,11 @@ public:
         std::string detail;
     };
 
-    ~TaskRepository();
+    ~TarkovDataRepository();
 
-    TaskRepository() = default;
-    TaskRepository(const TaskRepository&) = delete;
-    TaskRepository& operator=(const TaskRepository&) = delete;
+    TarkovDataRepository() = default;
+    TarkovDataRepository(const TarkovDataRepository&) = delete;
+    TarkovDataRepository& operator=(const TarkovDataRepository&) = delete;
 
     /// Loads whatever is cached, then refreshes in the background if it is
     /// missing or old. `language` is a tarkov.dev locale code such as "ru".
@@ -58,6 +60,10 @@ public:
     /// A coherent view. Never null; empty until the first load succeeds.
     std::shared_ptr<const data::TaskSet> tasks() const;
 
+    using MapFeatureSet = std::map<std::string, data::MapFeatures, std::less<>>;
+    /// Extracts, spawns and transits, keyed by BSG map id. Never null.
+    std::shared_ptr<const MapFeatureSet> mapFeatures() const;
+
     Status status() const;
 
     static std::filesystem::path defaultCacheRoot();
@@ -66,7 +72,7 @@ private:
     void run();
     bool loadFromCache(const std::string& mode);
     bool downloadAndCache(const std::string& mode);
-    void publish(data::TaskSet set, long long writtenAtUnix);
+    void publish(data::TaskSet set, MapFeatureSet features, long long writtenAtUnix);
     void say(const std::string& message) const;
 
     std::filesystem::path cacheDir(const std::string& mode) const;
@@ -88,6 +94,8 @@ private:
 
     std::shared_ptr<const data::TaskSet> published_{
         std::make_shared<const data::TaskSet>()};
+    std::shared_ptr<const MapFeatureSet> publishedMaps_{
+        std::make_shared<const MapFeatureSet>()};
 
     std::filesystem::path cacheRoot_;
 };

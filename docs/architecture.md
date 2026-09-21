@@ -91,8 +91,14 @@ See `research/tarkov-dev-api.md`.
 
 ### `ui`
 
-ImGui in **reactive repaint** mode: no frame is drawn unless something changed or the
-user is interacting. Idle cost is the thing being optimised here, not peak framerate.
+ImGui in **reactive repaint** mode: a frame is drawn only when the `RaidState`
+snapshot pointer changes, a displayed second ticks over, or the user is interacting.
+Everything else sleeps in `MsgWaitForMultipleObjects`.
+
+This is not a micro-optimisation. Measured on this machine with the HUD on screen:
+presenting every vsync cost **9.8% of a core**; the reactive loop costs **0.2%**, with
+a 45 MB working set. Those frames would otherwise have come out of the game's budget
+for redrawing a panel that had not changed.
 
 Two presentations:
 

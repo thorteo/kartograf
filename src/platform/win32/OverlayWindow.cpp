@@ -4,6 +4,8 @@
 
 #include <cstdio>
 
+#include "platform/win32/ImGuiLayer.h"
+
 namespace tarkov::win32 {
 namespace {
 
@@ -41,6 +43,14 @@ LRESULT CALLBACK OverlayWindow::windowProc(HWND hwnd, UINT message, WPARAM wPara
                                            LPARAM lParam) {
     auto* self = reinterpret_cast<OverlayWindow*>(
         GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+
+    // Let the UI see input first, but only when the overlay is actually
+    // interactive. With click-through on, no input reaches us and forwarding
+    // would leave ImGui believing the cursor is somewhere it is not.
+    if (self != nullptr && self->interactive_ &&
+        ImGuiLayer::handleMessage(hwnd, message, wParam, lParam)) {
+        return 0;
+    }
 
     switch (message) {
         case WM_NCCREATE: {
@@ -296,8 +306,8 @@ bool OverlayWindow::pumpMessages() {
     return !shouldClose_;
 }
 
-void OverlayWindow::renderFrame(float r, float g, float b, float a) {
-    if (!renderTarget_ || !context_ || !swapChain_) {
+void OverlayWindow::beginFrame(float r, float g, float b, float a) {
+    if (!renderTarget_ || !context_) {
         return;
     }
     // Premultiplied alpha: the colour channels are already scaled by alpha, so
@@ -307,7 +317,17 @@ void OverlayWindow::renderFrame(float r, float g, float b, float a) {
     ID3D11RenderTargetView* targets[] = {renderTarget_.get()};
     context_->OMSetRenderTargets(1, targets, nullptr);
     context_->ClearRenderTargetView(renderTarget_.get(), clear);
-    swapChain_->Present(1, 0);
+}
+
+void OverlayWindow::present(bool vsync) {
+    if (swapChain_) {
+        swapChain_->Present(vsync ? 1 : 0, 0);
+    }
+}
+
+void OverlayWindow::renderFrame(float r, float g, float b, float a) {
+    beginFrame(r, g, b, a);
+    present(true);
 }
 
 }  // namespace tarkov::win32

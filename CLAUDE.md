@@ -54,6 +54,15 @@ This split exists because development happens in WSL/Linux while the target is W
 Keeping the core portable means most of the codebase is testable without a Windows
 build. **Do not include `<windows.h>` from anything under `src/core/`.**
 
+## Rendering is reactive, and must stay that way
+
+A frame is drawn only when the RaidState snapshot pointer changes, a displayed second
+ticks over, or the user is interacting; otherwise the loop sleeps in
+`MsgWaitForMultipleObjects`. Measured on this machine: presenting every vsync cost
+9.8% of a core, the reactive loop costs 0.2%, working set 45 MB. If you add something
+that animates, gate it the same way rather than returning the loop to presenting every
+frame — those frames come out of the game's budget.
+
 ## Threading model
 
 We chose C++ knowing the compiler will not catch data races, so the design compensates:
@@ -66,12 +75,15 @@ See `docs/adr/0004-threading-model.md` before adding a thread or a shared field.
 
 ```
 src/core/geo/     coordinate projection, quaternion -> heading, floor selection
-src/core/game/    log parser, screenshot parser, raid state machine
-src/core/data/    tarkov.dev models, GraphQL queries, local cache
-src/core/util/    small shared helpers
-src/platform/     platform.h interfaces + win32/ and stub/ implementations
-src/ui/           ImGui views (map, HUD, settings)
+src/core/game/    log parser, screenshot parser, RaidState
+src/core/input/   hotkey parsing and validation (the portable half of binding)
+src/core/data/    tarkov.dev models, GraphQL queries, local cache (not yet written)
+src/platform/     win32/: overlay window, file watchers, game-window tracking
+src/ui/           ImGui views. Portable -- ImGui core builds on Linux, so the
+                  HUD and its formatting are unit tested without Windows.
 src/app/          entry point and wiring
+third_party/      vendored: imgui, nlohmann/json, doctest
+data/             pinned copy of tarkov.dev maps.json
 tests/fixtures/   real, scrubbed game data — see below
 docs/             architecture, ADRs, research notes, roadmap
 ```

@@ -32,7 +32,16 @@ records what that means concretely, in the order we intend to earn it.
       `Ctrl+Alt+F9` and `F8` bind cleanly.
 - [x] Excluded from screen capture — `WDA_EXCLUDEFROMCAPTURE` confirmed working here
 - [x] Overlay follows the game window and hides when the game is not foreground
+- [x] HUD: map, raid phase, elapsed time, position, heading, elevation, in-game
+      clock, and the **age of the last fix** coloured by confidence
+- [x] Automatic map detection from logs, with the game install located through the
+      registry rather than by inspecting the running process
+- [x] Live position from the screenshots folder via `ReadDirectoryChangesW`
+- [x] **Reactive rendering.** Measured on this machine: continuous presentation cost
+      9.8% of a core; drawing only when the state object changes, a displayed second
+      ticks, or the user is interacting costs **0.2%**. Working set 45 MB.
 - [ ] Hotkey binding persisted to a config file (currently a command-line flag)
+- [ ] The map view itself: tiles, position marker, automatic floor switching
 - [ ] Automatic map detection from logs — the overlay opens the right map by itself
 - [ ] Live position marker with heading, and a visible **age indicator** on the fix
 - [ ] Automatic floor switching from elevation plus bounds

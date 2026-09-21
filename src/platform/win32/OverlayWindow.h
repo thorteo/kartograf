@@ -52,8 +52,26 @@ public:
     /// Drains the message queue. Returns false when the window should close.
     bool pumpMessages();
 
-    /// Clears to a premultiplied-alpha colour and presents.
+    /// Clears the back buffer to a premultiplied-alpha colour and binds it.
+    /// Draw between this and present().
+    void beginFrame(float r, float g, float b, float a);
+
+    /// Presents the composed frame. `vsync` off is useful when the overlay is
+    /// idle and we are pacing ourselves.
+    void present(bool vsync = true);
+
+    /// Clears and presents in one call, with nothing drawn in between.
     void renderFrame(float r, float g, float b, float a);
+
+    /// While true, window messages are forwarded to the UI layer. Turned off
+    /// with click-through, when the overlay receives no input at all.
+    void setInteractive(bool interactive) { interactive_ = interactive; }
+    bool interactive() const { return interactive_; }
+
+    ID3D11Device* device() const { return device_.get(); }
+    ID3D11DeviceContext* context() const { return context_.get(); }
+    int width() const { return width_; }
+    int height() const { return height_; }
 
     HWND handle() const { return hwnd_; }
     const std::string& lastError() const { return lastError_; }
@@ -71,6 +89,7 @@ private:
 
     HWND hwnd_ = nullptr;
     bool clickThrough_ = true;
+    bool interactive_ = false;
     bool shouldClose_ = false;
     int width_ = 0;
     int height_ = 0;

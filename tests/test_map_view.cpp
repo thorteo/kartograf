@@ -3,9 +3,12 @@
 #include <set>
 #include <vector>
 
+#include <imgui_internal.h>
+
 #include "core/data/EmbeddedMaps.h"
 #include "core/geo/MapConfig.h"
 #include "core/geo/Projection.h"
+#include "core/map/TileMath.h"
 #include "imgui_harness.h"
 #include "ui/MapView.h"
 #include "ui/Strings.h"
@@ -293,4 +296,42 @@ TEST_CASE("a new fix pulses the marker for a few seconds, then drawing stops") {
     frameAt(9000, snapshotAt(236.21, 4.43, 165.98, /*receivedAt=*/9000));
     CHECK(state.pulseFromMillis == 9000);
     CHECK(frameAt(9500, snapshotAt(236.21, 4.43, 165.98, 9000)).wantsRedraw);
+}
+
+TEST_CASE("hovering a quest marker explains it without making the overlay interactive") {
+    test::HeadlessImGui imgui(1600.0f, 900.0f);
+    const auto& map = customsVariant();
+    ui::MapViewState state;
+    RecordingTiles tiles;
+    const auto snapshot = snapshotAt(236.21, 4.43, 165.98);
+
+    ui::MapOverlays overlays;
+    ui::QuestPlace place;
+    place.world = {236.21, 4.43, 165.98};
+    place.taskName = "Checking";
+    place.detail = "Find the bronze pocket watch";
+    overlays.quests.push_back(place);
+
+    const auto tooltipShown = [&](ImVec2 mouse) {
+        imgui.io().AddMousePosEvent(mouse.x, mouse.y);
+        imgui.frame([&] {
+            ui::drawMapView(state, map, snapshot, 1000, /*interactive=*/false,
+                            tiles.provider(), overlays);
+        });
+        const ImGuiWindow* tip = ImGui::FindWindowByName("tarkov-help-tip");
+        return tip != nullptr && tip->Active;
+    };
+
+    // One frame to fit the view to the player; then find the marker on screen.
+    CHECK_FALSE(tooltipShown(ImVec2(-FLT_MAX, -FLT_MAX)));
+    const auto marker = map::baseToScreen(
+        state.viewport, geo::Projection(map).toImage(place.world));
+    const ImVec2 at(static_cast<float>(marker.x), static_cast<float>(marker.y));
+
+    // Click-through, with the game's free pointer passed in: the tooltip shows.
+    CHECK(tooltipShown(at));
+    // Well away from the marker: nothing.
+    CHECK_FALSE(tooltipShown(ImVec2(at.x + 200.0f, at.y + 200.0f)));
+    // No usable pointer -- the game has it pinned for mouselook: nothing.
+    CHECK_FALSE(tooltipShown(ImVec2(-FLT_MAX, -FLT_MAX)));
 }

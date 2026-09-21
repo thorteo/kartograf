@@ -20,6 +20,7 @@
 #include <sstream>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -545,6 +546,7 @@ int main(int argc, char** argv) {
     std::string lastRaidMode;
 
     std::shared_ptr<const game::RaidSnapshot> lastSnapshot;
+    std::optional<POINT> lastPointer;
     unsigned long long lastDisplaySecond = 0;
     // Set whenever something outside the snapshot changes what is on screen.
     bool forceRedraw = true;
@@ -761,16 +763,35 @@ int main(int argc, char** argv) {
         const int uploaded = tiles.pump();
         const bool abstractUploaded = abstractMaps.pump();
         const bool iconsUploaded = icons.pump();
+        // Hovering a marker while the overlay is click-through. The game's
+        // pointer is followed only while the map is open and the game has let
+        // go of the cursor, and a frame is drawn only when it moves.
+        std::optional<POINT> pointer;
+        if (mapVisible && !interactive) {
+            pointer = win32::usablePointer(game.bounds);
+        }
+        const bool pointerMoved =
+            pointer.has_value() != lastPointer.has_value() ||
+            (pointer && (pointer->x != lastPointer->x || pointer->y != lastPointer->y));
+
         const bool needsFrame = interactive || stateChanged || secondTicked ||
                                 forceRedraw || uploaded > 0 || abstractUploaded ||
-                                iconsUploaded ||
-                                pendingTiles;
+                                iconsUploaded || pendingTiles || pointerMoved;
 
         if (!needsFrame) {
-            // Wake early if a message arrives, so input stays responsive.
+            // Wake early if a message arrives, so input stays responsive. The
+            // game's pointer sends us no messages, so poll it a little faster
+            // while it is free over the map.
             MsgWaitForMultipleObjects(0, nullptr, FALSE,
-                                      settingsWindow.visible() ? 16 : 100, QS_ALLINPUT);
+                                      settingsWindow.visible() ? 16
+                                      : pointer            ? 33
+                                                           : 100,
+                                      QS_ALLINPUT);
             continue;
+        }
+        lastPointer = pointer;
+        if (!interactive) {
+            imgui.setPassivePointer(pointer);
         }
 
         lastSnapshot = snapshot;

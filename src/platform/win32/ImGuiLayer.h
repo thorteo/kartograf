@@ -4,6 +4,8 @@
 
 #include <d3d11.h>
 
+#include <optional>
+
 // ImGui's own type, declared at global scope: declaring it inside the namespace
 // below would create a different, unrelated type.
 struct ImGuiContext;
@@ -25,6 +27,12 @@ public:
     bool initialise(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* context);
 
     void beginFrame(int width, int height);
+
+    /// Supplies the pointer position while the overlay is click-through and
+    /// receives no mouse input of its own, so hovering still works. nullopt
+    /// means there is no usable pointer. Call before beginFrame; not needed
+    /// while interactive, where the window's own mouse messages drive ImGui.
+    void setPassivePointer(std::optional<POINT> at);
     void endFrame();
 
     /// Forwards a window message to this layer's ImGui. Returns true when ImGui
@@ -43,6 +51,8 @@ public:
 private:
     bool initialised_ = false;
     ::ImGuiContext* context_ = nullptr;
+    bool passive_ = false;
+    std::optional<POINT> pointer_;
 };
 
 /// Applies the overlay's visual style: dark, translucent, legible over a game.

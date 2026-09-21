@@ -13,6 +13,25 @@ bool isAlive(HWND hwnd) {
 
 }  // namespace
 
+std::optional<POINT> usablePointer(const RECT& bounds) {
+    RECT clip{};
+    if (!GetClipCursor(&clip)) {
+        return std::nullopt;
+    }
+    if (clip.right - clip.left <= 1 && clip.bottom - clip.top <= 1) {
+        return std::nullopt;  // Pinned for mouselook.
+    }
+    CURSORINFO cursor{};
+    cursor.cbSize = sizeof(cursor);
+    if (!GetCursorInfo(&cursor) || (cursor.flags & CURSOR_SHOWING) == 0) {
+        return std::nullopt;
+    }
+    if (!PtInRect(&bounds, cursor.ptScreenPos)) {
+        return std::nullopt;
+    }
+    return POINT{cursor.ptScreenPos.x - bounds.left, cursor.ptScreenPos.y - bounds.top};
+}
+
 GameWindowState GameWindowTracker::poll() {
     if (!isAlive(cached_)) {
         cached_ = FindWindowW(kGameClass, kGameTitle);

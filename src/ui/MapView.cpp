@@ -472,7 +472,10 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
         };
         const auto consider = [&](const ImVec2& at, const std::string& title,
                                   const std::string& detail, const std::string& note) {
-            if (!interactive) {
+            // Any real pointer will do: the overlay's own while interactive,
+            // or the game's, passed through, while it is free in a menu or
+            // the inventory.
+            if (!ImGui::IsMousePosValid()) {
                 return;
             }
             const float dx = mouse.x - at.x;

@@ -1,5 +1,7 @@
 #include "platform/win32/ImGuiLayer.h"
 
+#include <cfloat>
+
 #include <imgui.h>
 
 #include <shlobj.h>
@@ -134,7 +136,22 @@ void ImGuiLayer::beginFrame(int width, int height) {
     ImGui::GetIO().DisplaySize =
         ImVec2(static_cast<float>(width), static_cast<float>(height));
 
+    if (passive_) {
+        // Queued after the backend's own update, so this is what the frame sees.
+        // An invalid position, not a stale one, when there is no pointer:
+        // otherwise a tooltip would stay up after the game took the cursor back.
+        ImGui::GetIO().AddMousePosEvent(
+            pointer_ ? static_cast<float>(pointer_->x) : -FLT_MAX,
+            pointer_ ? static_cast<float>(pointer_->y) : -FLT_MAX);
+        passive_ = false;
+    }
+
     ImGui::NewFrame();
+}
+
+void ImGuiLayer::setPassivePointer(std::optional<POINT> at) {
+    passive_ = true;
+    pointer_ = at;
 }
 
 void ImGuiLayer::endFrame() {

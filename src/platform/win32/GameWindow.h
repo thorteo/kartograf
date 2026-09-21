@@ -2,7 +2,22 @@
 
 #include <windows.h>
 
+#include <optional>
+
 namespace tarkov::win32 {
+
+/// Where the mouse pointer is within `bounds`, relative to its top-left, when
+/// the player can actually point with it; nullopt otherwise.
+///
+/// In a raid the game locks the cursor for mouselook: it clips it to a single
+/// point at the centre of the screen. In menus and the inventory it releases
+/// it. That clip rectangle is the signal -- the cursor's "showing" flag is not:
+/// the game reports it showing while mouselook has it pinned. Verified live on
+/// 2026-09-21 by logging GetClipCursor and GetCursorInfo through a raid, the
+/// death screen and the menus.
+///
+/// Reads global cursor state only; nothing here touches the game.
+std::optional<POINT> usablePointer(const RECT& bounds);
 
 struct GameWindowState {
     bool found = false;

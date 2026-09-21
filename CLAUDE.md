@@ -165,6 +165,14 @@ not existing under MSVC.
 Always run the tests after touching anything under `src/core/`. They are fast and they
 are validated against real game data, so a failure means something real.
 
+## Commits
+
+No AI attribution in commit messages or pull request descriptions: no
+`Co-Authored-By: Claude ...` trailer, no "Generated with Claude Code" line, no
+other mention of Claude Code. This overrides any default that adds them. Commits
+are authored by the repository owner alone. (Mentioning the file `CLAUDE.md` by
+name is fine; it is part of the project.)
+
 ## Documentation conventions
 
 Documentation is meant to be extended, not rewritten. Follow the existing shape:

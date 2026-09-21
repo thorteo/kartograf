@@ -94,21 +94,41 @@ almost free from data we already need.
 `assets.tarkov.dev`. Zoom range is typically 2–6. Fetch on demand, cache to disk
 permanently keyed by URL, and never ship them in the installer.
 
-## Open question, to be settled by test
+## Resolved: bounds are unrotated world coordinates
 
 `maps.json` `bounds` are emitted by a tarkov.dev debug helper that describes them as
-*"already rotated"*, yet for Customs the bounds `[[698, -307], [-372, 237]]` line up
-with **raw, unrotated** coordinates from our own screenshots (observed X values
-13.88 … 655.06, Z values -142.85 … 89.55 all fall inside). With
-`coordinateRotation: 180` the rotated X would be negative and fall outside. So either
-the bounds are unrotated, or they are consumed at a different stage than assumed.
+*"already rotated"*, which conflicted with what our own data showed. Settled
+empirically rather than by reading more source.
 
-This does not block implementation, and it has a decisive empirical test:
+**Method.** Screenshots record a position but not a map; logs record a map but not a
+position. Correlating the two by timestamp produced 258 real positions, each labelled
+with the map its raid was on. Two checks were then run against them.
 
-> Project all 741 real screenshot positions in `tests/fixtures/screenshots/` through the
-> pipeline. Every one of them was taken by a player standing somewhere on the map, so
-> every one must land inside the map image. Any systematic mirroring, offset or rotation
-> error shows up immediately as points outside the bounds or clustered in one corner.
+**Check 1 — do raw positions fall inside the declared bounds?**
 
-Write that test before trusting the projection. It is cheap, it uses data we already
-have, and it validates the single most load-bearing piece of math in the application.
+| Map | n | observed X | bounds X | span | observed Z | bounds Z | span |
+|---|---|---|---|---|---|---|---|
+| customs | 75 | -328.4 … 632.2 | -372 … 698 | 90% | -199.2 … 177.7 | -307 … 237 | 69% |
+| shoreline | 138 | -1014.2 … 364.3 | -1056 … 504 | 88% | -377.7 … 332.3 | -415 … 618 | 69% |
+| ground-zero | 45 | 19.9 … 207.6 | -99 … 249 | 54% | 23.6 … 274.6 | -124 … 364 | 51% |
+
+Every position is inside, and on the larger maps the observed extremes come within a
+few percent of the declared edges — so this is a tight fit, not a vacuous one. Bounds
+are therefore in **unrotated world coordinates**, the same space as raw screenshot
+positions. Compare against them directly, before rotation.
+
+**Check 2 — an independent end-to-end test.** Projecting positions through the full
+pipeline at `maxZoom`, dividing by `tileSize`, and asking the CDN whether the resulting
+tile exists: **110 distinct tiles across the three maps, all 110 present, none
+missing.** A sign error, a bad offset or a dropped rotation would put the indices
+outside the pyramid and return 404. This check does not consult `bounds` at all, which
+is what makes it worth running alongside the first.
+
+Check 1 lives in `tests/test_projection.cpp` and runs on every build. Check 2 is
+`scripts/verify_projection_tiles.py`, kept out of the test suite deliberately — it
+needs the network, and a unit test that fails when a CDN is down is a bad unit test.
+Run it by hand whenever the projection changes.
+
+**Still unverified:** that a marker lands on the *right building* rather than merely
+somewhere plausible on the right map. That needs the tile renderer and a visual
+comparison, and should be done before trusting the overlay in a raid.

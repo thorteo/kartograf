@@ -8,15 +8,15 @@ Checked 2026-09-21:
 |---|---|
 | g++ 15.2 (Linux) | present |
 | git | present |
-| CMake | **missing** |
-| Ninja | **missing** |
-| Clang | **missing** |
+| CMake 4.2.3 | installed |
+| Ninja 1.13.2 | installed |
+| Clang 21.1.8 | installed |
 | MSVC / Visual Studio (Windows side) | **missing** |
 | WSL Windows interop (`cmd.exe`, `/mnt/c`) | working |
 | Escape from Tarkov install | present, with live logs and screenshots |
 
-So nothing compiles yet. The toolchain has to be set up first, and there is a choice to
-make about how.
+The Linux core builds and tests today. The Windows overlay does not: there is no MSVC
+and no Windows SDK on this machine, and a choice has to be made about how to get one.
 
 ## Two routes to a Windows binary
 
@@ -48,7 +48,7 @@ developer is, with Route A available when a real Windows debugger is needed.
 
 Either way, the Linux core build below needs only CMake, Ninja and g++.
 
-## Planned presets
+## Presets
 
 ```sh
 # Core + tests, Linux, no Windows headers involved
@@ -59,7 +59,7 @@ ctest --preset linux-dev
 # Core + tests with ThreadSanitizer — worth running regularly, see ADR 0004
 cmake --preset linux-tsan && ctest --preset linux-tsan
 
-# Full overlay for Windows
+# Full overlay for Windows -- not yet wired up, needs a Windows toolchain first
 cmake --preset windows-release
 cmake --build --preset windows-release
 ```

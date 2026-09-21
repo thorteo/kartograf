@@ -3,16 +3,21 @@
 The stated goal is to be better than TarkovQuestie, not merely equivalent. This file
 records what that means concretely, in the order we intend to earn it.
 
-## M0 — Foundations
+## M0 — Foundations  ✅
 
-- [ ] Toolchain established and a trivial window builds and runs (`docs/build.md`)
-- [ ] `core/` builds and tests on Linux with no Windows headers
-- [ ] **Projection validated against all 741 real screenshot positions** — the test
-      described in `research/map-projection.md`. Nothing else is trustworthy until this
-      passes.
-- [ ] Log parser recognises all five lifecycle events in the fixture session
-- [ ] Screenshot filename parser handles the full fixture set, including the `(N)`
-      collision suffix
+- [x] Linux toolchain installed; `core/` builds and tests with no Windows headers
+- [x] **Projection validated against real positions.** 258 screenshots correlated with
+      the log's raid windows to label each with its map; all fall inside their map's
+      bounds, and 110 distinct projected tile indices all resolve on the CDN. This also
+      settled the open question about `bounds` semantics — see
+      `research/map-projection.md`.
+- [x] Log parser recognises all five lifecycle events across the fixture's 8 raids
+- [x] Screenshot filename parser handles the full corpus, including multi-digit `(N)`
+      suffixes and Russian-locale decimal hazards
+- [x] Floor selection from elevation *and* horizontal region
+- [ ] Windows toolchain, and a trivial transparent window that builds and runs
+
+24 test cases, 5880 assertions, all passing.
 
 ## M1 — The GPS core
 

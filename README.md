@@ -3,8 +3,10 @@
 A Windows overlay for Escape from Tarkov: your live position and your active quest
 objectives, drawn on top of the game.
 
-> **Status: early.** The design is settled and documented; the implementation has not
-> started. See [docs/features/roadmap.md](docs/features/roadmap.md).
+> **Status: early.** The portable core — screenshot and log parsing, coordinate
+> projection, floor selection — is implemented and tested against real game data. The
+> Windows overlay itself is not written yet.
+> See [docs/features/roadmap.md](docs/features/roadmap.md).
 
 ## How it works
 
@@ -49,4 +51,12 @@ on the log and screenshot formats.
 
 ## Building
 
-Not buildable yet; the toolchain comes first. See [docs/build.md](docs/build.md).
+The portable core builds and tests on Linux:
+
+```sh
+cmake --preset linux-dev && cmake --build --preset linux-dev
+ctest --preset linux-dev
+```
+
+The Windows overlay needs a toolchain that does not exist on this machine yet. See
+[docs/build.md](docs/build.md).

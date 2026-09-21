@@ -33,18 +33,21 @@
 #include "core/game/ScreenshotName.h"
 #include "core/geo/MapConfig.h"
 #include "core/input/Hotkey.h"
+#include "core/settings/Settings.h"
 #include "platform/win32/GameDataWatcher.h"
 #include "platform/win32/GameWindow.h"
 #include "platform/win32/ImGuiLayer.h"
 #include "platform/win32/OverlayWindow.h"
 #include "core/map/SvgPlacement.h"
 #include "platform/win32/IconStore.h"
+#include "platform/win32/SettingsWindow.h"
 #include "platform/win32/SvgMapStore.h"
 #include "platform/win32/TarkovDataRepository.h"
 #include "platform/win32/TileStore.h"
 #include "ui/Hud.h"
 #include "ui/MapView.h"
 #include "ui/QuestList.h"
+#include "ui/SettingsView.h"
 #include "ui/Strings.h"
 
 namespace {
@@ -128,22 +131,77 @@ bool hasFlag(int argc, char** argv, const char* name) {
     return false;
 }
 
-void registerOrReport(int id, const tarkov::input::Hotkey& hotkey,
-                      const char* purpose) {
+std::filesystem::path settingsFile() {
+    return tarkov::win32::TarkovDataRepository::defaultCacheRoot().parent_path() /
+           "settings.json";
+}
+
+tarkov::settings::Settings loadSettings() {
+    std::ifstream in(settingsFile(), std::ios::binary);
+    std::ostringstream buffer;
+    if (in) {
+        buffer << in.rdbuf();
+    }
+    auto loaded = tarkov::settings::parse(buffer.str());
+    tarkov::settings::sanitize(loaded);
+    return loaded;
+}
+
+void saveSettings(const tarkov::settings::Settings& settings) {
+    const std::string text = tarkov::settings::serialize(settings);
+    const auto path = settingsFile();
+    std::error_code ec;
+    std::filesystem::create_directories(path.parent_path(), ec);
+    const auto temporary = path.string() + ".part";
+    {
+        std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
+        out.write(text.data(), static_cast<std::streamsize>(text.size()));
+        if (!out) {
+            return;
+        }
+    }
+    std::filesystem::rename(temporary, path, ec);
+}
+
+std::wstring widen(const std::string& text) {
+    if (text.empty()) {
+        return {};
+    }
+    const int length = MultiByteToWideChar(CP_UTF8, 0, text.c_str(), -1, nullptr, 0);
+    std::wstring out(static_cast<std::size_t>(length > 0 ? length - 1 : 0), L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, text.c_str(), -1, out.data(), length);
+    return out;
+}
+
+/// Registers one hotkey. Returns an empty string on success, or the problem
+/// to show beside that key in the settings window.
+std::string registerOrReport(int id, const tarkov::input::Hotkey& hotkey,
+                             const char* purpose) {
+    if (!hotkey.valid()) {
+        return {};
+    }
     if (RegisterHotKey(nullptr, id, hotkey.modifiers | MOD_NOREPEAT,
                        hotkey.virtualKey)) {
         g_status.add(tarkov::ui::trf(tarkov::ui::Str::StatusHotkeyBound, purpose,
                                      tarkov::input::formatHotkey(hotkey).c_str()));
-        return;
+        return {};
     }
     const DWORD error = GetLastError();
     if (error == ERROR_HOTKEY_ALREADY_REGISTERED) {
         g_status.add(tarkov::ui::trf(tarkov::ui::Str::StatusHotkeyClaimed,
                                      tarkov::input::formatHotkey(hotkey).c_str()));
-    } else {
-        g_status.add(tarkov::ui::trf(tarkov::ui::Str::StatusHotkeyFailed,
-                                     tarkov::input::formatHotkey(hotkey).c_str()));
+        return tarkov::ui::tr(tarkov::ui::Str::KeyClaimed);
     }
+    g_status.add(tarkov::ui::trf(tarkov::ui::Str::StatusHotkeyFailed,
+                                 tarkov::input::formatHotkey(hotkey).c_str()));
+    return tarkov::ui::trf(tarkov::ui::Str::StatusHotkeyFailed,
+                           tarkov::input::formatHotkey(hotkey).c_str());
+}
+
+void unregisterHotkeys() {
+    UnregisterHotKey(nullptr, kMapHotkeyId);
+    UnregisterHotKey(nullptr, kInteractHotkeyId);
+    UnregisterHotKey(nullptr, kHudHotkeyId);
 }
 
 void drawStatus(unsigned long long nowMillis) {
@@ -277,20 +335,28 @@ std::vector<tarkov::ui::QuestPlace> buildQuestPlaces(
 int main(int argc, char** argv) {
     using namespace tarkov;
 
-    // First, before anything can report a status line: Russian unless asked
-    // otherwise. The player runs the game in Russian, and quest and extract
-    // names arrive from tarkov.dev in the same language.
-    ui::setLanguage(ui::parseLanguage(argumentValue(argc, argv, "--lang")));
-
-    const input::Hotkey mapKey =
-        resolveHotkey(argumentValue(argc, argv, "--toggle-key"),
-                      input::defaultToggleHotkey());
-    const input::Hotkey interact =
-        resolveHotkey(argumentValue(argc, argv, "--interact-key"),
-                      input::Hotkey{input::kAlt, 'N'});
-    const input::Hotkey hudKey =
-        resolveHotkey(argumentValue(argc, argv, "--hud-key"),
-                      input::Hotkey{input::kAlt, 'H'});
+    // Settings first, before anything can report a status line, since the
+    // language is one of them. Command-line flags are development aids and
+    // override the file for this run.
+    settings::Settings config = loadSettings();
+    if (const auto value = argumentValue(argc, argv, "--lang"); !value.empty()) {
+        config.language = value;
+    }
+    config.mapKey = resolveHotkey(argumentValue(argc, argv, "--toggle-key"), config.mapKey);
+    config.interactKey =
+        resolveHotkey(argumentValue(argc, argv, "--interact-key"), config.interactKey);
+    config.hudKey = resolveHotkey(argumentValue(argc, argv, "--hud-key"), config.hudKey);
+    if (const auto value = argumentValue(argc, argv, "--map-opacity"); !value.empty()) {
+        config.mapOpacity = static_cast<float>(std::atof(value.c_str()));
+    }
+    if (hasFlag(argc, argv, "--hud")) {
+        config.showHud = true;
+    }
+    if (hasFlag(argc, argv, "--allow-capture")) {
+        config.excludeFromCapture = false;
+    }
+    settings::sanitize(config);
+    ui::setLanguage(ui::parseLanguage(config.language));
     const bool debug = hasFlag(argc, argv, "--debug");
     // Development and first-run aids: show the overlay with no game running,
     // and allow it into screen captures so it can be photographed.
@@ -300,14 +366,11 @@ int main(int argc, char** argv) {
     // marker be checked against the map without playing.
     const std::string forcedMap = argumentValue(argc, argv, "--map");
     const std::string fakeShot = argumentValue(argc, argv, "--fake-shot");
-    const float mapOpacity = [&] {
-        const std::string value = argumentValue(argc, argv, "--map-opacity");
-        if (value.empty()) {
-            return 0.80f;
-        }
-        return std::clamp(static_cast<float>(std::atof(value.c_str())), 0.15f, 1.0f);
-    }();
-    const bool allowCapture = hasFlag(argc, argv, "--allow-capture");
+    // Whether to open the settings window now. --no-settings keeps scripted
+    // runs from stopping at it; --settings forces it.
+    const bool openSettingsAtStart =
+        hasFlag(argc, argv, "--settings") ||
+        (config.showSettingsOnStart && !hasFlag(argc, argv, "--no-settings"));
     const int runSeconds = [&] {
         const std::string value = argumentValue(argc, argv, "--run-seconds");
         return value.empty() ? 0 : std::atoi(value.c_str());
@@ -323,6 +386,7 @@ int main(int argc, char** argv) {
     }
 
     win32::ImGuiLayer imgui;
+    overlay.setUiLayer(&imgui);
     if (!imgui.initialise(overlay.handle(), overlay.device(), overlay.context())) {
         // MessageBoxW: the text may be Russian, which the ANSI variant would
         // mangle through the system code page.
@@ -334,22 +398,50 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    switch (overlay.setExcludedFromCapture(!allowCapture)) {
-        case win32::OverlayWindow::CaptureExclusion::kHidden:
-            g_status.add(ui::tr(ui::Str::StatusCaptureHidden));
-            break;
-        case win32::OverlayWindow::CaptureExclusion::kBlanked:
-            g_status.add(ui::tr(ui::Str::StatusCaptureBlanked));
-            break;
-        case win32::OverlayWindow::CaptureExclusion::kUnavailable:
-            g_status.add(allowCapture ? ui::tr(ui::Str::StatusCaptureVisible)
-                                      : ui::tr(ui::Str::StatusCaptureFailed));
-            break;
-    }
+    const auto applyCaptureExclusion = [&overlay](bool exclude) {
+        switch (overlay.setExcludedFromCapture(exclude)) {
+            case win32::OverlayWindow::CaptureExclusion::kHidden:
+                g_status.add(ui::tr(ui::Str::StatusCaptureHidden));
+                break;
+            case win32::OverlayWindow::CaptureExclusion::kBlanked:
+                g_status.add(ui::tr(ui::Str::StatusCaptureBlanked));
+                break;
+            case win32::OverlayWindow::CaptureExclusion::kUnavailable:
+                g_status.add(exclude ? ui::tr(ui::Str::StatusCaptureFailed)
+                                     : ui::tr(ui::Str::StatusCaptureVisible));
+                break;
+        }
+    };
+    applyCaptureExclusion(config.excludeFromCapture);
 
-    registerOrReport(kMapHotkeyId, mapKey, ui::tr(ui::Str::HotkeyPurposeMap));
-    registerOrReport(kInteractHotkeyId, interact, ui::tr(ui::Str::HotkeyPurposeInteract));
-    registerOrReport(kHudHotkeyId, hudKey, ui::tr(ui::Str::HotkeyPurposeHud));
+    ui::SettingsViewState settingsView;
+    // Re-registers every hotkey from the current settings and records, per
+    // key, why one could not be bound, for the settings window to show.
+    const auto applyHotkeys = [&config, &settingsView] {
+        unregisterHotkeys();
+        settingsView.hotkeyErrors[0] =
+            registerOrReport(kMapHotkeyId, config.mapKey, ui::tr(ui::Str::HotkeyPurposeMap));
+        settingsView.hotkeyErrors[1] = registerOrReport(
+            kInteractHotkeyId, config.interactKey, ui::tr(ui::Str::HotkeyPurposeInteract));
+        settingsView.hotkeyErrors[2] =
+            registerOrReport(kHudHotkeyId, config.hudKey, ui::tr(ui::Str::HotkeyPurposeHud));
+    };
+    applyHotkeys();
+
+    win32::SettingsWindow settingsWindow;
+    const auto trayTooltip = [&config] {
+        return widen(ui::trf(ui::Str::TrayRunning,
+                             input::formatHotkey(config.mapKey).c_str()));
+    };
+    settingsWindow.create(instance, overlay.device(), overlay.context(),
+                          widen(ui::tr(ui::Str::SettingsTitle)), trayTooltip());
+    settingsWindow.setTrayMenuLabels(widen(ui::tr(ui::Str::TraySettings)),
+                                     widen(ui::tr(ui::Str::TrayQuit)));
+    if (openSettingsAtStart) {
+        settingsWindow.show();
+    }
+    bool capturingKey = false;
+    bool toldAboutTray = false;
 
     const std::vector<geo::MapDefinition> maps = geo::parseMapsJson(data::kMapsJson);
     if (maps.empty()) {
@@ -371,7 +463,7 @@ int main(int argc, char** argv) {
 
     const data::MapIdTable mapIds = data::MapIdTable::parse(data::kMapIdsJson);
     win32::TarkovDataRepository quests;
-    quests.start("regular", ui::language() == ui::Lang::En ? "en" : "ru",
+    quests.start("regular", config.language,
                  [](const std::string& line) { g_status.add(line); });
 
     data::QuestProgressStore progress;
@@ -417,14 +509,25 @@ int main(int argc, char** argv) {
     hudOptions.showDebug = debug;
 
     ui::MapViewState mapState;
-    mapState.opacity = mapOpacity;
+    // The map's options come from the settings each frame; the map panel in
+    // game keeps only the floor choice, which is a moment-to-moment decision.
+    const auto applyMapSettings = [&config](ui::MapViewState& state) {
+        state.opacity = config.mapOpacity;
+        state.preferAbstract = config.preferAbstractMap;
+        state.showQuests = config.showQuests;
+        state.showExtracts = config.showExtracts;
+        state.showTransits = config.showTransits;
+        state.showSpawns = config.showSpawns;
+        state.dimOtherFloors = config.dimOtherFloors;
+    };
+    applyMapSettings(mapState);
     // Asking for a map on the command line means you want to see it.
     bool mapVisible = !forcedMap.empty();
     // Off by default. Almost everything it showed is either visible on the map,
     // shown by the game itself, or a raw coordinate no one navigates by; what
     // was actually unique -- the age of the position fix -- now lives in the
     // map footer. Screen corners in a raid are worth more than telemetry.
-    bool hudVisible = hasFlag(argc, argv, "--hud");
+    bool hudVisible = config.showHud;
     std::string tiledMap;
     std::string abstractMapKey;
     int abstractMapLayer = -2;
@@ -454,7 +557,103 @@ int main(int argc, char** argv) {
         g_status.add(ui::tr(ui::Str::StatusStandalone));
     }
 
+    // Quest counts for the settings window's status section, recomputed only
+    // when progress or quest data change.
+    std::uint64_t statusRevision = ~0ULL;
+    const data::TaskSet* statusTasks = nullptr;
+    int statusActive = 0;
+
     while (overlay.pumpMessages()) {
+        // --- Settings window and tray --------------------------------------
+        if (settingsWindow.takeQuitRequest()) {
+            break;
+        }
+        if (settingsWindow.takeOpenRequest()) {
+            settingsWindow.show();
+        }
+        if (settingsWindow.takeClosedByUser() && !toldAboutTray) {
+            // The first time the window is closed, say where the program went;
+            // otherwise closing it looks like quitting.
+            toldAboutTray = true;
+            settingsWindow.notify(L"tarkov-help", trayTooltip());
+        }
+
+        if (settingsWindow.visible()) {
+            // Hand key capture over to the window. Global hotkeys are released
+            // while it listens, or pressing a bound key (say F5) would fire the
+            // hotkey instead of reaching the capture.
+            if (settingsView.capturing && !capturingKey) {
+                capturingKey = true;
+                unregisterHotkeys();
+                settingsWindow.startKeyCapture();
+            }
+            if (capturingKey) {
+                if (auto key = settingsWindow.takeCapturedKey()) {
+                    settingsView.captured = *key;
+                }
+            }
+
+            const auto questData = quests.tasks();
+            const std::uint64_t revision = progress.revision();
+            if (statusRevision != revision || statusTasks != questData.get()) {
+                statusRevision = revision;
+                statusTasks = questData.get();
+                statusActive = static_cast<int>(
+                    data::resolveProgress(*progress.snapshot(), *questData).active.size());
+            }
+            ui::SettingsStatus status;
+            status.gameRunning = tracker.poll().found;
+            status.logFolderFound = !watcher.paths().logsRoot.empty();
+            status.screenshotFolderFound = !watcher.paths().screenshots.empty();
+            status.questsLoaded = static_cast<int>(questData->tasks.size());
+            status.questsActive = statusActive;
+            status.questDataLoading = quests.status().fetching;
+            const auto raid = raidState.snapshot();
+            status.positionAgeSeconds =
+                raid->fix.valid
+                    ? raid->fix.ageSeconds(static_cast<std::int64_t>(GetTickCount64()))
+                    : -1.0;
+
+            const settings::Settings before = config;
+            ui::SettingsViewResult outcome;
+            settingsWindow.render(
+                [&] { outcome = ui::drawSettings(config, settingsView, status); });
+
+            if (capturingKey && !settingsView.capturing) {
+                capturingKey = false;
+                settingsWindow.stopKeyCapture();
+                applyHotkeys();  // back on, with whatever was chosen
+            }
+
+            if (outcome.changed) {
+                settings::sanitize(config);
+                saveSettings(config);
+                // Apply everything that changed, immediately.
+                if (config.language != before.language) {
+                    ui::setLanguage(ui::parseLanguage(config.language));
+                    quests.setLanguage(config.language);
+                    settingsWindow.setTrayMenuLabels(widen(ui::tr(ui::Str::TraySettings)),
+                                                     widen(ui::tr(ui::Str::TrayQuit)));
+                    questPlacesRevision = ~0ULL;  // rebuild names
+                    overlaysFeaturesFrom = nullptr;
+                }
+                if (config.excludeFromCapture != before.excludeFromCapture) {
+                    applyCaptureExclusion(config.excludeFromCapture);
+                }
+                if (config.showHud != before.showHud) {
+                    hudVisible = config.showHud;
+                }
+                applyMapSettings(mapState);
+                forceRedraw = true;
+            }
+            if (outcome.done) {
+                settingsWindow.hide();
+            }
+            if (outcome.quit) {
+                break;
+            }
+        }
+
         MSG message;
         while (PeekMessageW(&message, nullptr, WM_HOTKEY, WM_HOTKEY, PM_REMOVE)) {
             if (message.message != WM_HOTKEY) {
@@ -488,7 +687,9 @@ int main(int argc, char** argv) {
             // Anchor to the primary monitor so the overlay can be seen and
             // photographed without the game running.
             game.found = true;
-            game.foreground = true;
+            // With no game, "the game is in front" means nothing else is; the
+            // settings window in front would otherwise be covered by the map.
+            game.foreground = GetForegroundWindow() != settingsWindow.handle();
             game.bounds = RECT{0, 0, GetSystemMetrics(SM_CXSCREEN),
                                GetSystemMetrics(SM_CYSCREEN)};
         }
@@ -496,8 +697,10 @@ int main(int argc, char** argv) {
         overlay.setVisible(shouldShow);
 
         if (!shouldShow) {
-            // Nothing to composite. Idle cheaply rather than spinning.
-            Sleep(60);
+            // Nothing to composite. Idle cheaply rather than spinning -- but
+            // wake promptly for input, and keep the settings window smooth.
+            MsgWaitForMultipleObjects(0, nullptr, FALSE,
+                                      settingsWindow.visible() ? 16 : 60, QS_ALLINPUT);
             continue;
         }
 
@@ -556,7 +759,8 @@ int main(int argc, char** argv) {
 
         if (!needsFrame) {
             // Wake early if a message arrives, so input stays responsive.
-            MsgWaitForMultipleObjects(0, nullptr, FALSE, 100, QS_ALLINPUT);
+            MsgWaitForMultipleObjects(0, nullptr, FALSE,
+                                      settingsWindow.visible() ? 16 : 100, QS_ALLINPUT);
             continue;
         }
 
@@ -807,8 +1011,6 @@ int main(int argc, char** argv) {
     icons.stop();
     abstractMaps.stop();
     tiles.stop();
-    UnregisterHotKey(nullptr, kMapHotkeyId);
-    UnregisterHotKey(nullptr, kHudHotkeyId);
-    UnregisterHotKey(nullptr, kInteractHotkeyId);
+    unregisterHotkeys();
     return 0;
 }

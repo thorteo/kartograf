@@ -145,6 +145,17 @@ cmake --build --preset windows-dev                             # the overlay, cr
 python3 scripts/verify_projection_tiles.py                     # network check, by hand
 ```
 
+Scripted runs should pass `--no-settings`, or the settings window stops at startup.
+User state lives in `%LOCALAPPDATA%\tarkov-help\`: `settings.json`, `progress.json`,
+and the `data`, `tiles`, `svg` and `icons` caches. Command-line flags (`--lang`,
+`--toggle-key`, `--map-opacity`, `--allow-capture`, …) override settings for one run.
+
+A process started from WSL is not allowed to take the foreground, so a window it opens
+may sit behind the terminal in a screenshot while being perfectly visible to a user who
+double-clicked the exe. Launch through PowerShell's `Start-Process` for captures. And
+in PowerShell P/Invoke, pass `[NullString]::Value`, not `$null`, for a null string —
+`$null` arrives as an empty string.
+
 The Windows build uses clang-cl against the real MSVC CRT and Windows SDK, fetched once
 by `xwin` into `~/.xwin-sdk`. WSL executes the resulting .exe directly, so the whole
 edit-build-run loop stays in one shell. **Build the Windows target too before

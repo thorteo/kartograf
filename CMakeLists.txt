@@ -57,6 +57,7 @@ add_library(tarkov_core STATIC
     src/core/game/RaidState.cpp
     src/core/game/QuestEvents.cpp
     src/core/input/Hotkey.cpp
+    src/core/settings/Settings.cpp
     src/core/data/TaskModel.cpp
     src/core/data/MapIds.cpp
     src/core/data/QuestProgress.cpp
@@ -143,6 +144,7 @@ add_library(tarkov_ui STATIC
     src/ui/MapView.cpp
     src/ui/QuestList.cpp
     src/ui/Strings.cpp
+    src/ui/SettingsView.cpp
 )
 target_link_libraries(tarkov_ui PUBLIC tarkov_core tarkov_imgui)
 
@@ -161,6 +163,7 @@ if(WIN32)
         src/platform/win32/TarkovDataRepository.cpp
         src/platform/win32/SvgMapStore.cpp
         src/platform/win32/IconStore.cpp
+        src/platform/win32/SettingsWindow.cpp
         src/platform/win32/ImGuiLayer.cpp
         third_party/imgui/backends/imgui_impl_win32.cpp
         third_party/imgui/backends/imgui_impl_dx11.cpp

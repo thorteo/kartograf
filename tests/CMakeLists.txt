@@ -14,6 +14,8 @@ add_executable(tarkov_tests
     test_quest_progress.cpp
     test_map_features.cpp
     test_strings.cpp
+    test_settings.cpp
+    test_settings_view.cpp
     test_projection.cpp
 )
 

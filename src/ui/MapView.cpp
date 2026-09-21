@@ -607,13 +607,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
             result.wantsRedraw = true;
         }
 
-        if (ImGui::IsItemHovered() && io.MouseWheel != 0.0f && io.KeyCtrl) {
-            // Ctrl+wheel adjusts how much of the game shows through, which is
-            // the thing most worth reaching for mid-raid.
-            state.opacity = std::clamp(state.opacity + io.MouseWheel * 0.05f,
-                                       kMinOpacity, kMaxOpacity);
-            result.wantsRedraw = true;
-        } else if (ImGui::IsItemHovered() && io.MouseWheel != 0.0f) {
+        if (ImGui::IsItemHovered() && io.MouseWheel != 0.0f) {
             const geo::Vec2 anchor{io.MousePos.x - origin.x, io.MousePos.y - origin.y};
             const double factor = std::pow(1.2, io.MouseWheel);
             state.viewport =
@@ -624,7 +618,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
     }
 
     // Floor selector, only while the overlay takes input.
-    if (interactive) {
+    if (interactive && !map.layers.empty()) {
         ImGui::SetNextWindowPos(ImVec2(origin.x + 16.0f, origin.y + 16.0f),
                                 ImGuiCond_Always);
         ImGui::SetNextWindowBgAlpha(0.85f);
@@ -633,32 +627,16 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                              ImGuiWindowFlags_AlwaysAutoResize |
                              ImGuiWindowFlags_NoSavedSettings |
                              ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove)) {
-            ImGui::SetNextItemWidth(130.0f);
-            if (ImGui::SliderFloat("##opacity", &state.opacity, kMinOpacity,
-                                   kMaxOpacity, tr(Str::OpacityFormat))) {
-                result.wantsRedraw = true;
-            }
-            ImGui::Checkbox(tr(Str::LayerQuests), &state.showQuests);
-            ImGui::SameLine();
-            ImGui::Checkbox(tr(Str::LayerExtracts), &state.showExtracts);
-            ImGui::Checkbox(tr(Str::LayerTransits), &state.showTransits);
-            ImGui::SameLine();
-            ImGui::Checkbox(tr(Str::LayerSpawns), &state.showSpawns);
-            if (ImGui::IsItemEdited()) {
+            // Opacity and layers live in the settings window; the in-game
+            // panel keeps only the floor, a moment-to-moment choice. It is
+            // only shown for maps that have floors to choose between.
+            if (ImGui::Checkbox(tr(Str::FloorAuto), &state.layerAuto)) {
                 result.wantsRedraw = true;
             }
             ImGui::Separator();
-            if (map.layers.empty()) {
-                ImGui::TextDisabled("%s", tr(Str::NoUpperFloors));
-            } else {
-                ImGui::Separator();
-                if (ImGui::Checkbox(tr(Str::FloorAuto), &state.layerAuto)) {
-                    result.wantsRedraw = true;
-                }
-            }
             // Listed top-down, the way a building reads.
-            for (int index = static_cast<int>(map.layers.size()) - 1;
-                 !map.layers.empty() && index >= -1; --index) {
+            for (int index = static_cast<int>(map.layers.size()) - 1; index >= -1;
+                 --index) {
                 const bool selected = state.activeLayer == index;
                 if (ImGui::Selectable(layerName(map, index).c_str(), selected)) {
                     state.activeLayer = index;

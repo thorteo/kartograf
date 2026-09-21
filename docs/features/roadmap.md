@@ -44,7 +44,15 @@ records what that means concretely, in the order we intend to earn it.
 - [x] **Reactive rendering.** Measured on this machine: continuous presentation cost
       9.8% of a core; drawing only when the state object changes, a displayed second
       ticks, or the user is interacting costs **0.2%**. Working set 45 MB.
-- [ ] Hotkey binding persisted to a config file (currently a command-line flag)
+- [x] **Settings window** at startup: hotkeys with press-to-bind capture and
+      conflict detection, map opacity and style, layers, language, capture
+      exclusion. Persisted to `settings.json`, applied live without a restart.
+      Its Status section shows whether the game, the log folder and the screenshots
+      folder were found — the diagnosis that the hidden-by-default HUD used to hint at.
+- [x] **Tray icon** with Settings and Quit. Closing the settings window hides it;
+      before this there was no way to exit short of killing the process.
+- [ ] Verify game-window detection against the real running game (never yet checked
+      with EFT open — only with `--no-game`)
 - [x] **The map view.** Raster tiles from the same CDN tarkov.dev uses, fetched by a
       worker pool, cached to disk forever, decoded with stb_image and uploaded to the
       GPU on the render thread with an LRU texture budget of 192 tiles (~48 MB).

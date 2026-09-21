@@ -51,6 +51,10 @@ public:
     /// and refreshes it if needed. Cheap and safe to call repeatedly.
     void setGameMode(std::string gameMode);
 
+    /// Switches the locale quest and extract names are shown in. Reloads from
+    /// the cache and downloads the other locale if it has not been fetched.
+    void setLanguage(std::string language);
+
     /// Asks for a refresh. Ignored while one is already running.
     ///
     /// The caller decides when this is appropriate: never mid-raid, where a
@@ -88,6 +92,11 @@ private:
     std::string gameMode_ = "regular";
     std::string wantedMode_ = "regular";
     bool refreshRequested_ = false;
+    /// Set when the language changed: the cache must be re-read so names come
+    /// through the new locale.
+    bool reloadRequested_ = false;
+    /// The cached copy has no translations for the current language.
+    bool localeMissing_ = false;
     bool fetching_ = false;
     std::string detail_;
     long long writtenAtUnix_ = 0;

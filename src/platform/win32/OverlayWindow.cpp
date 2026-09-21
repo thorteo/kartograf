@@ -47,8 +47,8 @@ LRESULT CALLBACK OverlayWindow::windowProc(HWND hwnd, UINT message, WPARAM wPara
     // Let the UI see input first, but only when the overlay is actually
     // interactive. With click-through on, no input reaches us and forwarding
     // would leave ImGui believing the cursor is somewhere it is not.
-    if (self != nullptr && self->interactive_ &&
-        ImGuiLayer::handleMessage(hwnd, message, wParam, lParam)) {
+    if (self != nullptr && self->interactive_ && self->uiLayer_ != nullptr &&
+        self->uiLayer_->handleMessage(hwnd, message, wParam, lParam)) {
         return 0;
     }
 

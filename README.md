@@ -28,9 +28,11 @@ hooking. That is a hard design constraint, not a current limitation:
 - Abstract vector maps by default, satellite tiles where no drawing exists
 - Raid timer and in-game clock
 - Transparent and see-through, click-through, excluded from screen capture
+- A settings window at startup for hotkeys, map look, layers and language; after
+  that the program lives in the system tray (Settings, Quit)
 - **F5** opens the map, **Alt+N** makes the overlay clickable, **Alt+H** shows the
-  detail panel. All rebindable — note a bare function key is claimed globally while
-  the overlay runs, so F5 will not reload a browser page until it exits
+  detail panel. All rebindable in settings — note a bare function key is claimed
+  globally while the overlay runs, so F5 will not reload a browser page until it exits
 
 ## Requirements
 

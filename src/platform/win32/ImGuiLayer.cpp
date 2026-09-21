@@ -53,22 +53,45 @@ bool loadSystemFont(ImGuiIO& io, float size) {
 
 }  // namespace
 
+namespace {
+
+/// Makes a context current for a scope and restores the previous one.
+class ContextScope {
+public:
+    explicit ContextScope(ImGuiContext* context) : previous_(ImGui::GetCurrentContext()) {
+        ImGui::SetCurrentContext(context);
+    }
+    ~ContextScope() { ImGui::SetCurrentContext(previous_); }
+    ContextScope(const ContextScope&) = delete;
+    ContextScope& operator=(const ContextScope&) = delete;
+
+private:
+    ImGuiContext* previous_;
+};
+
+}  // namespace
+
 ImGuiLayer::~ImGuiLayer() {
     if (!initialised_) {
         return;
     }
+    ImGui::SetCurrentContext(context_);
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
-    ImGui::DestroyContext();
+    ImGui::DestroyContext(context_);
+    context_ = nullptr;
     initialised_ = false;
 }
 
 bool ImGuiLayer::initialise(HWND hwnd, ID3D11Device* device,
                             ID3D11DeviceContext* context) {
     IMGUI_CHECKVERSION();
-    if (ImGui::CreateContext() == nullptr) {
+    ImGuiContext* previous = ImGui::GetCurrentContext();
+    context_ = ImGui::CreateContext();
+    if (context_ == nullptr) {
         return false;
     }
+    ImGui::SetCurrentContext(context_);
 
     ImGuiIO& io = ImGui::GetIO();
     // No imgui.ini: the overlay owns its own layout, and writing a stray file
@@ -82,14 +105,17 @@ bool ImGuiLayer::initialise(HWND hwnd, ID3D11Device* device,
     loadSystemFont(io, 17.0f);
 
     if (!ImGui_ImplWin32_Init(hwnd)) {
+        ImGui::SetCurrentContext(previous);
         return false;
     }
     if (!ImGui_ImplDX11_Init(device, context)) {
         ImGui_ImplWin32_Shutdown();
+        ImGui::SetCurrentContext(previous);
         return false;
     }
 
     initialised_ = true;
+    ImGui::SetCurrentContext(previous);
     return true;
 }
 
@@ -97,6 +123,9 @@ void ImGuiLayer::beginFrame(int width, int height) {
     if (!initialised_) {
         return;
     }
+    // Left current until endFrame: everything drawn in between belongs to
+    // this window.
+    ImGui::SetCurrentContext(context_);
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
 
@@ -118,6 +147,10 @@ void ImGuiLayer::endFrame() {
 
 bool ImGuiLayer::handleMessage(HWND hwnd, UINT message, WPARAM wParam,
                                LPARAM lParam) {
+    if (!initialised_) {
+        return false;
+    }
+    const ContextScope scope(context_);
     return ImGui_ImplWin32_WndProcHandler(hwnd, message, wParam, lParam) != 0;
 }
 

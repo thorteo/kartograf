@@ -120,6 +120,20 @@ void TarkovDataRepository::setGameMode(std::string gameMode) {
     wake_.notify_one();
 }
 
+void TarkovDataRepository::setLanguage(std::string language) {
+    {
+        const std::lock_guard<std::mutex> lock(mutex_);
+        if (language_ == language) {
+            return;
+        }
+        // Under the lock: the worker reads language_ while downloading, and
+        // an unguarded write from the UI thread would be a data race.
+        language_ = std::move(language);
+        reloadRequested_ = true;
+    }
+    wake_.notify_one();
+}
+
 void TarkovDataRepository::refresh() {
     {
         const std::lock_guard<std::mutex> lock(mutex_);
@@ -161,6 +175,11 @@ void TarkovDataRepository::publish(data::TaskSet set, MapFeatureSet features,
 }
 
 bool TarkovDataRepository::loadFromCache(const std::string& mode) {
+    std::string language;
+    {
+        const std::lock_guard<std::mutex> lock(mutex_);
+        language = language_;
+    }
     const fs::path dir = cacheDir(mode);
     const std::string body = readTextFile(dir / "tasks.json");
     if (body.empty()) {
@@ -168,7 +187,7 @@ bool TarkovDataRepository::loadFromCache(const std::string& mode) {
     }
 
     const data::TaskLocale locale =
-        data::TaskLocale::parse(readTextFile(dir / ("tasks_" + language_ + ".json")));
+        data::TaskLocale::parse(readTextFile(dir / ("tasks_" + language + ".json")));
     data::TaskSet set = data::parseTasks(body, locale);
     if (set.tasks.empty()) {
         // A cache that parses to nothing is worse than none: it would sit there
@@ -181,7 +200,7 @@ bool TarkovDataRepository::loadFromCache(const std::string& mode) {
     // Map features are optional: an old cache from before they were fetched
     // still gives quests, and the next refresh fills in the rest.
     const data::TaskLocale mapLocale =
-        data::TaskLocale::parse(readTextFile(dir / ("maps_" + language_ + ".json")));
+        data::TaskLocale::parse(readTextFile(dir / ("maps_" + language + ".json")));
     MapFeatureSet features =
         data::parseMapFeatures(readTextFile(dir / "maps.json"), mapLocale);
 
@@ -192,12 +211,23 @@ bool TarkovDataRepository::loadFromCache(const std::string& mode) {
     }
 
     const std::size_t count = set.tasks.size();
+    {
+        // Explicit, not encoded in the timestamp: a sentinel age is how a
+        // cache once never refreshed. Checked by run().
+        const std::lock_guard<std::mutex> lock(mutex_);
+        localeMissing_ = locale.size() == 0;
+    }
     publish(std::move(set), std::move(features), writtenAt);
     say(ui::trf(ui::Str::StatusQuestsFromCache, static_cast<int>(count)));
     return true;
 }
 
 bool TarkovDataRepository::downloadAndCache(const std::string& mode) {
+    std::string language;
+    {
+        const std::lock_guard<std::mutex> lock(mutex_);
+        language = language_;
+    }
     HttpClient client;
     if (!client.open(L"tarkov-help/0.1")) {
         return false;
@@ -218,11 +248,11 @@ bool TarkovDataRepository::downloadAndCache(const std::string& mode) {
     // titled with a hex id. Its absence is survivable, so it is not fatal.
     std::string localeBody;
     const auto localeResponse =
-        client.get(base + "/tasks_" + language_, 16u * 1024 * 1024);
+        client.get(base + "/tasks_" + language, 16u * 1024 * 1024);
     if (localeResponse.ok) {
         localeBody.assign(localeResponse.body.begin(), localeResponse.body.end());
     } else {
-        say(ui::trf(ui::Str::StatusNoTranslations, language_.c_str()));
+        say(ui::trf(ui::Str::StatusNoTranslations, language.c_str()));
     }
 
     const data::TaskLocale locale = data::TaskLocale::parse(localeBody);
@@ -241,7 +271,7 @@ bool TarkovDataRepository::downloadAndCache(const std::string& mode) {
     if (mapsResponse.ok) {
         mapsBody.assign(mapsResponse.body.begin(), mapsResponse.body.end());
         const auto mapsLocale =
-            client.get(base + "/maps_" + language_, 16u * 1024 * 1024);
+            client.get(base + "/maps_" + language, 16u * 1024 * 1024);
         if (mapsLocale.ok) {
             mapsLocaleBody.assign(mapsLocale.body.begin(), mapsLocale.body.end());
         }
@@ -257,11 +287,11 @@ bool TarkovDataRepository::downloadAndCache(const std::string& mode) {
         writeTextFile(dir / "maps.json", mapsBody);
     }
     if (!mapsLocaleBody.empty()) {
-        writeTextFile(dir / ("maps_" + language_ + ".json"), mapsLocaleBody);
+        writeTextFile(dir / ("maps_" + language + ".json"), mapsLocaleBody);
     }
     writeTextFile(dir / "tasks.json", body);
     if (!localeBody.empty()) {
-        writeTextFile(dir / ("tasks_" + language_ + ".json"), localeBody);
+        writeTextFile(dir / ("tasks_" + language + ".json"), localeBody);
     }
     writeTextFile(dir / "tasks.updated", std::to_string(writtenAt));
 
@@ -284,6 +314,10 @@ void TarkovDataRepository::run() {
             mode = wantedMode_;
             wantRefresh = refreshRequested_;
             refreshRequested_ = false;
+            if (reloadRequested_) {
+                reloadRequested_ = false;
+                loadedMode.clear();  // re-read the cache through the new locale
+            }
             gameMode_ = mode;
         }
 
@@ -298,16 +332,18 @@ void TarkovDataRepository::run() {
         if (!wantRefresh) {
             const auto current = status();
             bool mapsMissing = false;
+            bool localeMissing = false;
             {
                 const std::lock_guard<std::mutex> lock(mutex_);
                 mapsMissing = publishedMaps_->empty();
+                localeMissing = localeMissing_;
             }
             // Refresh when there is nothing, when its age is unknown, when it
             // is old, or when a cache from before map data existed lacks it.
             // An unknown age must count as stale: treating it as fresh is how
             // an older cache once kept extracts from ever being downloaded.
             if (!current.haveData || current.ageSeconds < 0 ||
-                current.ageSeconds > kMaxAgeSeconds || mapsMissing) {
+                current.ageSeconds > kMaxAgeSeconds || mapsMissing || localeMissing) {
                 wantRefresh = true;
             }
         }
@@ -331,7 +367,7 @@ void TarkovDataRepository::run() {
         // sleep long. There is nothing to poll for.
         wake_.wait_for(lock, std::chrono::minutes(30), [this] {
             return stopping_.load(std::memory_order_relaxed) || refreshRequested_ ||
-                   wantedMode_ != gameMode_;
+                   reloadRequested_ || wantedMode_ != gameMode_;
         });
     }
 }

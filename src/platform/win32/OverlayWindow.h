@@ -66,6 +66,9 @@ public:
     /// While true, window messages are forwarded to the UI layer. Turned off
     /// with click-through, when the overlay receives no input at all.
     void setInteractive(bool interactive) { interactive_ = interactive; }
+
+    /// The UI layer that receives this window's input while interactive.
+    void setUiLayer(class ImGuiLayer* layer) { uiLayer_ = layer; }
     bool interactive() const { return interactive_; }
 
     ID3D11Device* device() const { return device_.get(); }
@@ -90,6 +93,7 @@ private:
     HWND hwnd_ = nullptr;
     bool clickThrough_ = true;
     bool interactive_ = false;
+    class ImGuiLayer* uiLayer_ = nullptr;
     bool shouldClose_ = false;
     int width_ = 0;
     int height_ = 0;

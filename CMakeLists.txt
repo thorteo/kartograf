@@ -55,9 +55,11 @@ add_library(tarkov_core STATIC
     src/core/game/ScreenshotName.cpp
     src/core/game/LogParser.cpp
     src/core/game/RaidState.cpp
+    src/core/game/QuestEvents.cpp
     src/core/input/Hotkey.cpp
     src/core/data/TaskModel.cpp
     src/core/data/MapIds.cpp
+    src/core/data/QuestProgress.cpp
     ${TARKOV_EMBEDDED_MAP_IDS}
     src/core/map/TileMath.cpp
     src/core/map/SvgRenderer.cpp
@@ -135,7 +137,7 @@ target_include_directories(tarkov_imgui SYSTEM PUBLIC
 # tarkov_ui -- views. Portable: ImGui draws into a vertex buffer, so the HUD
 # can be built and its formatting tested without a Windows build.
 # ---------------------------------------------------------------------------
-add_library(tarkov_ui STATIC src/ui/Hud.cpp src/ui/MapView.cpp)
+add_library(tarkov_ui STATIC src/ui/Hud.cpp src/ui/MapView.cpp src/ui/QuestList.cpp)
 target_link_libraries(tarkov_ui PUBLIC tarkov_core tarkov_imgui)
 
 # ---------------------------------------------------------------------------

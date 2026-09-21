@@ -10,6 +10,8 @@ add_executable(tarkov_tests
     test_map_view.cpp
     test_task_model.cpp
     test_svg_renderer.cpp
+    test_quest_events.cpp
+    test_quest_progress.cpp
     test_projection.cpp
 )
 

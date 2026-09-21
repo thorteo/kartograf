@@ -20,6 +20,7 @@ Why the code is the way it is. [Index and process](adr/README.md).
 | [0002](adr/0002-no-game-process-interaction.md) | Never interact with the game process |
 | [0003](adr/0003-overlay-window.md) | Overlay via DirectComposition, not a DirectX hook |
 | [0004](adr/0004-threading-model.md) | Single guarded state, snapshot to renderer |
+| [0005](adr/0005-per-component-snapshot-stores.md) | Per-component snapshot stores |
 
 ## Research — `research/`
 
@@ -34,6 +35,7 @@ inference.
 | [eft-log-format.md](research/eft-log-format.md) | Log layout, the five raid lifecycle events, map id quirks |
 | [map-projection.md](research/map-projection.md) | Game coordinates to image coordinates, floor selection |
 | [tarkov-dev-api.md](research/tarkov-dev-api.md) | GraphQL schema, which objectives carry positions, caching |
+| [tarkov-dev-rest-api.md](research/tarkov-dev-rest-api.md) | The JSON API actually used: tasks, locales, map ids |
 
 ## Conventions
 

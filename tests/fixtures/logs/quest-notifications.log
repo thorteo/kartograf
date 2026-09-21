@@ -1,0 +1,263 @@
+2026-09-16 21:29:28.807|1.1.5.0.47426|Info|push-notifications|Got notification | ChatMessageReceived
+{
+  "type": "new_message",
+  "eventId": "<ID>",
+  "dialogId": "<ID>",
+  "message": {
+    "_id": "<ID>",
+    "uid": "<ID>",
+    "type": 10,
+    "dt": 1789583367,
+    "text": "quest started",
+    "templateId": "59689fbd86f7740d137ebfc4 description",
+    "hasRewards": false,
+    "maxStorageTime": 604800
+  }
+}
+2026-09-16 21:29:41.339|1.1.5.0.47426|Info|push-notifications|Got notification | ChatMessageReceived
+{
+  "type": "new_message",
+  "eventId": "<ID>",
+  "dialogId": "<ID>",
+  "message": {
+    "_id": "<ID>",
+    "uid": "<ID>",
+    "type": 10,
+    "dt": 1789583380,
+    "text": "quest started",
+    "templateId": "657315ddab5a49b71f098853 description",
+    "hasRewards": false,
+    "maxStorageTime": 604800
+  }
+}
+2026-09-16 21:29:42.628|1.1.5.0.47426|Info|push-notifications|Got notification | ChatMessageReceived
+{
+  "type": "new_message",
+  "eventId": "<ID>",
+  "dialogId": "<ID>",
+  "message": {
+    "_id": "<ID>",
+    "uid": "<ID>",
+    "type": 10,
+    "dt": 1789583381,
+    "text": "quest started",
+    "templateId": "596a0e1686f7741ddf17dbee description",
+    "hasRewards": false,
+    "maxStorageTime": 604800
+  }
+}
+2026-09-16 21:34:14.620|1.1.5.0.47426|Info|push-notifications|Got notification | ChatMessageReceived
+{
+  "type": "new_message",
+  "eventId": "<ID>",
+  "dialogId": "<ID>",
+  "message": {
+    "_id": "<ID>",
+    "uid": "<ID>",
+    "type": 10,
+    "dt": 1789583653,
+    "text": "quest started",
+    "templateId": "5ae448f286f77448d73c0131 description",
+    "maxStorageTime": 172800,
+    "profileChangeEvents": [],
+    "hasRewards": true
+  }
+}
+2026-09-16 21:34:16.061|1.1.5.0.47426|Info|push-notifications|Got notification | ChatMessageReceived
+{
+  "type": "new_message",
+  "eventId": "<ID>",
+  "dialogId": "<ID>",
+  "message": {
+    "_id": "<ID>",
+    "uid": "<ID>",
+    "type": 10,
+    "dt": 1789583655,
+    "text": "quest started",
+    "templateId": "5ae449c386f7744bde357697 description",
+    "hasRewards": false,
+    "maxStorageTime": 604800
+  }
+}
+2026-09-16 21:34:17.220|1.1.5.0.47426|Info|push-notifications|Got notification | ChatMessageReceived
+{
+  "type": "new_message",
+  "eventId": "<ID>",
+  "dialogId": "<ID>",
+  "message": {
+    "_id": "<ID>",
+    "uid": "<ID>",
+    "type": 10,
+    "dt": 1789583656,
+    "text": "quest started",
+    "templateId": "5ae448bf86f7744d733e55ee description",
+    "hasRewards": false,
+    "maxStorageTime": 604800
+  }
+}
+2026-09-16 22:11:24.252|1.1.5.0.47426|Info|push-notifications|Got notification | UserMatchCreated
+{
+  "type": "userMatchCreated",
+  "eventId": "<ID>",
+  "blockExitButton": true,
+  "blockExitButtonDuration": 0,
+  "showConfirmationPopup": false
+}
+2026-09-16 22:11:26.250|1.1.5.0.47426|Info|push-notifications|Got notification | UserConfirmed
+{
+  "type": "userConfirmed",
+  "eventId": "<ID>",
+  "profileid": "<ID>",
+  "profileToken": "<TOKEN>",
+  "status": "Busy",
+  "ip": "<IP>",
+  "port": 17008,
+  "sid": "<SID>",
+  "version": "live",
+  "location": "Interchange",
+  "raidMode": "Online",
+  "mode": "deathmatch",
+  "shortId": "C7LZQB",
+  "additional_info": []
+}
+2026-09-16 22:43:57.034|1.1.5.0.47426|Info|push-notifications|Got notification | UserMatchCreated
+{
+  "type": "userMatchCreated",
+  "eventId": "<ID>",
+  "blockExitButton": true,
+  "blockExitButtonDuration": 0,
+  "showConfirmationPopup": false
+}
+2026-09-16 23:44:27.491|1.1.5.0.47426|Info|push-notifications|Got notification | ChatMessageReceived
+{
+  "type": "new_message",
+  "eventId": "<ID>",
+  "dialogId": "<ID>",
+  "message": {
+    "_id": "<ID>",
+    "uid": "<ID>",
+    "type": 12,
+    "dt": 1789591466,
+    "text": "quest started",
+    "templateId": "5ae449c386f7744bde357697 successMessageText",
+    "maxStorageTime": 172800,
+    "profileChangeEvents": [],
+    "hasRewards": true
+  }
+}
+2026-09-16 23:44:30.359|1.1.5.0.47426|Info|push-notifications|Got notification | ChatMessageReceived
+{
+  "type": "new_message",
+  "eventId": "<ID>",
+  "dialogId": "<ID>",
+  "message": {
+    "_id": "<ID>",
+    "uid": "<ID>",
+    "type": 12,
+    "dt": 1789591469,
+    "text": "quest started",
+    "templateId": "5ae448f286f77448d73c0131 successMessageText",
+    "maxStorageTime": 172800,
+    "profileChangeEvents": [],
+    "hasRewards": true
+  }
+}
+2026-09-16 23:44:35.156|1.1.5.0.47426|Info|push-notifications|Got notification | ChatMessageReceived
+{
+  "type": "new_message",
+  "eventId": "<ID>",
+  "dialogId": "<ID>",
+  "message": {
+    "_id": "<ID>",
+    "uid": "<ID>",
+    "type": 10,
+    "dt": 1789591474,
+    "text": "quest started",
+    "templateId": "5ae4490786f7744ca822adcc description",
+    "hasRewards": false,
+    "maxStorageTime": 604800
+  }
+}
+2026-09-16 23:44:36.394|1.1.5.0.47426|Info|push-notifications|Got notification | ChatMessageReceived
+{
+  "type": "new_message",
+  "eventId": "<ID>",
+  "dialogId": "<ID>",
+  "message": {
+    "_id": "<ID>",
+    "uid": "<ID>",
+    "type": 10,
+    "dt": 1789591475,
+    "text": "quest started",
+    "templateId": "5ae4493d86f7744b8e15aa8f description",
+    "hasRewards": false,
+    "maxStorageTime": 604800
+  }
+}
+2026-09-16 23:44:37.415|1.1.5.0.47426|Info|push-notifications|Got notification | ChatMessageReceived
+{
+  "type": "new_message",
+  "eventId": "<ID>",
+  "dialogId": "<ID>",
+  "message": {
+    "_id": "<ID>",
+    "uid": "<ID>",
+    "type": 10,
+    "dt": 1789591476,
+    "text": "quest started",
+    "templateId": "5ae449b386f77446d8741719 description",
+    "maxStorageTime": 172800,
+    "profileChangeEvents": [],
+    "hasRewards": true
+  }
+}
+2026-09-16 23:44:38.555|1.1.5.0.47426|Info|push-notifications|Got notification | ChatMessageReceived
+{
+  "type": "new_message",
+  "eventId": "<ID>",
+  "dialogId": "<ID>",
+  "message": {
+    "_id": "<ID>",
+    "uid": "<ID>",
+    "type": 10,
+    "dt": 1789591477,
+    "text": "quest started",
+    "templateId": "60e71dc0a94be721b065bbfc description",
+    "hasRewards": false,
+    "maxStorageTime": 604800
+  }
+}
+2026-09-16 23:44:39.901|1.1.5.0.47426|Info|push-notifications|Got notification | ChatMessageReceived
+{
+  "type": "new_message",
+  "eventId": "<ID>",
+  "dialogId": "<ID>",
+  "message": {
+    "_id": "<ID>",
+    "uid": "<ID>",
+    "type": 10,
+    "dt": 1789591478,
+    "text": "quest started",
+    "templateId": "5c10f94386f774227172c572 description",
+    "maxStorageTime": 172800,
+    "profileChangeEvents": [],
+    "hasRewards": true
+  }
+}
+2026-09-17 00:32:57.457|1.1.5.0.47426|Info|push-notifications|Got notification | ChatMessageReceived
+{
+  "type": "new_message",
+  "eventId": "<ID>",
+  "dialogId": "<ID>",
+  "message": {
+    "_id": "<ID>",
+    "uid": "<ID>",
+    "type": 12,
+    "dt": 1789594376,
+    "text": "quest started",
+    "templateId": "5ae448bf86f7744d733e55ee successMessageText",
+    "maxStorageTime": 172800,
+    "profileChangeEvents": [],
+    "hasRewards": true
+  }
+}

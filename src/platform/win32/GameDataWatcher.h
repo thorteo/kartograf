@@ -8,7 +8,9 @@
 #include <string>
 #include <thread>
 
+#include "core/data/QuestProgress.h"
 #include "core/game/LogParser.h"
+#include "core/game/QuestEvents.h"
 #include "core/game/RaidState.h"
 #include "platform/win32/GameFiles.h"
 
@@ -32,7 +34,14 @@ public:
     GameDataWatcher(const GameDataWatcher&) = delete;
     GameDataWatcher& operator=(const GameDataWatcher&) = delete;
 
-    bool start(game::RaidState& state, Logger logger = {});
+    /// Called on the watcher thread after quest progress changed, so it can be
+    /// written to disk. The game only keeps about five days of logs; what we
+    /// have read has to be kept by us or it is lost.
+    using ProgressChanged = std::function<void()>;
+
+    bool start(game::RaidState& state, Logger logger = {},
+               data::QuestProgressStore* progress = nullptr,
+               ProgressChanged onProgress = {});
     void stop();
 
     const GamePaths& paths() const { return paths_; }
@@ -40,6 +49,10 @@ public:
 private:
     void run(game::RaidState* state);
     void openNewestLogFolder();
+    /// Reads the quest events out of every log session still on disk. Runs
+    /// once at startup; later events arrive through the live tail.
+    void importQuestHistory();
+    void pumpNotifications();
     void pumpLogs(game::RaidState& state);
     void handleScreenshotNames(game::RaidState& state,
                                const std::vector<std::wstring>& names);
@@ -57,6 +70,11 @@ private:
     LogTail outputLog_;
     game::LogParser applicationParser_;
     game::LogParser outputParser_;
+
+    data::QuestProgressStore* progress_ = nullptr;
+    ProgressChanged onProgress_;
+    LogTail notificationsLog_;
+    game::QuestEventParser notificationsParser_;
 };
 
 }  // namespace tarkov::win32

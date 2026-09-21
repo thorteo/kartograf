@@ -68,6 +68,13 @@ struct Task {
 
     std::vector<TaskObjective> objectives;
 
+    /// Quests that must be *completed* before this one can be taken.
+    ///
+    /// The API also lists "active" and "failed" requirements; only completion
+    /// is used, because it is the one that lets progress be inferred: if a
+    /// quest has been started, everything it required is necessarily done.
+    std::vector<std::string> prerequisiteIds;
+
     /// A name fit to show: the localized one, or normalizedName turned back
     /// into words when the locale has nothing.
     std::string displayName() const;

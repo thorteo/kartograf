@@ -2,6 +2,10 @@
 
 #include <imgui.h>
 
+#include <shlobj.h>
+
+#include <string>
+
 #include <backends/imgui_impl_dx11.h>
 #include <backends/imgui_impl_win32.h>
 
@@ -10,6 +14,44 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
                                                              LPARAM lParam);
 
 namespace tarkov::win32 {
+namespace {
+
+/// Loads a system font with Cyrillic coverage.
+///
+/// ImGui's built-in font is Latin-only: quest names from the Russian locale
+/// rendered as rows of question marks until this existed. Segoe UI ships with
+/// every supported Windows version, so nothing is bundled; Arial and Tahoma
+/// are fallbacks. ImGui 1.92 loads glyphs on demand, so no glyph ranges are
+/// needed.
+bool loadSystemFont(ImGuiIO& io, float size) {
+    PWSTR raw = nullptr;
+    std::wstring fonts;
+    if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Fonts, 0, nullptr, &raw))) {
+        fonts = raw;
+        CoTaskMemFree(raw);
+    }
+    if (fonts.empty()) {
+        return false;
+    }
+    for (const wchar_t* file : {L"segoeui.ttf", L"arial.ttf", L"tahoma.ttf"}) {
+        const std::wstring wide = fonts + L"\\" + file;
+        if (GetFileAttributesW(wide.c_str()) == INVALID_FILE_ATTRIBUTES) {
+            continue;
+        }
+        // ImGui opens files by UTF-8 name and converts on Windows.
+        const int length = WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), -1, nullptr,
+                                               0, nullptr, nullptr);
+        std::string path(static_cast<std::size_t>(length > 0 ? length - 1 : 0), '\0');
+        WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), -1, path.data(), length, nullptr,
+                            nullptr);
+        if (io.Fonts->AddFontFromFileTTF(path.c_str(), size) != nullptr) {
+            return true;
+        }
+    }
+    return false;
+}
+
+}  // namespace
 
 ImGuiLayer::~ImGuiLayer() {
     if (!initialised_) {
@@ -37,6 +79,7 @@ bool ImGuiLayer::initialise(HWND hwnd, ID3D11Device* device,
     io.MouseDrawCursor = false;
 
     applyOverlayStyle();
+    loadSystemFont(io, 17.0f);
 
     if (!ImGui_ImplWin32_Init(hwnd)) {
         return false;

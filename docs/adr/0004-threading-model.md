@@ -1,6 +1,6 @@
 # 0004. Single guarded state, snapshot to renderer
 
-**Status:** Accepted
+**Status:** Accepted, amended by [0005](0005-per-component-snapshot-stores.md)
 **Date:** 2026-09-21
 
 ## Context

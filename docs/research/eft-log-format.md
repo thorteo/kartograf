@@ -155,3 +155,45 @@ unknown id loudly rather than silently falling back to a default map.
   announce raids that ended hours ago.
 - `output_000.log` reached 59 306 lines in a single session, so never re-read from the
   start on each change notification.
+
+## Quest progress: `push-notifications_000.log`
+
+**Verified** against every log session on this machine (8 sessions, 91 quest events).
+
+Trader messages arrive as chat notifications: a timestamped header line
+`…|push-notifications|Got notification | ChatMessageReceived` followed by a JSON body
+spread over many lines. Quest state changes are encoded in the message's `type` and
+in the **suffix** of `templateId`:
+
+| type | templateId | meaning |
+|---|---|---|
+| 10 | `<questId> description` | quest started |
+| 12 | `<questId> successMessageText` | quest completed (carries reward items) |
+| 11 | `<questId> failMessageText` | quest failed |
+
+**The `text` field lies.** Completion messages carry `"text": "quest started"` too —
+every one of the 24 completions on this machine does. A parser keyed on `text` would
+record every completion as a start. Parse by type and suffix only. The suffix can
+also carry extra words (`successMessageText <id> 0`).
+
+The quest ids match tarkov.dev's task ids directly: 63 of 67 started quests resolved;
+the rest are presumably event or removed quests and are ignored.
+
+### The game only keeps about five days of logs
+
+Eight session folders here, spanning 2026-09-16 to 2026-09-20. Anything older is gone.
+So progress has to be **persisted by us** — `%LOCALAPPDATA%\tarkov-help\progress.json`
+— and on first run everything still on disk is imported. Events are merged by their
+own `dt` timestamp, so import order cannot roll a quest back.
+
+What the logs can no longer show is recovered two ways: a started quest proves all of
+its prerequisites were completed (inferred transitively through tarkov.dev's
+`taskRequirements`), and the player can correct anything by hand from the quest panel.
+
+### Scrubbing these for fixtures
+
+These bodies carry more than ids. `UserMatchCreated` includes a `profileToken` (a
+32-hex session token), a `sid` and an `ip`; message `_id`s are 26 hex characters, not
+24. A scrub that matches exactly 24 hex characters misses all of them — the first
+attempt at this fixture did. Quest ids in `templateId` are public game data and are
+kept; everything else is replaced.

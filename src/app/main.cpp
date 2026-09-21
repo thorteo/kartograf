@@ -13,7 +13,11 @@
 #include <cstdio>
 #include <algorithm>
 #include <cstdlib>
+#include <ctime>
 #include <deque>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -23,6 +27,7 @@
 
 #include "core/data/EmbeddedMaps.h"
 #include "core/data/MapIds.h"
+#include "core/data/QuestProgress.h"
 #include "core/data/TaskModel.h"
 #include "core/game/RaidState.h"
 #include "core/game/ScreenshotName.h"
@@ -38,6 +43,7 @@
 #include "platform/win32/TileStore.h"
 #include "ui/Hud.h"
 #include "ui/MapView.h"
+#include "ui/QuestList.h"
 
 namespace {
 
@@ -161,6 +167,43 @@ void drawStatus(unsigned long long nowMillis) {
     ImGui::End();
 }
 
+std::filesystem::path progressFile() {
+    return tarkov::win32::TaskRepository::defaultCacheRoot().parent_path() /
+           "progress.json";
+}
+
+std::mutex g_progressFileMutex;
+
+/// Writes progress beside the rest of the cache. Called from the watcher
+/// thread after log events and from the UI thread after a manual correction,
+/// hence the lock; the temporary-then-rename keeps a crash from truncating it.
+void saveProgress(const tarkov::data::QuestProgressStore& store) {
+    const std::lock_guard<std::mutex> lock(g_progressFileMutex);
+    const std::string text = store.snapshot()->serialize();
+    const auto path = progressFile();
+    std::error_code ec;
+    std::filesystem::create_directories(path.parent_path(), ec);
+    const auto temporary = path.string() + ".part";
+    {
+        std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
+        out.write(text.data(), static_cast<std::streamsize>(text.size()));
+        if (!out) {
+            return;
+        }
+    }
+    std::filesystem::rename(temporary, path, ec);
+}
+
+tarkov::data::QuestProgress loadProgress() {
+    std::ifstream in(progressFile(), std::ios::binary);
+    if (!in) {
+        return {};
+    }
+    std::ostringstream buffer;
+    buffer << in.rdbuf();
+    return tarkov::data::QuestProgress::parse(buffer.str());
+}
+
 /// Builds the markers for one map out of the quest data.
 ///
 /// A task can reference a map through several ids -- night Factory and Factory
@@ -168,7 +211,8 @@ void drawStatus(unsigned long long nowMillis) {
 /// quests would vanish depending on which variant the raid used.
 std::vector<tarkov::ui::QuestPlace> buildQuestPlaces(
     const tarkov::data::TaskSet& tasks, const tarkov::data::MapIdTable& mapIds,
-    const std::string& drawnAsName) {
+    const std::string& drawnAsName,
+    const tarkov::data::EffectiveProgress* activeOnly) {
     using namespace tarkov;
 
     std::vector<ui::QuestPlace> places;
@@ -184,6 +228,12 @@ std::vector<tarkov::ui::QuestPlace> buildQuestPlaces(
     };
 
     for (const auto& task : tasks.tasks) {
+        // Only the player's current quests, when progress is known. Every
+        // quest in the game on one map is 150+ markers -- noise, not help.
+        if (activeOnly != nullptr &&
+            activeOnly->stateOf(task.id) != tarkov::data::QuestState::Active) {
+            continue;
+        }
         const std::string name = task.displayName();
         for (const auto& objective : task.objectives) {
             for (const auto& zone : objective.zones) {
@@ -306,6 +356,9 @@ int main(int argc, char** argv) {
                                 : argumentValue(argc, argv, "--lang"),
                  [](const std::string& line) { g_status.add(line); });
 
+    data::QuestProgressStore progress;
+    progress.replace(loadProgress());
+
     game::RaidState raidState;
     if (!forcedMap.empty()) {
         game::RaidEvent forced;
@@ -325,13 +378,21 @@ int main(int argc, char** argv) {
     }
 
     win32::GameDataWatcher watcher;
-    if (!watcher.start(raidState, [](const std::string& line) { g_status.add(line); })) {
+    if (!watcher.start(
+            raidState, [](const std::string& line) { g_status.add(line); }, &progress,
+            [&progress] { saveProgress(progress); })) {
         g_status.add("running without game data");
     }
 
     win32::GameWindowTracker tracker;
     bool overlayEnabled = true;
-    bool interactive = false;
+    // Development aid: start clickable, so the quest panel can be seen without
+    // pressing the hotkey.
+    bool interactive = hasFlag(argc, argv, "--interactive");
+    if (interactive) {
+        overlay.setClickThrough(false);
+        overlay.setInteractive(true);
+    }
     bool warnedAboutFullscreen = false;
 
     ui::HudOptions hudOptions;
@@ -354,6 +415,10 @@ int main(int argc, char** argv) {
     std::vector<ui::QuestPlace> questPlaces;
     std::string questPlacesFor;
     const data::TaskSet* questPlacesFrom = nullptr;
+    std::uint64_t questPlacesRevision = ~0ULL;
+    bool questPlacesFiltered = false;
+    int activeQuestCount = 0;
+    std::vector<ui::QuestListEntry> questEntries;
     std::string lastRaidMode;
 
     std::shared_ptr<const game::RaidSnapshot> lastSnapshot;
@@ -528,12 +593,54 @@ int main(int argc, char** argv) {
                     tiles.setMap(variant->key, variant->tilePath, layerTemplates);
                 }
                 const auto questData = quests.tasks();
+                const std::uint64_t revision = progress.revision();
                 if (questPlacesFor != variant->key ||
-                    questPlacesFrom != questData.get()) {
+                    questPlacesFrom != questData.get() ||
+                    questPlacesRevision != revision) {
                     questPlacesFor = variant->key;
                     questPlacesFrom = questData.get();
-                    questPlaces = buildQuestPlaces(*questData, mapIds,
-                                                   snapshot->mapNormalized);
+                    questPlacesRevision = revision;
+
+                    const auto effective =
+                        data::resolveProgress(*progress.snapshot(), *questData);
+                    activeQuestCount = static_cast<int>(effective.active.size());
+                    // With no known progress, filtering would show nothing and
+                    // look broken. Show everything and say why instead.
+                    questPlacesFiltered = activeQuestCount > 0;
+                    questPlaces = buildQuestPlaces(
+                        *questData, mapIds, snapshot->mapNormalized,
+                        questPlacesFiltered ? &effective : nullptr);
+
+                    // The list covers every quest with a place on this map,
+                    // whatever its state, so it can be corrected from here.
+                    questEntries.clear();
+                    const auto ids = mapIds.idsFor(snapshot->mapNormalized);
+                    const auto recorded = progress.snapshot();
+                    for (const auto& task : questData->tasks) {
+                        int here = 0;
+                        for (const auto& objective : task.objectives) {
+                            for (const auto& zone : objective.zones) {
+                                here += std::find(ids.begin(), ids.end(), zone.mapId) !=
+                                        ids.end();
+                            }
+                            for (const auto& location : objective.questItemLocations) {
+                                here += std::find(ids.begin(), ids.end(),
+                                                  location.mapId) != ids.end();
+                            }
+                        }
+                        if (here == 0) {
+                            continue;
+                        }
+                        ui::QuestListEntry entry;
+                        entry.id = task.id;
+                        entry.name = task.displayName();
+                        entry.objectivesHere = here;
+                        entry.state = effective.stateOf(task.id);
+                        entry.inferred = effective.inferredCompleted.count(task.id) != 0;
+                        const auto* record = recorded->find(task.id);
+                        entry.manual = record != nullptr && record->manual;
+                        questEntries.push_back(std::move(entry));
+                    }
                     forceRedraw = true;
                 }
 
@@ -579,6 +686,22 @@ int main(int argc, char** argv) {
             }
         } else {
             pendingTiles = false;
+        }
+
+        if (mapVisible && interactive && !questEntries.empty()) {
+            ui::QuestListActions actions;
+            actions.setState = [&progress](const std::string& id, data::QuestState state) {
+                progress.setManual(id, state, static_cast<std::int64_t>(std::time(nullptr)));
+                saveProgress(progress);
+            };
+            actions.clearCorrection = [&progress](const std::string& id) {
+                progress.clearManual(id);
+                saveProgress(progress);
+            };
+            if (ui::drawQuestList(questEntries, questPlacesFiltered, activeQuestCount,
+                                  actions)) {
+                forceRedraw = true;
+            }
         }
 
         if (hudVisible) {

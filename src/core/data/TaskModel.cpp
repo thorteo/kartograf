@@ -252,6 +252,24 @@ TaskSet parseTasks(std::string_view text, const TaskLocale& locale) {
         task.kappaRequired = boolAt(entry, "kappaRequired");
         task.lightkeeperRequired = boolAt(entry, "lightkeeperRequired");
 
+        if (const json* requirements = find(entry, "taskRequirements");
+            requirements != nullptr && requirements->is_array()) {
+            for (const auto& requirement : *requirements) {
+                const std::string prerequisite = stringAt(requirement, "task");
+                const json* status = find(requirement, "status");
+                bool needsCompletion = false;
+                if (status != nullptr && status->is_array()) {
+                    for (const auto& value : *status) {
+                        needsCompletion = needsCompletion ||
+                                          (value.is_string() && value == "complete");
+                    }
+                }
+                if (!prerequisite.empty() && needsCompletion) {
+                    task.prerequisiteIds.push_back(prerequisite);
+                }
+            }
+        }
+
         const json* objectives = find(entry, "objectives");
         if (objectives != nullptr && objectives->is_array()) {
             for (const auto& source : *objectives) {

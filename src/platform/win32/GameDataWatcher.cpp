@@ -144,8 +144,12 @@ void GameDataWatcher::say(const std::string& message) const {
     }
 }
 
-bool GameDataWatcher::start(game::RaidState& state, Logger logger) {
+bool GameDataWatcher::start(game::RaidState& state, Logger logger,
+                            data::QuestProgressStore* progress,
+                            ProgressChanged onProgress) {
     logger_ = std::move(logger);
+    progress_ = progress;
+    onProgress_ = std::move(onProgress);
 
     auto discovered = discoverGamePaths();
     if (!discovered) {
@@ -198,14 +202,21 @@ void GameDataWatcher::openNewestLogFolder() {
     currentLogFolder_ = *folder;
     applicationLog_.close();
     outputLog_.close();
+    notificationsLog_.close();
     applicationParser_ = game::LogParser{};
     outputParser_ = game::LogParser{};
+    notificationsParser_ = game::QuestEventParser{};
 
     if (auto path = findLogFile(currentLogFolder_, "application_000.log")) {
         applicationLog_.open(*path);
     }
     if (auto path = findLogFile(currentLogFolder_, "output_000.log")) {
         outputLog_.open(*path);
+    }
+    if (progress_ != nullptr) {
+        if (auto path = findLogFile(currentLogFolder_, "push-notifications_000.log")) {
+            notificationsLog_.open(*path);
+        }
     }
 
     say("watching log session " + currentLogFolder_.filename().string());
@@ -235,6 +246,64 @@ void GameDataWatcher::pumpLogs(game::RaidState& state) {
     }
 }
 
+void GameDataWatcher::importQuestHistory() {
+    if (progress_ == nullptr || paths_.logsRoot.empty()) {
+        return;
+    }
+    std::error_code ec;
+    std::vector<fs::path> folders;
+    for (const auto& entry : fs::directory_iterator(paths_.logsRoot, ec)) {
+        if (entry.is_directory(ec) &&
+            entry.path().filename().string().rfind("log_", 0) == 0) {
+            folders.push_back(entry.path());
+        }
+    }
+    // Oldest first. Order does not affect the result -- events are merged by
+    // their own timestamps -- but it keeps the log of what happened readable.
+    std::sort(folders.begin(), folders.end());
+
+    int events = 0;
+    for (const auto& folder : folders) {
+        const auto path = findLogFile(folder, "push-notifications_000.log");
+        if (!path) {
+            continue;
+        }
+        LogTail history;
+        if (!history.open(*path, /*fromStart=*/true)) {
+            continue;
+        }
+        game::QuestEventParser parser;
+        for (const auto& line : history.readNewLines()) {
+            if (auto event = parser.feedLine(line)) {
+                progress_->apply(*event);
+                ++events;
+            }
+        }
+    }
+    if (events > 0) {
+        say("quests: " + std::to_string(events) + " events read from " +
+            std::to_string(folders.size()) + " log sessions");
+        if (onProgress_) {
+            onProgress_();
+        }
+    }
+}
+
+void GameDataWatcher::pumpNotifications() {
+    if (progress_ == nullptr || !notificationsLog_.isOpen()) {
+        return;
+    }
+    bool changed = false;
+    for (const auto& line : notificationsLog_.readNewLines()) {
+        if (auto event = notificationsParser_.feedLine(line)) {
+            changed = progress_->apply(*event) || changed;
+        }
+    }
+    if (changed && onProgress_) {
+        onProgress_();
+    }
+}
+
 void GameDataWatcher::handleScreenshotNames(game::RaidState& state,
                                             const std::vector<std::wstring>& names) {
     for (const auto& wide : names) {
@@ -258,6 +327,7 @@ void GameDataWatcher::run(game::RaidState* state) {
         shotsWatch.open(paths_.screenshots);
     }
 
+    importQuestHistory();
     openNewestLogFolder();
 
     while (!stopping_.load(std::memory_order_relaxed)) {
@@ -285,6 +355,7 @@ void GameDataWatcher::run(game::RaidState* state) {
         if (result == WAIT_TIMEOUT) {
             openNewestLogFolder();
             pumpLogs(*state);
+            pumpNotifications();
             continue;
         }
 
@@ -292,6 +363,7 @@ void GameDataWatcher::run(game::RaidState* state) {
             logsWatch.collect();
             openNewestLogFolder();
             pumpLogs(*state);
+            pumpNotifications();
         } else if (shotsIndex != 0xFFFFFFFF && result == WAIT_OBJECT_0 + shotsIndex) {
             handleScreenshotNames(*state, shotsWatch.collect());
         }
@@ -299,6 +371,7 @@ void GameDataWatcher::run(game::RaidState* state) {
 
     applicationLog_.close();
     outputLog_.close();
+    notificationsLog_.close();
 }
 
 }  // namespace tarkov::win32

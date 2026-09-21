@@ -21,10 +21,13 @@ capable — see `docs/features/roadmap.md`.
    is that we do not ship that feature. See `docs/adr/0002-no-game-process-interaction.md`.
 2. **Never bundle scraped game assets.** Map tiles and item images are fetched at
    runtime from their published CDN and cached locally.
-3. **Scrub fixtures.** Real logs contain profile IDs, IP addresses, session IDs and
-   account IDs. Anything committed under `tests/fixtures/` must have these replaced
-   with `<PROFILE_ID>`, `<IP>`, `<SID>`, `<ACCOUNT_ID>`, `<SHORT_ID>` placeholders.
-   Verify before committing.
+3. **Scrub fixtures.** Real logs contain profile IDs, IP addresses, session IDs,
+   account IDs and session **tokens** (`profileToken`). Anything committed under
+   `tests/fixtures/` must have these replaced with `<PROFILE_ID>`, `<IP>`, `<SID>`,
+   `<ACCOUNT_ID>`, `<SHORT_ID>`, `<TOKEN>` placeholders. Do not scrub by exact id
+   length — message ids are 26 hex characters and tokens 32; replace every hex run of
+   16+ characters that is not a public quest/item id. Grep for leftovers before
+   committing.
 
 ## Stack
 
@@ -85,22 +88,23 @@ We chose C++ knowing the compiler will not catch data races, so the design compe
 shared mutable state lives in exactly one place, `core/game/RaidState`, guarded by one
 mutex, and is only ever published as an immutable snapshot to the render thread.
 Watcher threads push events through a queue; they never touch render state directly.
-See `docs/adr/0004-threading-model.md` before adding a thread or a shared field.
+See `docs/adr/0004-threading-model.md` and `0005` before adding a thread or a shared
+field.
 
 ## Repository layout
 
 ```
 src/core/geo/     coordinate projection, quaternion -> heading, floor selection
-src/core/game/    log parser, screenshot parser, RaidState
+src/core/game/    log parser, screenshot parser, quest events, RaidState
 src/core/input/   hotkey parsing and validation (the portable half of binding)
-src/core/data/    tarkov.dev models, GraphQL queries, local cache (not yet written)
+src/core/data/    tarkov.dev task model, map ids, quest progress + inference
 src/platform/     win32/: overlay window, file watchers, game-window tracking
 src/ui/           ImGui views. Portable -- ImGui core builds on Linux, and
                   tests/imgui_harness.h runs ImGui with no backend, so the map
                   view's behaviour (floor switching, following, clamping) is
                   unit tested without Windows or a GPU.
 src/app/          entry point and wiring
-third_party/      vendored: imgui, nlohmann/json, doctest
+third_party/      vendored: imgui, nlohmann/json, doctest, stb_image, lunasvg
 data/             pinned copy of tarkov.dev maps.json
 tests/fixtures/   real, scrubbed game data — see below
 docs/             architecture, ADRs, research notes, roadmap
@@ -114,6 +118,8 @@ data rather than invented samples:
 - `tests/fixtures/screenshots/filenames.txt` — 100 real screenshot filenames
 - `tests/fixtures/logs/raid-lifecycle.log` — a scrubbed session covering 8 raids
   across three maps
+- `tests/fixtures/logs/quest-notifications.log` — scrubbed quest start/complete events
+- `tests/fixtures/tasks/` — 14 real tasks and their Russian locale entries
 
 Live sources on this machine, for refreshing fixtures:
 

@@ -64,7 +64,6 @@ struct QuestPlace {
 enum class MarkerIcon {
     QuestObjective,
     QuestItem,
-    Player,
     ExtractPmc,
     ExtractScav,
     ExtractShared,
@@ -131,6 +130,12 @@ struct MapViewState {
     /// The fix we last re-centred on. Kept here rather than in a function-local
     /// static so two views, or a restarted view, do not share it.
     std::int64_t lastFollowedFix = 0;
+    /// When the player marker started pulsing, on the nowMillis clock; 0 for
+    /// never. Set by the view on each new fix, and by the caller when the map
+    /// is opened, so the player is found at a glance either way.
+    std::int64_t pulseFromMillis = 0;
+    /// The fix the last pulse was for.
+    std::int64_t lastPulsedFix = 0;
 };
 
 struct MapViewResult {

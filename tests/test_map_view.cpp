@@ -253,7 +253,6 @@ TEST_CASE("overlay layers follow their toggles") {
     });
     CHECK(asked.count(ui::MarkerIcon::ExtractPmc) == 1);
     CHECK(asked.count(ui::MarkerIcon::SpawnBoss) == 0);
-    CHECK(asked.count(ui::MarkerIcon::Player) == 1);
 
     asked.clear();
     state.showSpawns = true;
@@ -264,4 +263,34 @@ TEST_CASE("overlay layers follow their toggles") {
     });
     CHECK(asked.count(ui::MarkerIcon::SpawnBoss) == 1);
     CHECK(asked.count(ui::MarkerIcon::ExtractPmc) == 0);
+}
+
+TEST_CASE("a new fix pulses the marker for a few seconds, then drawing stops") {
+    test::HeadlessImGui imgui(1600.0f, 900.0f);
+    const auto& map = customsVariant();
+    ui::MapViewState state;
+    RecordingTiles tiles;
+    const auto fix = snapshotAt(236.21, 4.43, 165.98, /*receivedAt=*/1000);
+
+    const auto frameAt = [&](std::int64_t now, const game::RaidSnapshot& snapshot) {
+        ui::MapViewResult result;
+        imgui.frame([&] {
+            result = ui::drawMapView(state, map, snapshot, now, false, tiles.provider());
+        });
+        return result;
+    };
+
+    frameAt(1000, fix);
+    CHECK(state.pulseFromMillis == 1000);
+    // Mid-pulse the view asks to be drawn again, so the ring can grow.
+    CHECK(frameAt(2500, fix).wantsRedraw);
+    // Afterwards it does not: an idle map must let the render loop sleep.
+    CHECK_FALSE(frameAt(5000, fix).wantsRedraw);
+
+    // The same fix again is not news.
+    CHECK(state.pulseFromMillis == 1000);
+    // A new one is.
+    frameAt(9000, snapshotAt(236.21, 4.43, 165.98, /*receivedAt=*/9000));
+    CHECK(state.pulseFromMillis == 9000);
+    CHECK(frameAt(9500, snapshotAt(236.21, 4.43, 165.98, 9000)).wantsRedraw);
 }

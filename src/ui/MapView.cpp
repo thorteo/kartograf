@@ -43,38 +43,88 @@ ImU32 markerColour(double ageSeconds) {
     return rgba(0.88f, 0.45f, 0.40f, 0.80f);
 }
 
-void drawPlayerMarker(ImDrawList* draw, const ImVec2& at, double headingDegrees,
-                      double ageSeconds) {
-    const float radians = static_cast<float>(headingDegrees * 3.14159265358979 / 180.0);
-    const float sin = std::sin(radians);
-    const float cos = std::cos(radians);
+/// How long one pulse takes, and how many follow a new fix or the map opening.
+///
+/// Bounded on purpose: rendering is reactive, and a pulse that never stopped
+/// would put the overlay back to presenting every frame -- measured at 9.8% of
+/// a core against 0.2% idle. A few seconds is enough to catch the eye.
+constexpr std::int64_t kPulsePeriodMillis = 1200;
+constexpr int kPulseCount = 3;
 
+/// Where in its pulse the marker is, 0..1, or a negative value when it is not
+/// pulsing.
+float pulsePhase(std::int64_t pulseFrom, std::int64_t nowMillis) {
+    if (pulseFrom == 0 || nowMillis < pulseFrom) {
+        return -1.0f;
+    }
+    const std::int64_t elapsed = nowMillis - pulseFrom;
+    if (elapsed >= kPulsePeriodMillis * kPulseCount) {
+        return -1.0f;
+    }
+    return static_cast<float>(elapsed % kPulsePeriodMillis) /
+           static_cast<float>(kPulsePeriodMillis);
+}
+
+/// The player: a dot with a pointer and a view cone toward the heading.
+///
+/// Drawn rather than taken from an icon so it stays crisp at any size and can
+/// carry the fix's age in its colour. The dark rim keeps it readable on the
+/// pale parts of the map, the white one on the dark parts.
+void drawPlayerMarker(ImDrawList* draw, const ImVec2& at, double headingDegrees,
+                      double ageSeconds, float pulse) {
+    const float radians = static_cast<float>(headingDegrees * 3.14159265358979 / 180.0);
     // Screen Y grows downward while a bearing of 0 points up, so the forward
     // vector is (sin, -cos).
-    const ImVec2 forward(sin, -cos);
-    const ImVec2 right(cos, sin);
+    const ImVec2 forward(std::sin(radians), -std::cos(radians));
+    const ImVec2 right(-forward.y, forward.x);
+    const auto along = [&](float ahead, float aside) {
+        return ImVec2(at.x + forward.x * ahead + right.x * aside,
+                      at.y + forward.y * ahead + right.y * aside);
+    };
 
-    const float length = 15.0f;
-    const float halfWidth = 8.0f;
+    const bool stale = ageSeconds >= 60.0;
+    const float alpha = stale ? 0.6f : 1.0f;
+    const ImVec4 tint = ImGui::ColorConvertU32ToFloat4(markerColour(ageSeconds));
+    const auto colour = [&](float a) { return rgba(tint.x, tint.y, tint.z, a); };
 
-    const ImVec2 tip(at.x + forward.x * length, at.y + forward.y * length);
-    const ImVec2 left(at.x - forward.x * length * 0.55f - right.x * halfWidth,
-                      at.y - forward.y * length * 0.55f - right.y * halfWidth);
-    const ImVec2 rightPoint(at.x - forward.x * length * 0.55f + right.x * halfWidth,
-                            at.y - forward.y * length * 0.55f + right.y * halfWidth);
+    // An expanding ring, fading as it grows.
+    if (pulse >= 0.0f) {
+        const float eased = 1.0f - (1.0f - pulse) * (1.0f - pulse);
+        const float fade = (1.0f - pulse) * (1.0f - pulse);
+        draw->AddCircle(at, 10.0f + eased * 30.0f, colour(0.85f * fade * alpha), 0,
+                        2.5f);
+    }
 
-    const ImU32 colour = markerColour(ageSeconds);
-    draw->AddTriangleFilled(tip, left, rightPoint, colour);
-    draw->AddTriangle(tip, left, rightPoint, rgba(0.05f, 0.06f, 0.05f, 0.9f), 2.0f);
+    // The view cone: three nested wedges stand in for a radial gradient, which
+    // ImDrawList cannot fill.
+    constexpr float kHalfAngle = 0.55f;  // about 32 degrees either side
+    const float heading = std::atan2(forward.y, forward.x);
+    for (const float reach : {52.0f, 38.0f, 24.0f}) {
+        draw->PathLineTo(at);
+        draw->PathArcTo(at, reach, heading - kHalfAngle, heading + kHalfAngle, 12);
+        draw->PathFillConvex(colour(0.13f * alpha));
+    }
 
-    // A ring that grows with the age of the fix: a visual statement of how far
-    // the player could plausibly have walked since we last knew where they were.
-    // Roughly 5 m/s of sprint, converted to screen units by the caller's scale
-    // is not available here, so this is a fixed cue rather than a true radius.
+    // The pointer, on the rim of the dot.
+    const ImVec2 tip = along(17.0f, 0.0f);
+    const ImVec2 baseLeft = along(7.0f, -6.5f);
+    const ImVec2 baseRight = along(7.0f, 6.5f);
+    draw->AddTriangleFilled(tip, baseLeft, baseRight, rgba(0.04f, 0.05f, 0.04f, 0.55f * alpha));
+    draw->AddTriangleFilled(along(15.5f, 0.0f), along(7.5f, -5.0f), along(7.5f, 5.0f),
+                            rgba(1.0f, 1.0f, 1.0f, alpha));
+
+    // The dot: dark rim, white ring, coloured core.
+    draw->AddCircleFilled(at, 10.5f, rgba(0.04f, 0.05f, 0.04f, 0.55f * alpha), 24);
+    draw->AddCircleFilled(at, 9.0f, rgba(1.0f, 1.0f, 1.0f, alpha), 24);
+    draw->AddCircleFilled(at, 6.5f, colour(alpha), 24);
+
+    // A ring that grows with the age of the fix: roughly how far the player
+    // could have walked since we last knew where they were. A fixed cue, not a
+    // true radius -- the scale is not known here.
     if (ageSeconds > 20.0) {
         const float radius =
             18.0f + static_cast<float>(std::min(ageSeconds, 120.0)) * 0.35f;
-        draw->AddCircle(at, radius, markerColour(ageSeconds), 0, 1.5f);
+        draw->AddCircle(at, radius, colour(alpha * 0.8f), 0, 1.5f);
     }
 }
 
@@ -82,7 +132,6 @@ ImU32 fallbackColour(MarkerIcon icon, float alpha) {
     switch (icon) {
         case MarkerIcon::QuestObjective: return rgba(0.96f, 0.82f, 0.36f, alpha);
         case MarkerIcon::QuestItem: return rgba(0.62f, 0.78f, 0.36f, alpha);
-        case MarkerIcon::Player: return rgba(0.72f, 0.88f, 0.45f, alpha);
         case MarkerIcon::ExtractPmc: return rgba(0.25f, 0.85f, 0.55f, alpha);
         case MarkerIcon::ExtractScav: return rgba(0.95f, 0.62f, 0.20f, alpha);
         case MarkerIcon::ExtractShared: return rgba(0.25f, 0.85f, 0.85f, alpha);
@@ -117,31 +166,6 @@ void drawIcon(ImDrawList* draw, const IconProvider& icons, MarkerIcon icon,
         draw->AddCircleFilled(at, r, fill);
         draw->AddCircle(at, r, edge, 0, 1.5f);
     }
-}
-
-/// Draws the player arrow rotated to the heading. The icon points up, and a
-/// bearing of 0 is up, so the rotation is the heading itself.
-void drawRotatedIcon(ImDrawList* draw, ImTextureID texture, const ImVec2& at,
-                     float size, double headingDegrees, float alpha) {
-    const float radians = static_cast<float>(headingDegrees * 3.14159265358979 / 180.0);
-    const float c = std::cos(radians);
-    const float s = std::sin(radians);
-    const float h = size / 2.0f;
-    const auto corner = [&](float x, float y) {
-        return ImVec2(at.x + x * c - y * s, at.y + x * s + y * c);
-    };
-    draw->AddImageQuad(texture, corner(-h, -h), corner(h, -h), corner(h, h),
-                       corner(-h, h), ImVec2(0, 0), ImVec2(1, 0), ImVec2(1, 1),
-                       ImVec2(0, 1), rgba(1.0f, 1.0f, 1.0f, alpha));
-}
-
-/// The ring that grows as a fix ages: how far the player could have gone since.
-void drawAgeRing(ImDrawList* draw, const ImVec2& at, double ageSeconds) {
-    if (ageSeconds <= 20.0) {
-        return;
-    }
-    const float radius = 18.0f + static_cast<float>(std::min(ageSeconds, 120.0)) * 0.35f;
-    draw->AddCircle(at, radius, markerColour(ageSeconds), 0, 1.5f);
 }
 
 }  // namespace
@@ -232,6 +256,12 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
     }
 
     const geo::Projection projection(map);
+
+    // Draw the eye to a new position, whether or not the view follows it.
+    if (snapshot.fix.valid && snapshot.fix.receivedAtMillis != state.lastPulsedFix) {
+        state.lastPulsedFix = snapshot.fix.receivedAtMillis;
+        state.pulseFromMillis = nowMillis;
+    }
 
     // Re-centre on a new fix while following. Compare the fix time rather than
     // the position: standing still is not a reason to stop following.
@@ -553,15 +583,11 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
             if (toScreen(snapshot.fix.world, at)) {
                 const double heading =
                     projection.toImageHeading(snapshot.fix.headingDegrees);
-                const double age = snapshot.fix.ageSeconds(nowMillis);
-                const ImTextureID arrow =
-                    overlays.icons ? overlays.icons(MarkerIcon::Player) : 0;
-                if (arrow != 0) {
-                    drawRotatedIcon(draw, arrow, at, 30.0f, heading,
-                                    age < 60.0 ? 1.0f : 0.55f);
-                    drawAgeRing(draw, at, age);
-                } else {
-                    drawPlayerMarker(draw, at, heading, age);
+                const float pulse = pulsePhase(state.pulseFromMillis, nowMillis);
+                drawPlayerMarker(draw, at, heading, snapshot.fix.ageSeconds(nowMillis),
+                                 pulse);
+                if (pulse >= 0.0f) {
+                    result.wantsRedraw = true;  // until the pulse has run out
                 }
             }
         }

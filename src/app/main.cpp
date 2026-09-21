@@ -453,7 +453,7 @@ int main(int argc, char** argv) {
 
     win32::IconStore icons;
     icons.start(overlay.device(),
-                {"quest_objective", "quest_item", "player-position", "extract_pmc",
+                {"quest_objective", "quest_item", "extract_pmc",
                  "extract_scav", "extract_shared", "extract_transit", "spawn_pmc",
                  "spawn_boss"});
 
@@ -666,6 +666,10 @@ int main(int argc, char** argv) {
             }
             if (message.wParam == kMapHotkeyId) {
                 mapVisible = !mapVisible;
+                if (mapVisible) {
+                    // Opening the map is when the player looks for themselves.
+                    mapState.pulseFromMillis = static_cast<std::int64_t>(GetTickCount64());
+                }
                 forceRedraw = true;
             } else if (message.wParam == kHudHotkeyId) {
                 hudVisible = !hudVisible;
@@ -938,7 +942,6 @@ int main(int argc, char** argv) {
                             switch (icon) {
                                 case ui::MarkerIcon::QuestObjective: name = "quest_objective"; break;
                                 case ui::MarkerIcon::QuestItem: name = "quest_item"; break;
-                                case ui::MarkerIcon::Player: name = "player-position"; break;
                                 case ui::MarkerIcon::ExtractPmc: name = "extract_pmc"; break;
                                 case ui::MarkerIcon::ExtractScav: name = "extract_scav"; break;
                                 case ui::MarkerIcon::ExtractShared: name = "extract_shared"; break;

@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
 #include <cmath>
+#include <numbers>
 
 #include "core/geo/Heading.h"
 #include "core/game/ScreenshotName.h"
@@ -15,7 +16,7 @@ namespace {
 /// A yaw-only rotation about the Y axis, the way the game would record a
 /// player looking in a given compass direction on level ground.
 Quat yawQuat(double degrees) {
-    const double half = degrees * M_PI / 180.0 / 2.0;
+    const double half = degrees * std::numbers::pi / 180.0 / 2.0;
     return Quat{0.0, std::sin(half), 0.0, std::cos(half)};
 }
 
@@ -50,10 +51,10 @@ TEST_CASE("pitch does not disturb the bearing") {
     // Players look up and down constantly. The compass bearing has to stay put
     // when they do, or the marker's arrow will swing while they aim.
     const double yaw = 123.0;
-    const double halfYaw = yaw * M_PI / 180.0 / 2.0;
+    const double halfYaw = yaw * std::numbers::pi / 180.0 / 2.0;
 
     for (double pitchDegrees : {-60.0, -20.0, 20.0, 60.0}) {
-        const double halfPitch = pitchDegrees * M_PI / 180.0 / 2.0;
+        const double halfPitch = pitchDegrees * std::numbers::pi / 180.0 / 2.0;
 
         // Composition of a yaw about Y then a pitch about the local X axis.
         const double cy = std::cos(halfYaw), sy = std::sin(halfYaw);

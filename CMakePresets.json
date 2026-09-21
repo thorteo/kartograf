@@ -1,6 +1,10 @@
 {
   "version": 3,
-  "cmakeMinimumRequired": { "major": 3, "minor": 20, "patch": 0 },
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
   "configurePresets": [
     {
       "name": "linux-dev",
@@ -32,23 +36,52 @@
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-fsanitize=address,undefined -fno-omit-frame-pointer -g"
       }
+    },
+    {
+      "name": "windows-dev",
+      "displayName": "Windows overlay (cross-compiled from Linux)",
+      "description": "clang-cl against the real MSVC CRT and Windows SDK fetched by xwin",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/windows-dev",
+      "toolchainFile": "${sourceDir}/cmake/windows-clang-cl.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "TARKOV_BUILD_TESTS": "OFF"
+      }
     }
   ],
   "buildPresets": [
-    { "name": "linux-dev",  "configurePreset": "linux-dev" },
-    { "name": "linux-tsan", "configurePreset": "linux-tsan" },
-    { "name": "linux-asan", "configurePreset": "linux-asan" }
+    {
+      "name": "linux-dev",
+      "configurePreset": "linux-dev"
+    },
+    {
+      "name": "linux-tsan",
+      "configurePreset": "linux-tsan"
+    },
+    {
+      "name": "linux-asan",
+      "configurePreset": "linux-asan"
+    },
+    {
+      "name": "windows-dev",
+      "configurePreset": "windows-dev"
+    }
   ],
   "testPresets": [
     {
       "name": "linux-dev",
       "configurePreset": "linux-dev",
-      "output": { "outputOnFailure": true }
+      "output": {
+        "outputOnFailure": true
+      }
     },
     {
       "name": "linux-asan",
       "configurePreset": "linux-asan",
-      "output": { "outputOnFailure": true }
+      "output": {
+        "outputOnFailure": true
+      }
     }
   ]
 }

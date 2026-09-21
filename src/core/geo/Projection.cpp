@@ -2,11 +2,12 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 
 namespace tarkov::geo {
 
 Projection::Projection(const MapVariant& map) : map_(&map) {
-    const double radians = map.coordinateRotation * M_PI / 180.0;
+    const double radians = map.coordinateRotation * std::numbers::pi / 180.0;
     cos_ = std::cos(radians);
     sin_ = std::sin(radians);
 }

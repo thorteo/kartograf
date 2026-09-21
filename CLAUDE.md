@@ -96,15 +96,22 @@ capitalisation of map names and the meaning of the trailing number in screenshot
 
 ## Build
 
-See `docs/build.md`. The Linux core build works today; the Windows target has no
-toolchain on this machine yet.
+See `docs/build.md`. Both targets build from this Linux machine.
 
 ```sh
 cmake --preset linux-dev && cmake --build --preset linux-dev   # core + tests
 ctest --preset linux-dev                                       # run tests
 cmake --preset linux-asan && ctest --preset linux-asan         # with sanitizers
+cmake --build --preset windows-dev                             # the overlay, cross-compiled
+./build/windows-dev/tarkov_help.exe                            # WSL runs it on Windows
 python3 scripts/verify_projection_tiles.py                     # network check, by hand
 ```
+
+The Windows build uses clang-cl against the real MSVC CRT and Windows SDK, fetched once
+by `xwin` into `~/.xwin-sdk`. WSL executes the resulting .exe directly, so the whole
+edit-build-run loop stays in one shell. **Build the Windows target too before
+committing** — it catches portability problems the Linux build cannot, such as `M_PI`
+not existing under MSVC.
 
 Always run the tests after touching anything under `src/core/`. They are fast and they
 are validated against real game data, so a failure means something real.

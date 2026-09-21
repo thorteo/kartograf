@@ -11,12 +11,14 @@ Checked 2026-09-21:
 | CMake 4.2.3 | installed |
 | Ninja 1.13.2 | installed |
 | Clang 21.1.8 | installed |
-| MSVC / Visual Studio (Windows side) | **missing** |
+| MSVC / Visual Studio (Windows side) | not installed, and not needed — see Route B |
+| xwin 0.10.0 + Windows SDK at `~/.xwin-sdk` | installed, 630 MB |
 | WSL Windows interop (`cmd.exe`, `/mnt/c`) | working |
 | Escape from Tarkov install | present, with live logs and screenshots |
 
-The Linux core builds and tests today. The Windows overlay does not: there is no MSVC
-and no Windows SDK on this machine, and a choice has to be made about how to get one.
+Both builds work today. Route B below is set up and is the one in use: the Windows
+overlay is cross-compiled from Linux and runs on Windows through WSL interop, so the
+whole edit-build-run loop stays in one shell.
 
 ## Two routes to a Windows binary
 
@@ -30,7 +32,7 @@ Pros: the reference configuration, full SDK, real debugger, no surprises with D3
 DirectComposition headers.
 Cons: several GB of install; iteration happens on the Windows side.
 
-### Route B — cross-compile from WSL with clang-cl + xwin
+### Route B — cross-compile from WSL with clang-cl + xwin  ← in use
 
 [`xwin`](https://github.com/Jake-Shadle/xwin) downloads the genuine Microsoft CRT and
 Windows SDK headers and libraries, after which `clang-cl` cross-compiles to
@@ -43,10 +45,30 @@ and `d3d11.h` have historically been incomplete, with DirectComposition interfac
 added by patches over time. Only the real SDK headers, which is what `xwin` fetches,
 are dependable here.
 
-**Recommendation:** Route B as the primary path, because it keeps development where the
-developer is, with Route A available when a real Windows debugger is needed.
+**In use:** Route B. Route A stays available for when a real Windows debugger is
+needed.
 
-Either way, the Linux core build below needs only CMake, Ninja and g++.
+Set up once:
+
+```sh
+xwin --accept-license --arch x86_64 --variant desktop splat --output ~/.xwin-sdk
+```
+
+That fetches the genuine Microsoft CRT and Windows SDK (630 MB), including `dcomp.h`,
+`d3d11.h` and `dxgi1_2.h`, and creates the lowercase symlinks that make case-sensitive
+Linux filesystems work with the SDK's mixed-case filenames. `cmake/windows-clang-cl.cmake`
+picks it up from `~/.xwin-sdk`, or from `XWIN_ROOT` if set.
+
+The toolchain pins the **static release CRT** in every configuration. xwin's splat
+carries no debug CRT, and static linking is what we want regardless: the overlay ships
+as a single .exe that needs no Visual C++ redistributable.
+
+Note that WSL can execute the cross-compiled binary directly, so a build can be tested
+without leaving the shell:
+
+```sh
+cmake --build --preset windows-dev && ./build/windows-dev/tarkov_help.exe
+```
 
 ## Presets
 
@@ -59,9 +81,9 @@ ctest --preset linux-dev
 # Core + tests with ThreadSanitizer — worth running regularly, see ADR 0004
 cmake --preset linux-tsan && ctest --preset linux-tsan
 
-# Full overlay for Windows -- not yet wired up, needs a Windows toolchain first
-cmake --preset windows-release
-cmake --build --preset windows-release
+# Full overlay for Windows, cross-compiled from Linux
+cmake --preset windows-dev
+cmake --build --preset windows-dev
 ```
 
 ## Dependencies

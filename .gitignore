@@ -23,3 +23,9 @@ cache/
 
 # Third-party sources are vendored deliberately; ignore their build artifacts only
 third_party/**/build/
+
+# Cross-compilation SDK and xwin's download cache. The SDK itself lives at
+# ~/.xwin-sdk; xwin also drops a .xwin-cache wherever it is run, and that is
+# hundreds of MB of Microsoft SDK sources which must never enter the repo.
+.xwin-sdk/
+.xwin-cache/

@@ -15,19 +15,28 @@ records what that means concretely, in the order we intend to earn it.
 - [x] Screenshot filename parser handles the full corpus, including multi-digit `(N)`
       suffixes and Russian-locale decimal hazards
 - [x] Floor selection from elevation *and* horizontal region
-- [ ] Windows toolchain, and a trivial transparent window that builds and runs
+- [x] Windows toolchain: clang-cl + xwin cross-compiling from WSL, verified by
+      running the result on Windows through interop
+- [x] Transparent DirectComposition overlay that initialises on the real GPU
 
-24 test cases, 5880 assertions, all passing.
+30 test cases, 5971 assertions, all passing.
 
 ## M1 — The GPS core
 
-- [ ] Transparent click-through overlay over the game in borderless mode
-- [ ] **Rebindable toggle hotkey**, persisted, with conflict detection
+- [x] Transparent click-through overlay: D3D11 + DirectComposition, `WS_EX_LAYERED |
+      WS_EX_TRANSPARENT | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW`, verified initialising
+      on this machine's GPU
+- [x] **Rebindable toggle hotkey** with conflict detection. Parsing and validation are
+      portable and unit-tested; registration is Win32. Confirmed live: `Ctrl+Shift+M`
+      is already claimed on this machine and is reported as such, while `Alt+M`,
+      `Ctrl+Alt+F9` and `F8` bind cleanly.
+- [x] Excluded from screen capture — `WDA_EXCLUDEFROMCAPTURE` confirmed working here
+- [x] Overlay follows the game window and hides when the game is not foreground
+- [ ] Hotkey binding persisted to a config file (currently a command-line flag)
 - [ ] Automatic map detection from logs — the overlay opens the right map by itself
 - [ ] Live position marker with heading, and a visible **age indicator** on the fix
 - [ ] Automatic floor switching from elevation plus bounds
 - [ ] Raid timer and in-game clock
-- [ ] Excluded from screen capture by default
 
 ## M2 — Quests
 

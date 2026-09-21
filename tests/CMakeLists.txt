@@ -3,6 +3,7 @@ add_executable(tarkov_tests
     test_screenshot_name.cpp
     test_log_parser.cpp
     test_heading.cpp
+    test_hotkey.cpp
     test_projection.cpp
 )
 

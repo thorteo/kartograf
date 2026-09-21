@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.png binary
+
+# Game logs are CRLF on Windows. Keep the fixture byte-identical to what the game
+# actually writes, so the parser is tested against real line endings.
+tests/fixtures/logs/*.log -text

@@ -1,0 +1,56 @@
+2026-09-20 01:36:09.808|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching G
+2026-09-20 01:36:09.808|1.1.5.1.47510|Info|application|scene preset path:maps/customs_preset.bundle rcid:bigmap.scenespreset.asset
+2026-09-20 01:36:11.894|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching H
+2026-09-20 01:36:11.896|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching I
+2026-09-20 01:36:40.232|1.1.5.1.47510|Info|output|application|LocationLoaded:22.03 real:31.8 diff:9.76
+2026-09-20 01:36:40.657|1.1.5.1.47510|Debug|application|TRACE-NetworkGameCreate profileStatus: 'Profileid: <PROFILE_ID>, Status: Busy, RaidMode: Online, Ip: <IP>, Port: 17008, Location: bigmap, Sid: <SID>, GameMode: deathmatch, shortId: <SHORT_ID>'
+2026-09-20 01:38:01.534|1.1.5.1.47510|Info|output|application|GameStarted:95.89(95.89) real:113.1(113.1) diff:17.2
+2026-09-20 01:56:46.198|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching G
+2026-09-20 01:56:46.198|1.1.5.1.47510|Info|application|scene preset path:maps/customs_preset.bundle rcid:bigmap.scenespreset.asset
+2026-09-20 01:56:52.669|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching H
+2026-09-20 01:56:52.669|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching I
+2026-09-20 01:57:20.069|1.1.5.1.47510|Info|output|application|LocationLoaded:24.19 real:35.54 diff:11.35
+2026-09-20 01:57:20.454|1.1.5.1.47510|Debug|application|TRACE-NetworkGameCreate profileStatus: 'Profileid: <PROFILE_ID>, Status: Busy, RaidMode: Online, Ip: <IP>, Port: 17003, Location: bigmap, Sid: <SID>, GameMode: deathmatch, shortId: <SHORT_ID>'
+2026-09-20 01:58:24.355|1.1.5.1.47510|Info|output|application|GameStarted:81.35(81.35) real:99.83(99.83) diff:18.48
+2026-09-20 02:26:13.398|1.1.5.1.47510|Info|application|scene preset path:maps/customs_preset.bundle rcid:bigmap.scenespreset.asset
+2026-09-20 02:26:13.399|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching G
+2026-09-20 02:26:15.458|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching H
+2026-09-20 02:26:15.458|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching I
+2026-09-20 02:26:43.366|1.1.5.1.47510|Info|output|application|LocationLoaded:19.57 real:31.51 diff:11.94
+2026-09-20 02:26:43.722|1.1.5.1.47510|Debug|application|TRACE-NetworkGameCreate profileStatus: 'Profileid: <PROFILE_ID>, Status: Busy, RaidMode: Online, Ip: <IP>, Port: 17008, Location: bigmap, Sid: <SID>, GameMode: deathmatch, shortId: <SHORT_ID>'
+2026-09-20 02:27:43.644|1.1.5.1.47510|Info|output|application|GameStarted:71.11(10.5) real:91.79(11.44) diff:20.68
+2026-09-20 02:41:07.232|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching G
+2026-09-20 02:41:07.232|1.1.5.1.47510|Info|application|scene preset path:maps/customs_preset.bundle rcid:bigmap.scenespreset.asset
+2026-09-20 02:41:09.419|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching H
+2026-09-20 02:41:09.419|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching I
+2026-09-20 02:41:37.666|1.1.5.1.47510|Info|output|application|LocationLoaded:19.38 real:32.01 diff:12.62
+2026-09-20 02:41:38.046|1.1.5.1.47510|Debug|application|TRACE-NetworkGameCreate profileStatus: 'Profileid: <PROFILE_ID>, Status: Busy, RaidMode: Online, Ip: <IP>, Port: 17002, Location: bigmap, Sid: <SID>, GameMode: deathmatch, shortId: <SHORT_ID>'
+2026-09-20 02:42:25.797|1.1.5.1.47510|Info|output|application|GameStarted:58.54(7.81) real:80.14(8.86) diff:21.59
+2026-09-20 02:55:19.226|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching G
+2026-09-20 02:55:19.226|1.1.5.1.47510|Info|application|scene preset path:maps/customs_preset.bundle rcid:bigmap.scenespreset.asset
+2026-09-20 02:55:20.903|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching H
+2026-09-20 02:55:20.904|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching I
+2026-09-20 02:55:49.267|1.1.5.1.47510|Info|output|application|LocationLoaded:19.1 real:31.59 diff:12.49
+2026-09-20 02:55:49.669|1.1.5.1.47510|Debug|application|TRACE-NetworkGameCreate profileStatus: 'Profileid: <PROFILE_ID>, Status: Busy, RaidMode: Online, Ip: <IP>, Port: 17004, Location: bigmap, Sid: <SID>, GameMode: deathmatch, shortId: <SHORT_ID>'
+2026-09-20 02:56:48.313|1.1.5.1.47510|Info|output|application|GameStarted:68.58(11.06) real:90.63(12.04) diff:22.04
+2026-09-20 03:07:30.065|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching G
+2026-09-20 03:07:30.065|1.1.5.1.47510|Info|application|scene preset path:maps/customs_preset.bundle rcid:bigmap.scenespreset.asset
+2026-09-20 03:07:31.915|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching H
+2026-09-20 03:07:31.916|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching I
+2026-09-20 03:08:00.916|1.1.5.1.47510|Info|output|application|LocationLoaded:19.12 real:32.26 diff:13.13
+2026-09-20 03:09:11.925|1.1.5.1.47510|Debug|application|TRACE-NetworkGameCreate profileStatus: 'Profileid: <PROFILE_ID>, Status: Busy, RaidMode: Online, Ip: <IP>, Port: 17008, Location: bigmap, Sid: <SID>, GameMode: deathmatch, shortId: <SHORT_ID>'
+2026-09-20 03:10:10.437|1.1.5.1.47510|Info|output|application|GameStarted:139.22(11.1) real:161.78(12.1) diff:22.55
+2026-09-20 03:32:13.992|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching G
+2026-09-20 03:32:13.992|1.1.5.1.47510|Info|application|scene preset path:maps/shoreline_preset.bundle rcid:shoreline.scenespreset.asset
+2026-09-20 03:32:18.193|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching H
+2026-09-20 03:32:18.193|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching I
+2026-09-20 03:32:54.118|1.1.5.1.47510|Info|output|application|LocationLoaded:27.81 real:40.12 diff:12.31
+2026-09-20 03:35:55.156|1.1.5.1.47510|Debug|application|TRACE-NetworkGameCreate profileStatus: 'Profileid: <PROFILE_ID>, Status: Busy, RaidMode: Online, Ip: <IP>, Port: 17003, Location: Shoreline, Sid: <SID>, GameMode: deathmatch, shortId: <SHORT_ID>'
+2026-09-20 03:37:10.602|1.1.5.1.47510|Info|output|application|GameStarted:273.56(10.79) real:296.61(12.06) diff:23.04
+2026-09-20 04:10:20.883|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching G
+2026-09-20 04:10:20.883|1.1.5.1.47510|Info|application|scene preset path:maps/sandbox_preset.bundle rcid:sandbox.scenespreset.asset
+2026-09-20 04:10:27.545|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching H
+2026-09-20 04:10:27.545|1.1.5.1.47510|Debug|application|TRACE-NetworkGameMatching I
+2026-09-20 04:10:56.474|1.1.5.1.47510|Info|output|application|LocationLoaded:25.47 real:37.24 diff:11.77
+2026-09-20 04:15:22.492|1.1.5.1.47510|Debug|application|TRACE-NetworkGameCreate profileStatus: 'Profileid: <PROFILE_ID>, Status: Busy, RaidMode: Online, Ip: <IP>, Port: 17005, Location: Sandbox, Sid: <SID>, GameMode: deathmatch, shortId: <SHORT_ID>'
+2026-09-20 04:16:09.485|1.1.5.1.47510|Info|output|application|GameStarted:332.97(11.35) real:350.25(12.01) diff:17.27

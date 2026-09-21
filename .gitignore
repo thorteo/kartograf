@@ -1,0 +1,25 @@
+# Build
+build/
+out/
+cmake-build-*/
+*.obj
+*.exe
+*.pdb
+*.ilk
+*.lib
+*.dll
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+
+# Local config / runtime state
+config.local.json
+*.sqlite
+*.sqlite-journal
+cache/
+
+# Third-party sources are vendored deliberately; ignore their build artifacts only
+third_party/**/build/

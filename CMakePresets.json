@@ -48,6 +48,15 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "TARKOV_BUILD_TESTS": "OFF"
       }
+    },
+    {
+      "name": "linux-release",
+      "inherits": "linux-dev",
+      "displayName": "Linux core + tests, optimised",
+      "binaryDir": "${sourceDir}/build/linux-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
     }
   ],
   "buildPresets": [
@@ -66,6 +75,10 @@
     {
       "name": "windows-dev",
       "configurePreset": "windows-dev"
+    },
+    {
+      "name": "linux-release",
+      "configurePreset": "linux-release"
     }
   ],
   "testPresets": [
@@ -79,6 +92,13 @@
     {
       "name": "linux-asan",
       "configurePreset": "linux-asan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-release",
+      "configurePreset": "linux-release",
       "output": {
         "outputOnFailure": true
       }

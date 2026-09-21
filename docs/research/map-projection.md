@@ -88,6 +88,57 @@ Labyrinth and Terminal are single-layer.
 This is the feature that makes the overlay genuinely useful indoors, and it comes
 almost free from data we already need.
 
+## Two map formats, and neither alone is enough
+
+tarkov.dev publishes each map twice: as a raster tile pyramid and as an abstract
+vector drawing. Their own UI calls the second one "Abstract", and it is the better
+base for an overlay — high contrast, no photographic noise competing with the game.
+
+Neither format covers every map:
+
+| Format | Missing for |
+|---|---|
+| Raster tiles | Streets of Tarkov, Lighthouse, Terminal |
+| Abstract SVG | Icebreaker, The Lab, The Labyrinth |
+
+Together they cover all of them, so both renderers are kept and the format is chosen
+per map, abstract first.
+
+## Placing the abstract map
+
+From tarkov.dev's own map page: the SVG is put on the map with
+`L.svgOverlay(svgElement, svgBounds)` where `svgBounds` falls back to `bounds`. So the
+drawing stretches to fill the same world rectangle everything else is projected into —
+no separate coordinate system to reconcile. Only Reserve declares its own `svgBounds`
+(`[[289,-274],[-303,272]]` against bounds of `[[289,-293],[-303,244]]`).
+
+The documents are simple by SVG standards: Customs is 506 paths with flat fills from a
+CSS class list, and **no text, gradients, filters or embedded images**. Labels are not
+in the SVG at all — `maps.json` carries a `labels` array and tarkov.dev draws them
+itself, which means a renderer with no text support is enough.
+
+Every floor lives in the same document, in groups named to match `maps.json`'s
+`svgLayer` field: `Ground_Level`, `Second_Floor`, `Third_Floor`, `Underground_Level`.
+All but the ground level are hidden, and visibility is set by injecting a stylesheet
+rather than editing elements. `maps.json` sometimes names a floor the SVG does not
+carry — Customs declares a 4th floor with `svgLayer: null` — so an unknown layer id is
+ignored rather than treated as an error.
+
+## Rasterisation cost
+
+Measured with an optimised build on this machine, rendering the full map:
+
+| | 1024 px | 2560 px | 4096 px |
+|---|---:|---:|---:|
+| Customs (190 KB, 506 paths) | 9 ms | 32 ms | 69 ms |
+| Streets (328 KB, the heaviest) | 24 ms | 91 ms | 208 ms |
+
+Fast enough to re-render on a worker thread when the viewport moves, which decides the
+design: **render only the visible region, at screen resolution**, rather than the whole
+map at a fixed size. A full-map texture sharp enough for a zoomed-in view would cost
+hundreds of megabytes; a screen-sized region costs one texture and stays sharp at any
+zoom.
+
 ## Tiles
 
 `tilePath` is a standard `{z}/{x}/{y}` pyramid of 256 px PNGs on

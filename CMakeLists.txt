@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
-project(tarkov_help LANGUAGES CXX)
+# C is needed for plutovg, lunasvg's rasteriser backend. Without it CMake
+# silently drops every .c file from the build and the link fails with hundreds
+# of undefined references.
+project(tarkov_help LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -57,6 +60,7 @@ add_library(tarkov_core STATIC
     src/core/data/MapIds.cpp
     ${TARKOV_EMBEDDED_MAP_IDS}
     src/core/map/TileMath.cpp
+    src/core/map/SvgRenderer.cpp
     ${TARKOV_EMBEDDED_MAPS}
     src/core/geo/Heading.cpp
     src/core/geo/MapConfig.cpp
@@ -71,10 +75,45 @@ target_include_directories(tarkov_core SYSTEM PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party
 )
 
+target_link_libraries(tarkov_core PUBLIC tarkov_lunasvg)
+
 if(MSVC)
     target_compile_options(tarkov_core PRIVATE /W4 /permissive-)
 else()
     target_compile_options(tarkov_core PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+# ---------------------------------------------------------------------------
+# tarkov_lunasvg -- vendored SVG rasteriser (MIT, with its plutovg backend).
+#
+# The abstract maps tarkov.dev publishes are SVG, and three maps have no raster
+# tiles at all. Rendering them needs a real rasteriser; lunasvg is small,
+# dependency-free, and handles the <use>, transform and CSS-class features these
+# files actually use. System font loading is disabled: the map SVGs contain no
+# text, and labels are drawn from maps.json instead.
+# ---------------------------------------------------------------------------
+file(GLOB TARKOV_LUNASVG_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lunasvg/source/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lunasvg/plutovg/source/*.c
+)
+add_library(tarkov_lunasvg STATIC ${TARKOV_LUNASVG_SOURCES})
+target_include_directories(tarkov_lunasvg SYSTEM PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lunasvg/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lunasvg/plutovg/include
+)
+target_include_directories(tarkov_lunasvg PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lunasvg/plutovg/source
+)
+target_compile_definitions(tarkov_lunasvg
+    PUBLIC  LUNASVG_BUILD_STATIC PLUTOVG_BUILD_STATIC
+    PRIVATE LUNASVG_BUILD PLUTOVG_BUILD
+            LUNASVG_DISABLE_LOAD_SYSTEM_FONTS
+)
+if(MSVC)
+    # Vendored third-party code is not ours to keep warning-clean.
+    target_compile_options(tarkov_lunasvg PRIVATE /W0)
+else()
+    target_compile_options(tarkov_lunasvg PRIVATE -w)
 endif()
 
 # ---------------------------------------------------------------------------

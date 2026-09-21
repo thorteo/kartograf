@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Mirrors how tarkov.dev's abstract maps are built: every floor lives in
+       one document, the ground level is visible and the upper floors are
+       hidden until asked for. -->
+  <g id="Ground_Level">
+    <rect x="0" y="0" width="50" height="100" fill="#0000ff"/>
+  </g>
+  <g id="Second_Floor" style="display:none">
+    <rect x="50" y="0" width="50" height="50" fill="#ff0000"/>
+  </g>
+  <g id="Third_Floor" style="display:none">
+    <rect x="50" y="50" width="50" height="50" fill="#00ff00"/>
+  </g>
+</svg>

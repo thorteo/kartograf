@@ -268,7 +268,11 @@ int main(int argc, char** argv) {
     mapState.opacity = mapOpacity;
     // Asking for a map on the command line means you want to see it.
     bool mapVisible = !forcedMap.empty();
-    bool hudVisible = true;
+    // Off by default. Almost everything it showed is either visible on the map,
+    // shown by the game itself, or a raw coordinate no one navigates by; what
+    // was actually unique -- the age of the position fix -- now lives in the
+    // map footer. Screen corners in a raid are worth more than telemetry.
+    bool hudVisible = hasFlag(argc, argv, "--hud");
     std::string tiledMap;
 
     std::shared_ptr<const game::RaidSnapshot> lastSnapshot;

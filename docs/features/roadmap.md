@@ -32,8 +32,12 @@ records what that means concretely, in the order we intend to earn it.
       `Ctrl+Alt+F9` and `F8` bind cleanly.
 - [x] Excluded from screen capture — `WDA_EXCLUDEFROMCAPTURE` confirmed working here
 - [x] Overlay follows the game window and hides when the game is not foreground
-- [x] HUD: map, raid phase, elapsed time, position, heading, elevation, in-game
-      clock, and the **age of the last fix** coloured by confidence
+- [x] HUD with map, raid phase, elapsed time, position, heading, elevation and
+      in-game clock. **Off by default**: almost all of it is either visible on the
+      map, already shown by the game, or a raw coordinate nobody navigates by, and
+      a permanent panel costs a screen corner that matters more in a raid. `Alt+H`
+      or `--hud` brings it back. The one thing it uniquely carried — the age of the
+      position fix — moved to the map footer, coloured by confidence
 - [x] Automatic map detection from logs, with the game install located through the
       registry rather than by inspecting the running process
 - [x] Live position from the screenshots folder via `ReadDirectoryChangesW`

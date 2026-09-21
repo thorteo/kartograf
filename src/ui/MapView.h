@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <functional>
 #include <string>
 
@@ -60,6 +61,9 @@ std::string layerName(const geo::MapVariant& map, int layer);
 ///
 /// Shown on demand rather than permanently: a fullscreen composited surface is
 /// the most expensive thing the overlay can put on screen.
+/// Formats the age of a position fix for the map footer, e.g. "12s" or "3m20s".
+std::string formatFixAge(double seconds);
+
 MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                           const game::RaidSnapshot& snapshot,
                           std::int64_t nowMillis, bool interactive,

@@ -77,6 +77,17 @@ void drawPlayerMarker(ImDrawList* draw, const ImVec2& at, double headingDegrees,
 
 }  // namespace
 
+std::string formatFixAge(double seconds) {
+    if (seconds < 0.0) {
+        seconds = 0.0;
+    }
+    const int total = static_cast<int>(seconds);
+    if (total < 60) {
+        return std::to_string(total) + "s";
+    }
+    return std::to_string(total / 60) + "m" + std::to_string(total % 60) + "s";
+}
+
 std::string layerName(const geo::MapVariant& map, int layer) {
     if (layer < 0) {
         return "Ground";
@@ -358,16 +369,30 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
 
     // Footer: the state of the view, and how to get back to the player.
     {
-        char text[200];
+        char text[280];
         const char* mode = state.followPlayer ? "following" : "free";
         // Interchange and Shoreline declare upper floors with no tiles. Saying
         // so beats silently showing the ground level and letting the player
         // believe they are looking at the floor they are standing on.
         const bool floorMissing = state.activeLayer >= 0 && !activeLayerDrawable;
-        std::snprintf(text, sizeof(text), "%s   %s%s%s   zoom %d   %s",
-                      map.key.c_str(), layerName(map, state.activeLayer).c_str(),
+
+        // The age of the fix is the one thing the map cannot show by itself and
+        // the game does not show at all. It decides whether the marker means
+        // anything, so it belongs where the marker is.
+        char age[48];
+        if (snapshot.fix.valid) {
+            const double seconds = snapshot.fix.ageSeconds(nowMillis);
+            std::snprintf(age, sizeof(age), "   fix %s%s",
+                          formatFixAge(seconds).c_str(),
+                          seconds >= 60.0 ? " - press screenshot" : "");
+        } else {
+            std::snprintf(age, sizeof(age), "   no position - press screenshot");
+        }
+
+        std::snprintf(text, sizeof(text), "%s   %s%s%s   %s%s", map.key.c_str(),
+                      layerName(map, state.activeLayer).c_str(),
                       state.layerAuto ? " (auto)" : "",
-                      floorMissing ? " - no image for this floor" : "", zoom, mode);
+                      floorMissing ? " - no image for this floor" : "", mode, age);
 
         const ImVec2 size = ImGui::CalcTextSize(text);
         // Bottom centre: the status log lives bottom-left and the HUD
@@ -377,7 +402,11 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
         draw->AddRectFilled(ImVec2(at.x - 8.0f, at.y - 6.0f),
                             ImVec2(at.x + size.x + 8.0f, at.y + size.y + 6.0f),
                             rgba(0.04f, 0.05f, 0.05f, 0.80f), 4.0f);
-        draw->AddText(at, rgba(0.70f, 0.73f, 0.66f, 1.0f), text);
+        const ImU32 footerColour =
+            snapshot.fix.valid
+                ? markerColour(snapshot.fix.ageSeconds(nowMillis))
+                : rgba(0.70f, 0.73f, 0.66f, 1.0f);
+        draw->AddText(at, footerColour, text);
     }
 
     ImGui::End();

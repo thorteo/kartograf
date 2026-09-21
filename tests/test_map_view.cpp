@@ -211,3 +211,13 @@ TEST_CASE("a map with no tiles draws an explanation instead of empty placeholder
     CHECK(state.viewport.screenWidth == 1600);
     CHECK(state.viewport.screenHeight == 900);
 }
+
+TEST_CASE("the fix age reads at a glance") {
+    using ui::formatFixAge;
+    CHECK(formatFixAge(0.0) == "0s");
+    CHECK(formatFixAge(9.4) == "9s");
+    CHECK(formatFixAge(59.0) == "59s");
+    CHECK(formatFixAge(60.0) == "1m0s");
+    CHECK(formatFixAge(200.0) == "3m20s");
+    CHECK(formatFixAge(-5.0) == "0s");
+}

@@ -17,6 +17,13 @@ Note this is the **game install directory**, not `%LOCALAPPDATA%Low`. `LocalLow`
 only `Player.log` and a Vuplex webview cache, neither of which is useful to us. A new
 folder is created per game launch.
 
+**The hour is not zero-padded**, so folder names do not sort as strings:
+`log_2026.09.21_2-31-42_…` sorts after `log_2026.09.21_19-54-34_…`. Month, day,
+minutes and seconds are padded in every folder seen. Picking the newest folder by
+name watched a dead 02:31 session all evening on 2026-09-21 while the game wrote to
+the 19:54 one; `parseLogFolderName` exists for this. Verified against all nine
+folders on the development machine.
+
 Files in a session folder, with the ones we care about marked:
 
 | File | Use |

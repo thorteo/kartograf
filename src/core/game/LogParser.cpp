@@ -28,6 +28,26 @@ bool parseFixedInt(std::string_view s, std::size_t offset, std::size_t width, in
     return std::from_chars(begin, begin + width, out).ec == std::errc{};
 }
 
+/// Reads one to `maxWidth` digits at `cursor`, then expects `separator`.
+/// Advances past both. Used where the game does not zero-pad.
+bool parseDelimitedInt(std::string_view s, std::size_t& cursor, std::size_t maxWidth,
+                       char separator, int& out) {
+    std::size_t width = 0;
+    while (cursor + width < s.size() && width < maxWidth && s[cursor + width] >= '0' &&
+           s[cursor + width] <= '9') {
+        ++width;
+    }
+    if (width == 0 || cursor + width >= s.size() || s[cursor + width] != separator) {
+        return false;
+    }
+    const char* begin = s.data() + cursor;
+    if (std::from_chars(begin, begin + width, out).ec != std::errc{}) {
+        return false;
+    }
+    cursor += width + 1;
+    return true;
+}
+
 /// Reads "Key: value" out of the comma-separated profileStatus blob.
 std::string fieldValue(std::string_view blob, std::string_view key) {
     const std::size_t at = blob.find(key);
@@ -65,6 +85,28 @@ long long LogTimestamp::millisSinceEpoch() const {
                                          static_cast<unsigned>(day));
     const long long seconds = days * 86400LL + hour * 3600LL + minute * 60LL + second;
     return seconds * 1000LL + millis;
+}
+
+std::optional<LogTimestamp> parseLogFolderName(std::string_view name) {
+    constexpr std::string_view kPrefix = "log_";
+    if (name.substr(0, kPrefix.size()) != kPrefix) {
+        return std::nullopt;
+    }
+    LogTimestamp time;
+    std::size_t cursor = kPrefix.size();
+    if (!parseDelimitedInt(name, cursor, 4, '.', time.year) ||
+        !parseDelimitedInt(name, cursor, 2, '.', time.month) ||
+        !parseDelimitedInt(name, cursor, 2, '_', time.day) ||
+        !parseDelimitedInt(name, cursor, 2, '-', time.hour) ||
+        !parseDelimitedInt(name, cursor, 2, '-', time.minute) ||
+        !parseDelimitedInt(name, cursor, 2, '_', time.second)) {
+        return std::nullopt;
+    }
+    if (time.month < 1 || time.month > 12 || time.day < 1 || time.day > 31 ||
+        time.hour > 23 || time.minute > 59 || time.second > 59) {
+        return std::nullopt;
+    }
+    return time;
 }
 
 std::optional<LogLine> parseLogLine(std::string_view raw) {

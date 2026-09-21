@@ -143,3 +143,54 @@ TEST_CASE("timestamps order correctly across the session") {
         previous = current;
     }
 }
+
+TEST_CASE("session folder names parse, with the hour not zero-padded") {
+    const auto late = game::parseLogFolderName("log_2026.09.21_19-54-34_1.1.5.1.47510");
+    REQUIRE(late);
+    CHECK(late->year == 2026);
+    CHECK(late->month == 9);
+    CHECK(late->day == 21);
+    CHECK(late->hour == 19);
+    CHECK(late->minute == 54);
+    CHECK(late->second == 34);
+
+    const auto early = game::parseLogFolderName("log_2026.09.21_2-31-42_1.1.5.1.47510");
+    REQUIRE(early);
+    CHECK(early->hour == 2);
+
+    // The reason this exists: as strings, the 02:31 session sorts after 19:54.
+    CHECK(std::string("log_2026.09.21_2-31-42") > std::string("log_2026.09.21_19-54-34"));
+    CHECK(late->millisSinceEpoch() > early->millisSinceEpoch());
+}
+
+TEST_CASE("the newest of the real session folders is found by time") {
+    // Every session folder on the development machine on 2026-09-21.
+    const char* names[] = {
+        "log_2026.09.16_20-43-44_1.1.5.1.47510", "log_2026.09.16_21-21-16_1.1.5.1.47510",
+        "log_2026.09.16_22-42-03_1.1.5.1.47510", "log_2026.09.18_0-56-52_1.1.5.1.47510",
+        "log_2026.09.18_22-32-24_1.1.5.1.47510", "log_2026.09.19_4-10-34_1.1.5.1.47510",
+        "log_2026.09.20_1-32-29_1.1.5.1.47510",  "log_2026.09.21_19-54-34_1.1.5.1.47510",
+        "log_2026.09.21_2-31-42_1.1.5.1.47510",
+    };
+    std::string newest;
+    long long newestTime = 0;
+    for (const char* name : names) {
+        const auto time = game::parseLogFolderName(name);
+        REQUIRE(time);
+        if (time->millisSinceEpoch() > newestTime) {
+            newestTime = time->millisSinceEpoch();
+            newest = name;
+        }
+    }
+    CHECK(newest == "log_2026.09.21_19-54-34_1.1.5.1.47510");
+}
+
+TEST_CASE("names that are not session folders are rejected") {
+    CHECK_FALSE(game::parseLogFolderName(""));
+    CHECK_FALSE(game::parseLogFolderName("log_"));
+    CHECK_FALSE(game::parseLogFolderName("logs_2026.09.21_19-54-34_1"));
+    CHECK_FALSE(game::parseLogFolderName("log_2026.09.21"));
+    CHECK_FALSE(game::parseLogFolderName("log_2026.13.21_19-54-34_1"));
+    CHECK_FALSE(game::parseLogFolderName("log_2026.09.21_24-00-00_1"));
+    CHECK_FALSE(game::parseLogFolderName("log_2026.09.21_19-54-34"));  // no version
+}

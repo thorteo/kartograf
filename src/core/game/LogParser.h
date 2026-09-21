@@ -43,6 +43,14 @@ struct LogLine {
 /// fixtures keep it that way deliberately.
 std::optional<LogLine> parseLogLine(std::string_view raw);
 
+/// When a session log folder was created, from its name:
+/// "log_2026.09.21_19-54-34_1.1.5.1.47510".
+///
+/// The hour is not zero-padded ("log_2026.09.21_2-31-42_..."), so the names do
+/// not sort as strings; compare the parsed times instead. Returns nullopt for
+/// anything that is not a session folder.
+std::optional<LogTimestamp> parseLogFolderName(std::string_view name);
+
 enum class RaidEventType {
     /// Map assets started loading. The earliest signal we get, roughly 30
     /// seconds before the raid, and the right moment to prefetch.

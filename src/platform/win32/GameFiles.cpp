@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <array>
 
+#include "core/game/LogParser.h"
+
 namespace tarkov::win32 {
 namespace {
 
@@ -135,18 +137,22 @@ std::optional<fs::path> newestLogFolder(const fs::path& logsRoot) {
     }
 
     fs::path newest;
+    long long newestTime = 0;
     for (const auto& entry : fs::directory_iterator(logsRoot, ec)) {
         if (!entry.is_directory(ec)) {
             continue;
         }
-        const std::wstring name = entry.path().filename().wstring();
-        if (name.rfind(L"log_", 0) != 0) {
+        // Compare parsed times, not names: the hour is not zero-padded, so
+        // "2-31-42" sorts after "19-54-34" as a string.
+        const auto created =
+            game::parseLogFolderName(entry.path().filename().string());
+        if (!created) {
             continue;
         }
-        // Names start with a sortable timestamp, so comparing them compares
-        // times without parsing anything.
-        if (newest.empty() || name > newest.filename().wstring()) {
+        const long long time = created->millisSinceEpoch();
+        if (newest.empty() || time > newestTime) {
             newest = entry.path();
+            newestTime = time;
         }
     }
     if (newest.empty()) {

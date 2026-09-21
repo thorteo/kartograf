@@ -50,6 +50,9 @@ public:
     void setBounds(int x, int y, int width, int height);
 
     /// Drains the message queue. Returns false when the window should close.
+    ///
+    /// WM_HOTKEY is left in the queue for the caller: hotkeys registered with no
+    /// window arrive as thread messages, which DispatchMessage would discard.
     bool pumpMessages();
 
     /// Clears the back buffer to a premultiplied-alpha colour and binds it.

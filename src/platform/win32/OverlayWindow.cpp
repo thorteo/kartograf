@@ -295,14 +295,21 @@ void OverlayWindow::setBounds(int x, int y, int width, int height) {
 }
 
 bool OverlayWindow::pumpMessages() {
-    MSG message;
-    while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE)) {
-        if (message.message == WM_QUIT) {
-            shouldClose_ = true;
+    // Two ranges, skipping WM_HOTKEY. Taking it here would lose it: a hotkey
+    // registered with no window is a thread message, and DispatchMessage drops
+    // those. The caller reads hotkeys from the queue itself.
+    const auto drain = [this](UINT first, UINT last) {
+        MSG message;
+        while (PeekMessageW(&message, nullptr, first, last, PM_REMOVE)) {
+            if (message.message == WM_QUIT) {
+                shouldClose_ = true;
+            }
+            TranslateMessage(&message);
+            DispatchMessageW(&message);
         }
-        TranslateMessage(&message);
-        DispatchMessageW(&message);
-    }
+    };
+    drain(0, WM_HOTKEY - 1);
+    drain(WM_HOTKEY + 1, 0xFFFFFFFF);
     return !shouldClose_;
 }
 

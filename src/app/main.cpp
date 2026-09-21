@@ -656,6 +656,11 @@ int main(int argc, char** argv) {
 
         MSG message;
         while (PeekMessageW(&message, nullptr, WM_HOTKEY, WM_HOTKEY, PM_REMOVE)) {
+            if (message.message == WM_QUIT) {
+                // Retrieved whatever the filter says; hand it back to the pump.
+                PostQuitMessage(static_cast<int>(message.wParam));
+                break;
+            }
             if (message.message != WM_HOTKEY) {
                 continue;
             }

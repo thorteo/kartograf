@@ -404,14 +404,19 @@ int main(int argc, char** argv) {
             } else {
                 if (tiledMap != variant->key) {
                     tiledMap = variant->key;
-                    tiles.setMap(variant->key, variant->tilePath);
+                    std::vector<std::string> layerTemplates;
+                    layerTemplates.reserve(variant->layers.size());
+                    for (const auto& layer : variant->layers) {
+                        layerTemplates.push_back(layer.tilePath);
+                    }
+                    tiles.setMap(variant->key, variant->tilePath, layerTemplates);
                 }
                 const auto result = ui::drawMapView(
                     mapState, *variant, *snapshot,
                     static_cast<std::int64_t>(nowTicks), interactive,
-                    [&tiles](int zoom, int x, int y) -> ImTextureID {
+                    [&tiles](int layer, int zoom, int x, int y) -> ImTextureID {
                         return reinterpret_cast<ImTextureID>(
-                            tiles.acquire({zoom, x, y}));
+                            tiles.acquire({layer, zoom, x, y}));
                     });
                 // Keep drawing while tiles are still arriving, then stop.
                 pendingTiles = result.tilesRequested > 0;

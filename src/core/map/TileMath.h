@@ -51,9 +51,20 @@ int chooseZoom(const geo::MapVariant& map, double scale);
 std::vector<VisibleTile> visibleTiles(const geo::MapVariant& map,
                                       const Viewport& viewport, int zoom);
 
-/// A viewport that fits the map's declared bounds into the given screen size.
+/// A viewport that fits the whole map into the given screen size.
+///
+/// Letterboxes when the aspect ratios differ, which is right for an overview:
+/// seeing all of the map matters more than filling the screen.
 Viewport fitToBounds(const geo::MapVariant& map, int screenWidth, int screenHeight,
                      double padding = 0.92);
+
+/// The smallest scale at which the map covers the screen completely.
+///
+/// The counterpart to fitToBounds: centred on the player mid-raid, a screen
+/// with empty margins reads as a broken map, and seeing the whole location
+/// matters less than seeing your surroundings. Returns 0 when the map declares
+/// no bounds.
+double coverScale(const geo::MapVariant& map, int screenWidth, int screenHeight);
 
 /// Zooms by `factor` while keeping `anchorScreen` over the same map location.
 ///
@@ -62,8 +73,20 @@ Viewport fitToBounds(const geo::MapVariant& map, int screenWidth, int screenHeig
 Viewport zoomAbout(const Viewport& viewport, const geo::Vec2& anchorScreen,
                    double factor, double minScale, double maxScale);
 
-/// Keeps the centre within the map's bounds, so the map cannot be flung off
-/// screen and lost.
+/// Keeps the map filling the screen wherever it can.
+///
+/// Clamping only the centre is not enough: with the centre merely inside the
+/// bounds, half the screen can still be empty backdrop, which reads as a
+/// cropped or broken map rather than as the edge of the data.
+///
+/// So along each axis: if the map is wider than the screen at this scale, the
+/// centre is constrained so the viewport stays inside the map. If it is
+/// narrower, the map is centred instead, since it cannot fill the screen and
+/// pinning it to one side would look arbitrary.
 Viewport clampToBounds(const geo::MapVariant& map, Viewport viewport);
+
+/// The floor to draw for a world position: geo::selectLayer, with the ground
+/// level expressed as -1 rather than an empty optional.
+int layerIndexOrGround(const geo::MapVariant& map, const geo::Vec3& world);
 
 }  // namespace tarkov::map

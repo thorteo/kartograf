@@ -32,10 +32,13 @@ namespace tarkov::win32 {
 class TileStore {
 public:
     struct Key {
+        /// -1 is ground level; 0 and up index MapVariant::layers.
+        int layer = -1;
         int zoom = 0;
         int x = 0;
         int y = 0;
         bool operator<(const Key& other) const {
+            if (layer != other.layer) return layer < other.layer;
             if (zoom != other.zoom) return zoom < other.zoom;
             if (x != other.x) return x < other.x;
             return y < other.y;
@@ -58,9 +61,18 @@ public:
     bool start(ID3D11Device* device, int workerCount = 3);
     void stop();
 
-    /// Points the store at a map. Changing maps drops the pending queue: tiles
-    /// for a map the player has left are wasted bandwidth.
-    void setMap(const std::string& normalizedName, const std::string& tilePathTemplate);
+    /// Points the store at a map.
+    ///
+    /// `groundTemplate` is the base layer; `layerTemplates` are the upper
+    /// floors, indexed to match MapVariant::layers. Keeping every floor in one
+    /// store means switching floors costs nothing once a floor has been seen —
+    /// re-pointing the store at each floor in turn would throw the tiles away
+    /// on every step through a building.
+    ///
+    /// Changing maps does drop everything: tiles for a map the player has left
+    /// are only taking up memory.
+    void setMap(const std::string& normalizedName, const std::string& groundTemplate,
+                const std::vector<std::string>& layerTemplates);
 
     /// The texture for a tile, or nullptr if it is not ready yet. Requests it
     /// on first miss. Render thread only.
@@ -97,6 +109,7 @@ private:
     bool fetchAndDecode(const std::string& map, const Key& key, Decoded& out);
     std::filesystem::path cachePathFor(const std::string& map, const Key& key) const;
     std::string urlFor(const Key& key) const;
+    const std::string* templateFor(int layer) const;
     void evictIfNeeded();
 
     ID3D11Device* device_ = nullptr;
@@ -108,6 +121,7 @@ private:
 
     std::string mapName_;
     std::string tileTemplate_;
+    std::vector<std::string> layerTemplates_;
     std::uint64_t mapGeneration_ = 0;
 
     std::map<Key, Entry> entries_;

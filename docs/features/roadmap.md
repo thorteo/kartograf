@@ -50,8 +50,13 @@ records what that means concretely, in the order we intend to earn it.
       line, with the heading arrow pointing the right way. This was the last thing the
       earlier tests could not confirm.
 - [x] maps.json compiled into the binary, so a release stays one file
-- [ ] Automatic floor switching wired into the view (the selector is written and
-      tested; the view still draws ground level only)
+- [x] **Automatic floor switching.** The view draws ground, then the active floor
+      over it, picked from the player's elevation *and* horizontal position. Verified
+      with a real Dorms position on Customs: y 4.43 selects 2nd Floor, y 0.50 the
+      ground, y 9.00 the 3rd, and the same elevation out in the open stays ground.
+      A manual override with an auto toggle is available while interactive.
+- [x] The map fills the screen when centred on the player, rather than letterboxing
+      or leaving the map's edge inside the viewport
 - [ ] Quest objectives on the map
 - [ ] Automatic map detection from logs — the overlay opens the right map by itself
 - [ ] Live position marker with heading, and a visible **age indicator** on the fix
@@ -94,6 +99,18 @@ Not because they are hard, but because of `adr/0002-no-game-process-interaction.
 - Any form of input automation
 
 These are permanent exclusions, not deferred items.
+
+## Known gap: three maps have no raster tiles
+
+Streets of Tarkov, Lighthouse and Terminal publish no tile pyramid upstream — only
+SVG. Probing the CDN confirms the tiles genuinely do not exist rather than being
+absent from `maps.json`. Interchange and Shoreline draw at ground level but their
+upper floors are SVG-only too.
+
+The overlay says so plainly instead of drawing an empty grid, and position tracking
+still works on those maps. Closing the gap means rendering SVG, which is a real
+dependency (lunasvg or similar) and a decision of its own. `tests/test_tile_math.cpp`
+encodes the current coverage so a change upstream in either direction surfaces.
 
 ## Open questions
 

@@ -112,13 +112,16 @@ void TileStore::stop() {
 }
 
 void TileStore::setMap(const std::string& normalizedName,
-                       const std::string& tilePathTemplate) {
+                       const std::string& groundTemplate,
+                       const std::vector<std::string>& layerTemplates) {
     const std::lock_guard<std::mutex> lock(mutex_);
-    if (mapName_ == normalizedName && tileTemplate_ == tilePathTemplate) {
+    if (mapName_ == normalizedName && tileTemplate_ == groundTemplate &&
+        layerTemplates_ == layerTemplates) {
         return;
     }
     mapName_ = normalizedName;
-    tileTemplate_ = tilePathTemplate;
+    tileTemplate_ = groundTemplate;
+    layerTemplates_ = layerTemplates;
     // Bumping the generation makes every in-flight request stale: a worker that
     // finishes a tile for the previous map discards it rather than uploading
     // the wrong picture.
@@ -128,8 +131,23 @@ void TileStore::setMap(const std::string& normalizedName,
     decoded_.clear();
 }
 
+const std::string* TileStore::templateFor(int layer) const {
+    if (layer < 0) {
+        return tileTemplate_.empty() ? nullptr : &tileTemplate_;
+    }
+    if (static_cast<std::size_t>(layer) >= layerTemplates_.size()) {
+        return nullptr;
+    }
+    const std::string& candidate = layerTemplates_[static_cast<std::size_t>(layer)];
+    return candidate.empty() ? nullptr : &candidate;
+}
+
 std::string TileStore::urlFor(const Key& key) const {
-    std::string url = tileTemplate_;
+    const std::string* pattern = templateFor(key.layer);
+    if (pattern == nullptr) {
+        return {};
+    }
+    std::string url = *pattern;
     url = replaceAll(url, "{z}", std::to_string(key.zoom));
     url = replaceAll(url, "{x}", std::to_string(key.x));
     url = replaceAll(url, "{y}", std::to_string(key.y));
@@ -137,14 +155,22 @@ std::string TileStore::urlFor(const Key& key) const {
 }
 
 fs::path TileStore::cachePathFor(const std::string& map, const Key& key) const {
-    return cacheRoot_ / map / std::to_string(key.zoom) / std::to_string(key.x) /
-           (std::to_string(key.y) + ".png");
+    // Ground and each upper floor get their own subtree, so the same z/x/y from
+    // two floors cannot collide.
+    const std::string floor =
+        key.layer < 0 ? std::string("ground") : ("layer" + std::to_string(key.layer));
+    return cacheRoot_ / map / floor / std::to_string(key.zoom) /
+           std::to_string(key.x) / (std::to_string(key.y) + ".png");
 }
 
 ID3D11ShaderResourceView* TileStore::acquire(const Key& key) {
     const std::lock_guard<std::mutex> lock(mutex_);
     if (tileTemplate_.empty()) {
         return nullptr;
+    }
+
+    if (templateFor(key.layer) == nullptr) {
+        return nullptr;  // This floor publishes no tiles.
     }
 
     auto it = entries_.find(key);
@@ -179,6 +205,9 @@ bool TileStore::fetchAndDecode(const std::string& map, const Key& key, Decoded& 
         {
             const std::lock_guard<std::mutex> lock(mutex_);
             url = urlFor(key);
+        }
+        if (url.empty()) {
+            return false;
         }
         const auto response = client.get(url);
         if (!response.ok) {

@@ -1,5 +1,8 @@
 #include "ui/MapView.h"
 
+#include <string>
+#include <vector>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -12,6 +15,11 @@ namespace {
 
 constexpr double kMinScale = 0.05;
 constexpr double kMaxScale = 24.0;
+
+/// Zoom used the first time the view has a position to centre on. Chosen to
+/// show a few hundred metres around the player, which is the range that matters
+/// while moving.
+constexpr double kDefaultPlayerScale = 3.0;
 
 ImU32 rgba(float r, float g, float b, float a) {
     return ImGui::GetColorU32(ImVec4(r, g, b, a));
@@ -66,6 +74,17 @@ void drawPlayerMarker(ImDrawList* draw, const ImVec2& at, double headingDegrees,
 
 }  // namespace
 
+std::string layerName(const geo::MapVariant& map, int layer) {
+    if (layer < 0) {
+        return "Ground";
+    }
+    if (static_cast<std::size_t>(layer) >= map.layers.size()) {
+        return "Layer " + std::to_string(layer);
+    }
+    const std::string& name = map.layers[static_cast<std::size_t>(layer)].name;
+    return name.empty() ? ("Layer " + std::to_string(layer)) : name;
+}
+
 MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                           const game::RaidSnapshot& snapshot,
                           std::int64_t nowMillis, bool interactive,
@@ -104,6 +123,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
             state.viewport.screenWidth = width;
             state.viewport.screenHeight = height;
         }
+        state.viewport = map::clampToBounds(map, state.viewport);
         result.wantsRedraw = true;
     }
 
@@ -111,11 +131,27 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
 
     // Re-centre on a new fix while following. Compare the fix time rather than
     // the position: standing still is not a reason to stop following.
-    static std::int64_t lastFollowedFix = -1;
     if (state.followPlayer && snapshot.fix.valid &&
-        snapshot.fix.receivedAtMillis != lastFollowedFix) {
-        lastFollowedFix = snapshot.fix.receivedAtMillis;
+        snapshot.fix.receivedAtMillis != state.lastFollowedFix) {
+        const bool first = state.lastFollowedFix == 0;
+        state.lastFollowedFix = snapshot.fix.receivedAtMillis;
         state.viewport.centerBase = projection.toImage(snapshot.fix.world);
+
+        // Opening the map in a raid should show the surroundings, not the whole
+        // location, and it should fill the screen. Fitting the map letterboxes
+        // whenever the aspect ratios differ, and empty margins around a map
+        // centred on the player read as a broken map rather than as the edge of
+        // the world.
+        if (first) {
+            const double cover =
+                map::coverScale(map, state.viewport.screenWidth,
+                                state.viewport.screenHeight);
+            state.viewport.scale =
+                std::max({state.viewport.scale, cover, kDefaultPlayerScale});
+        }
+        // Following the player must not drag the map off the screen edge any
+        // more than dragging by hand may.
+        state.viewport = map::clampToBounds(map, state.viewport);
         result.wantsRedraw = true;
     }
 
@@ -127,24 +163,83 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                         ImVec2(origin.x + canvasSize.x, origin.y + canvasSize.y),
                         rgba(0.03f, 0.04f, 0.04f, 0.90f));
 
+    // Which floor to show. Following the player's elevation is the point of
+    // the feature: walking upstairs in Dorms should change the map without the
+    // player reaching for anything.
+    if (state.layerAuto) {
+        const int wanted =
+            snapshot.fix.valid
+                ? static_cast<int>(
+                      map::layerIndexOrGround(map, snapshot.fix.world))
+                : -1;
+        if (wanted != state.activeLayer) {
+            state.activeLayer = wanted;
+            result.wantsRedraw = true;
+        }
+    }
+    // Guard against a stale index after a map or data change.
+    if (state.activeLayer >= static_cast<int>(map.layers.size())) {
+        state.activeLayer = -1;
+    }
+
+    // Three maps publish no raster tiles at all -- Streets, Lighthouse and
+    // Terminal are SVG-only upstream, confirmed by probing the CDN. Drawing a
+    // grid of empty placeholders for them would look like a broken download
+    // rather than missing data, so say what is actually wrong.
+    if (map.tilePath.empty()) {
+        const ImVec2 centre(origin.x + canvasSize.x / 2.0f,
+                            origin.y + canvasSize.y / 2.0f);
+        const char* headline = "No map image available for this location yet.";
+        const char* detail =
+            "This map is published as vector art only. Position tracking still "
+            "works; the HUD has your coordinates.";
+        const ImVec2 headlineSize = ImGui::CalcTextSize(headline);
+        const ImVec2 detailSize = ImGui::CalcTextSize(detail);
+        draw->AddText(ImVec2(centre.x - headlineSize.x / 2.0f, centre.y - 16.0f),
+                      rgba(0.86f, 0.87f, 0.83f, 1.0f), headline);
+        draw->AddText(ImVec2(centre.x - detailSize.x / 2.0f, centre.y + 8.0f),
+                      rgba(0.58f, 0.60f, 0.55f, 1.0f), detail);
+        ImGui::End();
+        return result;
+    }
+
     const int zoom = map::chooseZoom(map, state.viewport.scale);
     const auto visible = map::visibleTiles(map, state.viewport, zoom);
 
-    for (const auto& tile : visible) {
-        const ImVec2 topLeft(origin.x + static_cast<float>(tile.topLeft.x),
-                             origin.y + static_cast<float>(tile.topLeft.y));
-        const ImVec2 bottomRight(origin.x + static_cast<float>(tile.bottomRight.x),
-                                 origin.y + static_cast<float>(tile.bottomRight.y));
+    // Ground first, then the active floor over it. Upper-floor tiles cover only
+    // the buildings that have one, so the ground underneath has to stay drawn
+    // or the rest of the map would disappear when the player goes inside.
+    std::vector<int> passes{-1};
+    const bool activeLayerDrawable =
+        state.activeLayer >= 0 &&
+        static_cast<std::size_t>(state.activeLayer) < map.layers.size() &&
+        !map.layers[static_cast<std::size_t>(state.activeLayer)].tilePath.empty();
+    if (activeLayerDrawable) {
+        passes.push_back(state.activeLayer);
+    }
 
-        const ImTextureID texture = tiles ? tiles(tile.zoom, tile.x, tile.y) : 0;
-        if (texture != 0) {
-            draw->AddImage(texture, topLeft, bottomRight);
-            ++result.tilesDrawn;
-        } else {
-            // A placeholder rather than a hole: an empty rectangle reads as
-            // "loading", while nothing at all reads as "broken".
-            draw->AddRectFilled(topLeft, bottomRight, rgba(0.09f, 0.10f, 0.10f, 0.55f));
-            ++result.tilesRequested;
+    for (const int layer : passes) {
+        for (const auto& tile : visible) {
+            const ImVec2 topLeft(origin.x + static_cast<float>(tile.topLeft.x),
+                                 origin.y + static_cast<float>(tile.topLeft.y));
+            const ImVec2 bottomRight(
+                origin.x + static_cast<float>(tile.bottomRight.x),
+                origin.y + static_cast<float>(tile.bottomRight.y));
+
+            const ImTextureID texture =
+                tiles ? tiles(layer, tile.zoom, tile.x, tile.y) : 0;
+            if (texture != 0) {
+                draw->AddImage(texture, topLeft, bottomRight);
+                ++result.tilesDrawn;
+            } else if (layer == -1) {
+                // A placeholder rather than a hole: an empty rectangle reads as
+                // "loading", while nothing at all reads as "broken". Only for
+                // ground -- a missing upper-floor tile usually means that floor
+                // simply does not cover this spot.
+                draw->AddRectFilled(topLeft, bottomRight,
+                                    rgba(0.09f, 0.10f, 0.10f, 0.55f));
+                ++result.tilesRequested;
+            }
         }
     }
 
@@ -192,19 +287,57 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
             const double factor = std::pow(1.2, io.MouseWheel);
             state.viewport =
                 map::zoomAbout(state.viewport, anchor, factor, kMinScale, kMaxScale);
+            state.viewport = map::clampToBounds(map, state.viewport);
             result.wantsRedraw = true;
         }
     }
 
+    // Floor selector, only while the overlay takes input.
+    if (interactive && !map.layers.empty()) {
+        ImGui::SetNextWindowPos(ImVec2(origin.x + 16.0f, origin.y + 16.0f),
+                                ImGuiCond_Always);
+        ImGui::SetNextWindowBgAlpha(0.85f);
+        if (ImGui::Begin("tarkov-help-floors", nullptr,
+                         ImGuiWindowFlags_NoDecoration |
+                             ImGuiWindowFlags_AlwaysAutoResize |
+                             ImGuiWindowFlags_NoSavedSettings |
+                             ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove)) {
+            if (ImGui::Checkbox("auto", &state.layerAuto)) {
+                result.wantsRedraw = true;
+            }
+            ImGui::Separator();
+            // Listed top-down, the way a building reads.
+            for (int index = static_cast<int>(map.layers.size()) - 1; index >= -1;
+                 --index) {
+                const bool selected = state.activeLayer == index;
+                if (ImGui::Selectable(layerName(map, index).c_str(), selected)) {
+                    state.activeLayer = index;
+                    state.layerAuto = false;
+                    result.wantsRedraw = true;
+                }
+            }
+        }
+        ImGui::End();
+    }
+
     // Footer: the state of the view, and how to get back to the player.
     {
-        char text[160];
+        char text[200];
         const char* mode = state.followPlayer ? "following" : "free";
-        std::snprintf(text, sizeof(text), "%s   zoom %d   scale %.2f   %s",
-                      map.key.c_str(), zoom, state.viewport.scale, mode);
+        // Interchange and Shoreline declare upper floors with no tiles. Saying
+        // so beats silently showing the ground level and letting the player
+        // believe they are looking at the floor they are standing on.
+        const bool floorMissing = state.activeLayer >= 0 && !activeLayerDrawable;
+        std::snprintf(text, sizeof(text), "%s   %s%s%s   zoom %d   %s",
+                      map.key.c_str(), layerName(map, state.activeLayer).c_str(),
+                      state.layerAuto ? " (auto)" : "",
+                      floorMissing ? " - no image for this floor" : "", zoom, mode);
 
         const ImVec2 size = ImGui::CalcTextSize(text);
-        const ImVec2 at(origin.x + 16.0f, origin.y + canvasSize.y - size.y - 16.0f);
+        // Bottom centre: the status log lives bottom-left and the HUD
+        // top-right, and a footer underneath either of them is unreadable.
+        const ImVec2 at(origin.x + (canvasSize.x - size.x) / 2.0f,
+                        origin.y + canvasSize.y - size.y - 16.0f);
         draw->AddRectFilled(ImVec2(at.x - 8.0f, at.y - 6.0f),
                             ImVec2(at.x + size.x + 8.0f, at.y + size.y + 6.0f),
                             rgba(0.04f, 0.05f, 0.05f, 0.80f), 4.0f);

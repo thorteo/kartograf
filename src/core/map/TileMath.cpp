@@ -117,6 +117,20 @@ Viewport fitToBounds(const geo::MapVariant& map, int screenWidth, int screenHeig
     return viewport;
 }
 
+double coverScale(const geo::MapVariant& map, int screenWidth, int screenHeight) {
+    const geo::Projection projection(map);
+    const auto bounds = projection.imageBounds();
+    if (!bounds || screenWidth <= 0 || screenHeight <= 0) {
+        return 0.0;
+    }
+    const double width = bounds->second.x - bounds->first.x;
+    const double height = bounds->second.y - bounds->first.y;
+    if (width <= 0.0 || height <= 0.0) {
+        return 0.0;
+    }
+    return std::max(screenWidth / width, screenHeight / height);
+}
+
 Viewport zoomAbout(const Viewport& viewport, const geo::Vec2& anchorScreen,
                    double factor, double minScale, double maxScale) {
     Viewport out = viewport;
@@ -139,14 +153,32 @@ Viewport zoomAbout(const Viewport& viewport, const geo::Vec2& anchorScreen,
 Viewport clampToBounds(const geo::MapVariant& map, Viewport viewport) {
     const geo::Projection projection(map);
     const auto bounds = projection.imageBounds();
-    if (!bounds) {
+    if (!bounds || viewport.scale <= 0.0) {
         return viewport;
     }
-    viewport.centerBase.x =
-        std::clamp(viewport.centerBase.x, bounds->first.x, bounds->second.x);
-    viewport.centerBase.y =
-        std::clamp(viewport.centerBase.y, bounds->first.y, bounds->second.y);
+
+    const auto clampAxis = [](double center, double low, double high,
+                              double halfScreen) {
+        if (high - low <= 2.0 * halfScreen) {
+            // The map is narrower than the screen on this axis; centre it.
+            return (low + high) / 2.0;
+        }
+        return std::clamp(center, low + halfScreen, high - halfScreen);
+    };
+
+    const double halfWidth = viewport.screenWidth / (2.0 * viewport.scale);
+    const double halfHeight = viewport.screenHeight / (2.0 * viewport.scale);
+
+    viewport.centerBase.x = clampAxis(viewport.centerBase.x, bounds->first.x,
+                                      bounds->second.x, halfWidth);
+    viewport.centerBase.y = clampAxis(viewport.centerBase.y, bounds->first.y,
+                                      bounds->second.y, halfHeight);
     return viewport;
+}
+
+int layerIndexOrGround(const geo::MapVariant& map, const geo::Vec3& world) {
+    const auto layer = geo::selectLayer(map, world);
+    return layer ? static_cast<int>(*layer) : -1;
 }
 
 }  // namespace tarkov::map

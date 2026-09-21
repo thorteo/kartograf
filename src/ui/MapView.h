@@ -14,9 +14,12 @@ namespace tarkov::ui {
 
 /// Supplies the texture for a tile, or 0 when it is not ready yet.
 ///
+/// `layer` is -1 for ground level and 0 and up for MapVariant::layers.
+///
 /// A callback rather than a texture cache type, so this file stays free of
 /// Direct3D and the view can be built and reasoned about on Linux.
-using TileTextureProvider = std::function<ImTextureID(int zoom, int x, int y)>;
+using TileTextureProvider =
+    std::function<ImTextureID(int layer, int zoom, int x, int y)>;
 
 /// Everything the map view remembers between frames.
 struct MapViewState {
@@ -24,8 +27,13 @@ struct MapViewState {
     std::string mapName;      ///< The map the viewport was built for.
     bool followPlayer = true; ///< Re-centre on each new position fix.
     bool initialised = false;
-    int activeLayer = -1;     ///< -1 is ground level.
+    /// -1 is ground level; 0 and up index MapVariant::layers.
+    int activeLayer = -1;
+    /// Follow the player's elevation. Cleared when a floor is picked by hand.
     bool layerAuto = true;
+    /// The fix we last re-centred on. Kept here rather than in a function-local
+    /// static so two views, or a restarted view, do not share it.
+    std::int64_t lastFollowedFix = 0;
 };
 
 struct MapViewResult {
@@ -33,6 +41,13 @@ struct MapViewResult {
     int tilesRequested = 0;
     int tilesDrawn = 0;
 };
+
+/// The floor the player is on, as a display name.
+///
+/// Returns "Ground" for the base level, and for an unrecognised index the
+/// index itself rather than an empty string, so a data change shows up instead
+/// of silently vanishing.
+std::string layerName(const geo::MapVariant& map, int layer);
 
 /// Draws the full-screen map.
 ///

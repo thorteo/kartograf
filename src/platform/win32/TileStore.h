@@ -1,0 +1,125 @@
+#pragma once
+
+#include <windows.h>
+
+#include <atomic>
+#include <condition_variable>
+#include <cstdint>
+#include <deque>
+#include <filesystem>
+#include <map>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include <d3d11.h>
+
+#include "platform/win32/ComPtr.h"
+#include "platform/win32/HttpClient.h"
+
+namespace tarkov::win32 {
+
+/// Fetches, caches and uploads map tiles.
+///
+/// Tiles come from the same CDN tarkov.dev uses, are cached to disk forever
+/// (they only change when the game's maps do), and are uploaded to the GPU on
+/// the render thread. No game assets are bundled with the application.
+///
+/// Threading: worker threads do the network and PNG decoding; the render
+/// thread creates textures. Decoded pixels cross between them through one
+/// mutex-guarded queue.
+class TileStore {
+public:
+    struct Key {
+        int zoom = 0;
+        int x = 0;
+        int y = 0;
+        bool operator<(const Key& other) const {
+            if (zoom != other.zoom) return zoom < other.zoom;
+            if (x != other.x) return x < other.x;
+            return y < other.y;
+        }
+    };
+
+    struct Stats {
+        int ready = 0;
+        int loading = 0;
+        int failed = 0;
+        int queued = 0;
+    };
+
+    ~TileStore();
+
+    TileStore() = default;
+    TileStore(const TileStore&) = delete;
+    TileStore& operator=(const TileStore&) = delete;
+
+    bool start(ID3D11Device* device, int workerCount = 3);
+    void stop();
+
+    /// Points the store at a map. Changing maps drops the pending queue: tiles
+    /// for a map the player has left are wasted bandwidth.
+    void setMap(const std::string& normalizedName, const std::string& tilePathTemplate);
+
+    /// The texture for a tile, or nullptr if it is not ready yet. Requests it
+    /// on first miss. Render thread only.
+    ID3D11ShaderResourceView* acquire(const Key& key);
+
+    /// Uploads decoded tiles to the GPU. Render thread, once per frame.
+    /// Returns how many textures were created, so the caller can tell whether
+    /// the frame changed.
+    int pump(int maxUploads = 4);
+
+    Stats stats() const;
+
+    /// Where tiles are cached on disk.
+    static std::filesystem::path defaultCacheRoot();
+
+private:
+    enum class State { Queued, Loading, Ready, Failed };
+
+    struct Entry {
+        State state = State::Queued;
+        ComPtr<ID3D11ShaderResourceView> texture;
+        std::uint64_t lastUsedFrame = 0;
+    };
+
+    struct Decoded {
+        Key key;
+        std::string map;
+        int width = 0;
+        int height = 0;
+        std::vector<std::uint8_t> pixels;  ///< RGBA8
+    };
+
+    void workerLoop();
+    bool fetchAndDecode(const std::string& map, const Key& key, Decoded& out);
+    std::filesystem::path cachePathFor(const std::string& map, const Key& key) const;
+    std::string urlFor(const Key& key) const;
+    void evictIfNeeded();
+
+    ID3D11Device* device_ = nullptr;
+    std::filesystem::path cacheRoot_;
+
+    mutable std::mutex mutex_;
+    std::condition_variable work_;
+    std::atomic<bool> stopping_{false};
+
+    std::string mapName_;
+    std::string tileTemplate_;
+    std::uint64_t mapGeneration_ = 0;
+
+    std::map<Key, Entry> entries_;
+    std::deque<std::pair<Key, std::uint64_t>> pending_;  ///< key + generation
+    std::deque<Decoded> decoded_;
+
+    std::vector<std::thread> workers_;
+    std::uint64_t frame_ = 0;
+
+    /// 256x256 RGBA is 256 KB per tile, so this cap is the memory budget.
+    /// 192 tiles is about 48 MB, comfortably more than one screen at any zoom.
+    static constexpr std::size_t kMaxTextures = 192;
+};
+
+}  // namespace tarkov::win32

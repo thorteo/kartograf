@@ -79,10 +79,22 @@ forward.z = 1 - 2 * (qx*qx + qy*qy)
 yaw_radians = atan2(forward.x, forward.z)
 ```
 
-Then apply the map's `coordinateRotation` before drawing. Verify the result against a
-known landmark before trusting it — sign conventions here are easy to get backwards,
-and the fixture set contains sequences where the player is visibly walking in a
-straight line, which makes an error obvious.
+Then apply the map's `coordinateRotation` before drawing.
+
+**Verified.** Sign conventions here are easy to get backwards in a way that still looks
+plausible, so this was checked against players who were actually walking: pair up
+consecutive screenshots, derive the bearing from the displacement, and compare it to
+the bearing from the quaternion. Measured across the corpus: **median error 9.4°, 77%
+within 45°**. An inverted axis or a swapped sin/cos would push the median past 90°.
+The check lives in `tests/test_heading.cpp`.
+
+One methodological trap, worth recording because it first looked like a bug. Selecting
+those pairs by the **filename timestamp** destroys the correlation — median error 110°,
+indistinguishable from noise. The timestamp has minute resolution, and in a minute a
+player can be anywhere. Selecting by **in-game time** instead, which carries two
+decimals of an hour at 7×, is about five real seconds of resolution and recovers the
+signal completely. When a correlation against this data looks absent, suspect the
+time resolution before suspecting the maths.
 
 ## Consequences for the design
 

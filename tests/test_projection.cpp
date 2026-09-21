@@ -20,6 +20,7 @@
 #include "core/game/LogParser.h"
 #include "core/game/ScreenshotName.h"
 #include "core/geo/MapConfig.h"
+#include "core/data/EmbeddedMaps.h"
 #include "core/geo/Projection.h"
 #include "fixtures.h"
 
@@ -258,4 +259,28 @@ TEST_CASE("floor selection needs both elevation and position") {
     // of the rule that is easy to forget.
     CHECK_FALSE(geo::selectLayer(*customs, geo::Vec3{99999.0, insideHeight, 99999.0})
                     .has_value());
+}
+
+TEST_CASE("the embedded maps.json matches the file on disk") {
+    // The binary ships with maps.json compiled in. If the embedding step ever
+    // silently produced something different from the pinned file, every map in
+    // the overlay would be subtly wrong while the tests kept passing.
+    const auto fromFile = geo::parseMapsJson(test::readFile(test::dataPath("maps.json")));
+    const auto embedded = geo::parseMapsJson(data::kMapsJson);
+
+    REQUIRE(embedded.size() == fromFile.size());
+    REQUIRE_FALSE(embedded.empty());
+
+    for (std::size_t i = 0; i < embedded.size(); ++i) {
+        CAPTURE(embedded[i].normalizedName);
+        CHECK(embedded[i].normalizedName == fromFile[i].normalizedName);
+        CHECK(embedded[i].variants.size() == fromFile[i].variants.size());
+    }
+
+    const auto* customs = geo::findMap(embedded, "customs");
+    REQUIRE(customs != nullptr);
+    const auto* variant = customs->interactiveVariant();
+    REQUIRE(variant != nullptr);
+    CHECK(variant->coordinateRotation == doctest::Approx(180.0));
+    CHECK_FALSE(variant->tilePath.empty());
 }

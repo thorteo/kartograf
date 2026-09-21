@@ -6,6 +6,7 @@ add_executable(tarkov_tests
     test_hotkey.cpp
     test_raid_state.cpp
     test_hud_format.cpp
+    test_tile_math.cpp
     test_projection.cpp
 )
 

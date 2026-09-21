@@ -11,6 +11,25 @@ endif()
 
 option(TARKOV_BUILD_TESTS "Build the test suite" ON)
 
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
+# maps.json is compiled in rather than shipped beside the executable, so a
+# release is one file and cannot be half-updated.
+set(TARKOV_EMBEDDED_MAPS ${CMAKE_CURRENT_BINARY_DIR}/generated/EmbeddedMaps.cpp)
+add_custom_command(
+    OUTPUT ${TARKOV_EMBEDDED_MAPS}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/generated
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/scripts/embed_file.py
+            ${CMAKE_CURRENT_SOURCE_DIR}/data/maps.json
+            ${TARKOV_EMBEDDED_MAPS}
+            tarkov::data kMapsJson
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/data/maps.json
+            ${CMAKE_CURRENT_SOURCE_DIR}/scripts/embed_file.py
+    COMMENT "Embedding maps.json"
+    VERBATIM
+)
+
 # ---------------------------------------------------------------------------
 # tarkov_core -- portable. Must never include <windows.h>; see CLAUDE.md.
 # ---------------------------------------------------------------------------
@@ -19,6 +38,8 @@ add_library(tarkov_core STATIC
     src/core/game/LogParser.cpp
     src/core/game/RaidState.cpp
     src/core/input/Hotkey.cpp
+    src/core/map/TileMath.cpp
+    ${TARKOV_EMBEDDED_MAPS}
     src/core/geo/Heading.cpp
     src/core/geo/MapConfig.cpp
     src/core/geo/Projection.cpp
@@ -56,7 +77,7 @@ target_include_directories(tarkov_imgui SYSTEM PUBLIC
 # tarkov_ui -- views. Portable: ImGui draws into a vertex buffer, so the HUD
 # can be built and its formatting tested without a Windows build.
 # ---------------------------------------------------------------------------
-add_library(tarkov_ui STATIC src/ui/Hud.cpp)
+add_library(tarkov_ui STATIC src/ui/Hud.cpp src/ui/MapView.cpp)
 target_link_libraries(tarkov_ui PUBLIC tarkov_core tarkov_imgui)
 
 # ---------------------------------------------------------------------------
@@ -69,6 +90,8 @@ if(WIN32)
         src/platform/win32/GameWindow.cpp
         src/platform/win32/GameFiles.cpp
         src/platform/win32/GameDataWatcher.cpp
+        src/platform/win32/HttpClient.cpp
+        src/platform/win32/TileStore.cpp
         src/platform/win32/ImGuiLayer.cpp
         third_party/imgui/backends/imgui_impl_win32.cpp
         third_party/imgui/backends/imgui_impl_dx11.cpp
@@ -86,6 +109,7 @@ if(WIN32)
         ole32
         advapi32
         dwmapi
+        winhttp
     )
 
     if(MSVC)

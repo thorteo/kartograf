@@ -41,7 +41,18 @@ records what that means concretely, in the order we intend to earn it.
       9.8% of a core; drawing only when the state object changes, a displayed second
       ticks, or the user is interacting costs **0.2%**. Working set 45 MB.
 - [ ] Hotkey binding persisted to a config file (currently a command-line flag)
-- [ ] The map view itself: tiles, position marker, automatic floor switching
+- [x] **The map view.** Raster tiles from the same CDN tarkov.dev uses, fetched by a
+      worker pool, cached to disk forever, decoded with stb_image and uploaded to the
+      GPU on the render thread with an LRU texture budget of 192 tiles (~48 MB).
+      Drag to pan, wheel to zoom about the cursor, follow-the-player by default.
+- [x] **Marker verified against the map, not just the map bounds.** Injecting a real
+      Customs position put the marker on the south-west corner of Dorms, at the tree
+      line, with the heading arrow pointing the right way. This was the last thing the
+      earlier tests could not confirm.
+- [x] maps.json compiled into the binary, so a release stays one file
+- [ ] Automatic floor switching wired into the view (the selector is written and
+      tested; the view still draws ground level only)
+- [ ] Quest objectives on the map
 - [ ] Automatic map detection from logs — the overlay opens the right map by itself
 - [ ] Live position marker with heading, and a visible **age indicator** on the fix
 - [ ] Automatic floor switching from elevation plus bounds

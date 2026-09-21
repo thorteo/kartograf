@@ -16,21 +16,28 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <vector>
 
 #include <imgui.h>
 
+#include "core/data/EmbeddedMaps.h"
 #include "core/game/RaidState.h"
+#include "core/game/ScreenshotName.h"
+#include "core/geo/MapConfig.h"
 #include "core/input/Hotkey.h"
 #include "platform/win32/GameDataWatcher.h"
 #include "platform/win32/GameWindow.h"
 #include "platform/win32/ImGuiLayer.h"
 #include "platform/win32/OverlayWindow.h"
+#include "platform/win32/TileStore.h"
 #include "ui/Hud.h"
+#include "ui/MapView.h"
 
 namespace {
 
-constexpr int kToggleHotkeyId = 1;
+constexpr int kMapHotkeyId = 1;
 constexpr int kInteractHotkeyId = 2;
+constexpr int kHudHotkeyId = 3;
 
 /// Status lines, shown briefly in the overlay so the user is not expected to
 /// have a console open.
@@ -153,16 +160,24 @@ void drawStatus(unsigned long long nowMillis) {
 int main(int argc, char** argv) {
     using namespace tarkov;
 
-    const input::Hotkey toggle =
+    const input::Hotkey mapKey =
         resolveHotkey(argumentValue(argc, argv, "--toggle-key"),
                       input::defaultToggleHotkey());
     const input::Hotkey interact =
         resolveHotkey(argumentValue(argc, argv, "--interact-key"),
                       input::Hotkey{input::kAlt, 'N'});
+    const input::Hotkey hudKey =
+        resolveHotkey(argumentValue(argc, argv, "--hud-key"),
+                      input::Hotkey{input::kAlt, 'H'});
     const bool debug = hasFlag(argc, argv, "--debug");
     // Development and first-run aids: show the overlay with no game running,
     // and allow it into screen captures so it can be photographed.
     const bool standalone = hasFlag(argc, argv, "--no-game");
+    // Development aids: open a named map with no raid running, and inject a
+    // position by pasting a real screenshot filename. Together these let the
+    // marker be checked against the map without playing.
+    const std::string forcedMap = argumentValue(argc, argv, "--map");
+    const std::string fakeShot = argumentValue(argc, argv, "--fake-shot");
     const bool allowCapture = hasFlag(argc, argv, "--allow-capture");
     const int runSeconds = [&] {
         const std::string value = argumentValue(argc, argv, "--run-seconds");
@@ -198,10 +213,36 @@ int main(int argc, char** argv) {
             break;
     }
 
-    registerOrReport(kToggleHotkeyId, toggle, "toggle");
+    registerOrReport(kMapHotkeyId, mapKey, "map");
     registerOrReport(kInteractHotkeyId, interact, "interact");
+    registerOrReport(kHudHotkeyId, hudKey, "hud");
+
+    const std::vector<geo::MapDefinition> maps = geo::parseMapsJson(data::kMapsJson);
+    if (maps.empty()) {
+        g_status.add("embedded map data failed to parse -- the map view is disabled");
+    }
+
+    win32::TileStore tiles;
+    tiles.start(overlay.device());
 
     game::RaidState raidState;
+    if (!forcedMap.empty()) {
+        game::RaidEvent forced;
+        forced.type = game::RaidEventType::MapLoading;
+        forced.mapId = forcedMap;
+        raidState.apply(forced, static_cast<std::int64_t>(GetTickCount64()));
+        g_status.add("forced map: " + forcedMap);
+    }
+    if (!fakeShot.empty()) {
+        if (const auto shot = game::parseScreenshotName(fakeShot)) {
+            raidState.applyPosition(*shot,
+                                    static_cast<std::int64_t>(GetTickCount64()));
+            g_status.add("injected position from screenshot name");
+        } else {
+            g_status.add("could not parse the screenshot name given to --fake-shot");
+        }
+    }
+
     win32::GameDataWatcher watcher;
     if (!watcher.start(raidState, [](const std::string& line) { g_status.add(line); })) {
         g_status.add("running without game data");
@@ -215,10 +256,19 @@ int main(int argc, char** argv) {
     ui::HudOptions hudOptions;
     hudOptions.showDebug = debug;
 
+    ui::MapViewState mapState;
+    // Asking for a map on the command line means you want to see it.
+    bool mapVisible = !forcedMap.empty();
+    bool hudVisible = true;
+    std::string tiledMap;
+
     std::shared_ptr<const game::RaidSnapshot> lastSnapshot;
     unsigned long long lastDisplaySecond = 0;
     // Set whenever something outside the snapshot changes what is on screen.
     bool forceRedraw = true;
+    // Tiles arrive asynchronously, so a frame with missing tiles has to be
+    // followed by more frames until they land.
+    bool pendingTiles = false;
 
     const ULONGLONG startedAt = GetTickCount64();
     if (standalone) {
@@ -231,8 +281,11 @@ int main(int argc, char** argv) {
             if (message.message != WM_HOTKEY) {
                 continue;
             }
-            if (message.wParam == kToggleHotkeyId) {
-                overlayEnabled = !overlayEnabled;
+            if (message.wParam == kMapHotkeyId) {
+                mapVisible = !mapVisible;
+                forceRedraw = true;
+            } else if (message.wParam == kHudHotkeyId) {
+                hudVisible = !hudVisible;
                 forceRedraw = true;
             } else if (message.wParam == kInteractHotkeyId) {
                 forceRedraw = true;
@@ -303,8 +356,11 @@ int main(int argc, char** argv) {
         const unsigned long long displaySecond = nowTicks / 1000;
         const bool stateChanged = snapshot.get() != lastSnapshot.get();
         const bool secondTicked = displaySecond != lastDisplaySecond;
-        const bool needsFrame =
-            interactive || stateChanged || secondTicked || forceRedraw;
+        // A tile arriving changes the picture even though no state did, so the
+        // upload count is part of what makes a frame necessary.
+        const int uploaded = tiles.pump();
+        const bool needsFrame = interactive || stateChanged || secondTicked ||
+                                forceRedraw || uploaded > 0 || pendingTiles;
 
         if (!needsFrame) {
             // Wake early if a message arrives, so input stays responsive.
@@ -320,7 +376,56 @@ int main(int argc, char** argv) {
         overlay.beginFrame(0.0f, 0.0f, 0.0f, 0.0f);
         imgui.beginFrame(overlay.width(), overlay.height());
 
-        ui::drawHud(*snapshot, static_cast<std::int64_t>(nowTicks), hudOptions);
+        // The map goes underneath, so the HUD and status stay legible over it.
+        if (mapVisible && !maps.empty()) {
+            const geo::MapVariant* variant = nullptr;
+            if (!snapshot->mapNormalized.empty()) {
+                if (const auto* definition =
+                        geo::findMap(maps, snapshot->mapNormalized)) {
+                    variant = definition->interactiveVariant();
+                }
+            }
+
+            if (variant == nullptr) {
+                ImGui::SetNextWindowPos(
+                    ImVec2(overlay.width() / 2.0f, overlay.height() / 2.0f),
+                    ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+                if (ImGui::Begin("tarkov-help-nomap", nullptr,
+                                 ImGuiWindowFlags_NoDecoration |
+                                     ImGuiWindowFlags_AlwaysAutoResize |
+                                     ImGuiWindowFlags_NoSavedSettings |
+                                     ImGuiWindowFlags_NoNav |
+                                     ImGuiWindowFlags_NoMove)) {
+                    ImGui::Text("Waiting for a raid to start.");
+                    ImGui::TextDisabled("The map opens by itself once the game "
+                                        "says which one you are on.");
+                }
+                ImGui::End();
+            } else {
+                if (tiledMap != variant->key) {
+                    tiledMap = variant->key;
+                    tiles.setMap(variant->key, variant->tilePath);
+                }
+                const auto result = ui::drawMapView(
+                    mapState, *variant, *snapshot,
+                    static_cast<std::int64_t>(nowTicks), interactive,
+                    [&tiles](int zoom, int x, int y) -> ImTextureID {
+                        return reinterpret_cast<ImTextureID>(
+                            tiles.acquire({zoom, x, y}));
+                    });
+                // Keep drawing while tiles are still arriving, then stop.
+                pendingTiles = result.tilesRequested > 0;
+                if (result.wantsRedraw) {
+                    forceRedraw = true;
+                }
+            }
+        } else {
+            pendingTiles = false;
+        }
+
+        if (hudVisible) {
+            ui::drawHud(*snapshot, static_cast<std::int64_t>(nowTicks), hudOptions);
+        }
         drawStatus(nowTicks);
 
         imgui.endFrame();
@@ -328,7 +433,9 @@ int main(int argc, char** argv) {
     }
 
     watcher.stop();
-    UnregisterHotKey(nullptr, kToggleHotkeyId);
+    tiles.stop();
+    UnregisterHotKey(nullptr, kMapHotkeyId);
+    UnregisterHotKey(nullptr, kHudHotkeyId);
     UnregisterHotKey(nullptr, kInteractHotkeyId);
     return 0;
 }

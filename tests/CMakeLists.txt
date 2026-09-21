@@ -8,6 +8,7 @@ add_executable(tarkov_tests
     test_hud_format.cpp
     test_tile_math.cpp
     test_map_view.cpp
+    test_task_model.cpp
     test_projection.cpp
 )
 

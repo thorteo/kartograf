@@ -1,0 +1,3336 @@
+{
+ "data": {
+  "tasks": {
+   "657315ddab5a49b71f098853": {
+    "id": "657315ddab5a49b71f098853",
+    "name": "657315ddab5a49b71f098853 name",
+    "trader": "54cb57776803fa99248b456e",
+    "wikiLink": "https://escapefromtarkov.fandom.com/wiki/First_in_Line",
+    "minPlayerLevel": 1,
+    "taskRequirements": [],
+    "traderRequirements": [],
+    "objectives": [
+     {
+      "id": "65732ac3c67dcd96adffa3c7",
+      "description": "65732ac3c67dcd96adffa3c7",
+      "type": "visit",
+      "optional": false,
+      "zones": [
+       {
+        "id": "Sandbox_1_MedicalArea_exploration",
+        "map": "65b8d6f5cdde2479cb2a3125",
+        "position": {
+         "x": 156.2,
+         "y": 25.52,
+         "z": -83.59
+        },
+        "size": {
+         "x": 25.5,
+         "y": 6,
+         "z": 14.2
+        },
+        "outline": [
+         {
+          "x": 143.45,
+          "y": 25.52,
+          "z": -90.6899948
+         },
+         {
+          "x": 168.95,
+          "y": 25.52,
+          "z": -90.6899948
+         },
+         {
+          "x": 168.95,
+          "y": 25.52,
+          "z": -76.49
+         },
+         {
+          "x": 143.45,
+          "y": 25.52,
+          "z": -76.49
+         }
+        ],
+        "top": 28.52,
+        "bottom": 22.52,
+        "terrainElevation": 25.52
+       },
+       {
+        "id": "Sandbox_1_MedicalArea_exploration",
+        "map": "653e6760052c01c1c805532f",
+        "position": {
+         "x": 156.2,
+         "y": 25.52,
+         "z": -83.59
+        },
+        "outline": [
+         {
+          "x": 143.45,
+          "y": 22.52,
+          "z": -90.69
+         },
+         {
+          "x": 143.45,
+          "y": 22.52,
+          "z": -76.49
+         },
+         {
+          "x": 168.95,
+          "y": 22.52,
+          "z": -76.49
+         },
+         {
+          "x": 168.95,
+          "y": 22.52,
+          "z": -90.69
+         }
+        ],
+        "top": 28.52,
+        "bottom": 22.52
+       }
+      ],
+      "maps": [
+       "653e6760052c01c1c805532f",
+       "65b8d6f5cdde2479cb2a3125"
+      ]
+     },
+     {
+      "id": "65817bf31404f3565aef9fec",
+      "description": "65817bf31404f3565aef9fec",
+      "type": "giveItem",
+      "count": 3,
+      "optional": false,
+      "items": [
+       "590c695186f7741e566b64a2",
+       "5751a89d24597722aa0e8db0",
+       "5af0548586f7743a532b7e99",
+       "544fb3f34bdc2d03748b456a",
+       "544fb37f4bdc2dee738b4567",
+       "5755383e24597772cb798966",
+       "590c657e86f77412b013051d",
+       "60098ad7c2240c0fe85c570a",
+       "590c661e86f7741e566b646a",
+       "590c678286f77426c9660122",
+       "5755356824597772cb798962",
+       "544fb45d4bdc2dee738b4568",
+       "544fb25a4bdc2dfb738b4567",
+       "5751a25924597722c463c472",
+       "5d02778e86f774203e7dedbe",
+       "5af0454c86f7746bf20992e8",
+       "60098af40accd37ef2175f27",
+       "5e831507ea0a7c419c2f9bd9",
+       "5e8488fa988a8701445df1e4",
+       "544fb3364bdc2d34748b456a",
+       "5d02797c86f774203f38e30a",
+       "5ed515c8d380ab312177c0fa",
+       "5ed515f6915ec335206e4152",
+       "5c10c8fd86f7743d7d706df3",
+       "5ed515e03a40a50460332579",
+       "5ed51652f6c34d2cc26336a1",
+       "5ed5160a87bb8443d10680b5",
+       "5ed5166ad380ab312177c100",
+       "637b60c3b7afa97bfc3d7001",
+       "5ed515ece452db0eb56fc028",
+       "637b6179104668754b72f8f5",
+       "637b6251104668754b72f8f9",
+       "5c0e530286f7747fa1419862",
+       "637b612fb7afa97bfc3d7005",
+       "5c0e531286f7747fa54205c2",
+       "5c0e531d86f7747fa23f4d42",
+       "5fca13ca637ee0341a484f46",
+       "637b620db7afa97bfc3d7009",
+       "5c0e533786f7747fa23f4d47",
+       "5c0e534186f7747fa1419867",
+       "5fca138c2a7b221b2852a5c6",
+       "5c052e6986f7746b207bc3c9",
+       "5c0530ee86f774697952d952",
+       "6389c6c7dbfd5e4b95197e68",
+       "5b4335ba86f7744d2837a264",
+       "5af0534a86f7743b6f354284",
+       "59e361e886f774176c10a2a5",
+       "59e3606886f77417674759a5",
+       "5d1b3a5d86f774252167ba22",
+       "5d1b3f2d86f774253763b735",
+       "62a0a043cf4a99369e2624a5",
+       "619cc01e0a7c3a1a2731940c"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": true
+     }
+    ],
+    "failConditions": [],
+    "startRewards": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "finishRewards": {
+     "traderStanding": [
+      {
+       "standing": 0.1,
+       "trader": "54cb57776803fa99248b456e"
+      }
+     ],
+     "items": [
+      {
+       "item": "5449016a4bdc2d6f028b456f",
+       "count": 80000,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "failureOutcome": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "restartable": false,
+    "experience": 3000,
+    "factionName": "Any",
+    "neededKeys": [],
+    "availableDelaySecondsMin": 0,
+    "availableDelaySecondsMax": 0,
+    "otherRequirements": [
+     {
+      "id": "68dfd6d220b777b168d7ef72",
+      "type": "dialogue",
+      "traders": [
+       "54cb57776803fa99248b456e"
+      ]
+     }
+    ],
+    "normalizedName": "first-in-line",
+    "kappaRequired": false,
+    "lightkeeperRequired": false,
+    "taskImageLink": "https://assets.tarkov.dev/657315ddab5a49b71f098853.webp",
+    "map": "653e6760052c01c1c805532f"
+   },
+   "657315df034d76585f032e01": {
+    "id": "657315df034d76585f032e01",
+    "name": "657315df034d76585f032e01 name",
+    "trader": "54cb50c76803fa8b248b4571",
+    "wikiLink": "https://escapefromtarkov.fandom.com/wiki/Shooting_Cans",
+    "minPlayerLevel": 1,
+    "taskRequirements": [],
+    "traderRequirements": [],
+    "objectives": [
+     {
+      "id": "657333fee3fbaa77d3b5cd7c",
+      "description": "657333fee3fbaa77d3b5cd7c",
+      "type": "visit",
+      "optional": false,
+      "zones": [
+       {
+        "id": "Sandbox_2_Kord_exploration",
+        "map": "65b8d6f5cdde2479cb2a3125",
+        "position": {
+         "x": 56.603,
+         "y": 32.336,
+         "z": 130.605
+        },
+        "size": {
+         "x": 7,
+         "y": 3,
+         "z": 7
+        },
+        "outline": [
+         {
+          "x": 53.103,
+          "y": 32.336,
+          "z": 127.104996
+         },
+         {
+          "x": 60.103,
+          "y": 32.336,
+          "z": 127.104996
+         },
+         {
+          "x": 60.103,
+          "y": 32.336,
+          "z": 134.105
+         },
+         {
+          "x": 53.103,
+          "y": 32.336,
+          "z": 134.105
+         }
+        ],
+        "top": 33.836,
+        "bottom": 30.8359985,
+        "terrainElevation": 32.336
+       },
+       {
+        "id": "Sandbox_2_Kord_exploration",
+        "map": "653e6760052c01c1c805532f",
+        "position": {
+         "x": 56.6,
+         "y": 32.34,
+         "z": 130.6
+        },
+        "outline": [
+         {
+          "x": 53.1,
+          "y": 30.84,
+          "z": 127.1
+         },
+         {
+          "x": 53.1,
+          "y": 30.84,
+          "z": 134.1
+         },
+         {
+          "x": 60.1,
+          "y": 30.84,
+          "z": 134.1
+         },
+         {
+          "x": 60.1,
+          "y": 30.84,
+          "z": 127.1
+         }
+        ],
+        "top": 33.84,
+        "bottom": 30.84
+       }
+      ],
+      "maps": [
+       "653e6760052c01c1c805532f",
+       "65b8d6f5cdde2479cb2a3125"
+      ]
+     },
+     {
+      "id": "6573340403f471fb2bb12df1",
+      "description": "6573340403f471fb2bb12df1",
+      "type": "visit",
+      "optional": false,
+      "zones": [
+       {
+        "id": "Sandbox_2_AGS_exploration",
+        "map": "65b8d6f5cdde2479cb2a3125",
+        "position": {
+         "x": 101.043,
+         "y": 34.16,
+         "z": 276.36
+        },
+        "size": {
+         "x": 7.55,
+         "y": 3,
+         "z": 6.6
+        },
+        "outline": [
+         {
+          "x": 97.268,
+          "y": 34.16,
+          "z": 273.06
+         },
+         {
+          "x": 104.818,
+          "y": 34.16,
+          "z": 273.06
+         },
+         {
+          "x": 104.818,
+          "y": 34.16,
+          "z": 279.659973
+         },
+         {
+          "x": 97.268,
+          "y": 34.16,
+          "z": 279.659973
+         }
+        ],
+        "top": 35.66,
+        "bottom": 32.66,
+        "terrainElevation": 34.16
+       },
+       {
+        "id": "Sandbox_2_AGS_exploration",
+        "map": "653e6760052c01c1c805532f",
+        "position": {
+         "x": 101.04,
+         "y": 34.16,
+         "z": 276.36
+        },
+        "outline": [
+         {
+          "x": 97.27,
+          "y": 32.66,
+          "z": 273.06
+         },
+         {
+          "x": 97.27,
+          "y": 32.66,
+          "z": 279.66
+         },
+         {
+          "x": 104.82,
+          "y": 32.66,
+          "z": 279.66
+         },
+         {
+          "x": 104.82,
+          "y": 32.66,
+          "z": 273.06
+         }
+        ],
+        "top": 35.66,
+        "bottom": 32.66
+       }
+      ],
+      "maps": [
+       "653e6760052c01c1c805532f",
+       "65b8d6f5cdde2479cb2a3125"
+      ]
+     },
+     {
+      "id": "6a54a310b22ea41cf1c54a20",
+      "description": "6a54a310b22ea41cf1c54a20",
+      "type": "shoot",
+      "count": 5,
+      "optional": false,
+      "shotType": "kill",
+      "bodyParts": [],
+      "usingWeapon": [],
+      "usingWeaponMods": [],
+      "distance": {
+       "value": 0,
+       "compareMethod": ">="
+      },
+      "timeFromHour": 0,
+      "timeUntilHour": 0,
+      "wearing": [],
+      "notWearing": [],
+      "enemyHealthEffect": null,
+      "targetNames": [
+       "Any"
+      ],
+      "playerHealthEffect": null,
+      "zones": [],
+      "maps": [
+       "653e6760052c01c1c805532f",
+       "65b8d6f5cdde2479cb2a3125"
+      ]
+     }
+    ],
+    "failConditions": [],
+    "startRewards": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "finishRewards": {
+     "traderStanding": [
+      {
+       "standing": 0.1,
+       "trader": "54cb50c76803fa8b248b4571"
+      }
+     ],
+     "items": [
+      {
+       "item": "5449016a4bdc2d6f028b456f",
+       "count": 80000,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "failureOutcome": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "restartable": false,
+    "experience": 3000,
+    "factionName": "Any",
+    "neededKeys": [],
+    "availableDelaySecondsMin": 0,
+    "availableDelaySecondsMax": 0,
+    "otherRequirements": [],
+    "normalizedName": "shooting-cans",
+    "kappaRequired": false,
+    "lightkeeperRequired": false,
+    "taskImageLink": "https://assets.tarkov.dev/657315df034d76585f032e01.webp",
+    "map": "653e6760052c01c1c805532f"
+   },
+   "657315e270bb0b8dba00cc48": {
+    "id": "657315e270bb0b8dba00cc48",
+    "name": "657315e270bb0b8dba00cc48 name",
+    "trader": "58330581ace78e27b8b10cee",
+    "wikiLink": "https://escapefromtarkov.fandom.com/wiki/Burning_Rubber",
+    "minPlayerLevel": 1,
+    "taskRequirements": [],
+    "traderRequirements": [],
+    "objectives": [
+     {
+      "id": "65733e571b7e7ed95fcd2f0c",
+      "description": "65733e571b7e7ed95fcd2f0c",
+      "type": "extract",
+      "count": 1,
+      "optional": false,
+      "exitName": "Sandbox_VExit",
+      "exitStatus": [
+       "ExpBonusRunner",
+       "ExpBonusSurvived"
+      ],
+      "maps": [
+       "653e6760052c01c1c805532f",
+       "65b8d6f5cdde2479cb2a3125"
+      ]
+     }
+    ],
+    "failConditions": [],
+    "startRewards": {
+     "traderStanding": [],
+     "items": [
+      {
+       "item": "5449016a4bdc2d6f028b456f",
+       "count": 20000,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "finishRewards": {
+     "traderStanding": [
+      {
+       "standing": 0.1,
+       "trader": "58330581ace78e27b8b10cee"
+      }
+     ],
+     "items": [
+      {
+       "item": "569668774bdc2da2298b4568",
+       "count": 450,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "failureOutcome": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "restartable": false,
+    "experience": 3000,
+    "factionName": "Any",
+    "neededKeys": [],
+    "availableDelaySecondsMin": 0,
+    "availableDelaySecondsMax": 0,
+    "otherRequirements": [
+     {
+      "id": "6917b4c8e0ec62f3d7a46246",
+      "type": "dialogue",
+      "traders": [
+       "58330581ace78e27b8b10cee"
+      ]
+     }
+    ],
+    "normalizedName": "burning-rubber",
+    "kappaRequired": false,
+    "lightkeeperRequired": false,
+    "taskImageLink": "https://assets.tarkov.dev/657315e270bb0b8dba00cc48.webp",
+    "map": "653e6760052c01c1c805532f"
+   },
+   "657315e4a6af4ab4b50f3459": {
+    "id": "657315e4a6af4ab4b50f3459",
+    "name": "657315e4a6af4ab4b50f3459 name",
+    "trader": "5a7c2eca46aef81a7ca2145d",
+    "wikiLink": "https://escapefromtarkov.fandom.com/wiki/Saving_the_Mole",
+    "minPlayerLevel": 1,
+    "taskRequirements": [],
+    "traderRequirements": [],
+    "objectives": [
+     {
+      "id": "6575a64d3fc09bdfb38b713d",
+      "description": "6575a64d3fc09bdfb38b713d",
+      "type": "visit",
+      "optional": false,
+      "zones": [
+       {
+        "id": "Sandbox_5_Office_exploration",
+        "map": "65b8d6f5cdde2479cb2a3125",
+        "position": {
+         "x": -13.48,
+         "y": 31.01,
+         "z": 51.33
+        },
+        "size": {
+         "x": 13.6,
+         "y": 3,
+         "z": 13.3
+        },
+        "outline": [
+         {
+          "x": -20.2799988,
+          "y": 31.01,
+          "z": 44.68
+         },
+         {
+          "x": -6.67999935,
+          "y": 31.01,
+          "z": 44.68
+         },
+         {
+          "x": -6.67999935,
+          "y": 31.01,
+          "z": 57.9800034
+         },
+         {
+          "x": -20.2799988,
+          "y": 31.01,
+          "z": 57.9800034
+         }
+        ],
+        "top": 32.5100021,
+        "bottom": 29.51,
+        "terrainElevation": 31.01
+       },
+       {
+        "id": "Sandbox_5_Office_exploration",
+        "map": "653e6760052c01c1c805532f",
+        "position": {
+         "x": -13.48,
+         "y": 31.01,
+         "z": 51.33
+        },
+        "outline": [
+         {
+          "x": -20.28,
+          "y": 29.51,
+          "z": 44.68
+         },
+         {
+          "x": -20.28,
+          "y": 29.51,
+          "z": 57.98
+         },
+         {
+          "x": -6.68,
+          "y": 29.51,
+          "z": 57.98
+         },
+         {
+          "x": -6.68,
+          "y": 29.51,
+          "z": 44.68
+         }
+        ],
+        "top": 32.51,
+        "bottom": 29.51
+       }
+      ],
+      "maps": [
+       "653e6760052c01c1c805532f",
+       "65b8d6f5cdde2479cb2a3125"
+      ]
+     },
+     {
+      "id": "6575a524a39d2be74e620546",
+      "description": "6575a524a39d2be74e620546",
+      "type": "visit",
+      "optional": true,
+      "zones": [
+       {
+        "id": "Sandbox_5_DeadGroup_exploration",
+        "map": "65b8d6f5cdde2479cb2a3125",
+        "position": {
+         "x": -21.01,
+         "y": 24.228,
+         "z": -25.1
+        },
+        "size": {
+         "x": 16,
+         "y": 3,
+         "z": 8
+        },
+        "outline": [
+         {
+          "x": -29.01,
+          "y": 24.228,
+          "z": -29.1
+         },
+         {
+          "x": -13.01,
+          "y": 24.228,
+          "z": -29.1
+         },
+         {
+          "x": -13.01,
+          "y": 24.228,
+          "z": -21.1
+         },
+         {
+          "x": -29.01,
+          "y": 24.228,
+          "z": -21.1
+         }
+        ],
+        "top": 25.728,
+        "bottom": 22.728,
+        "terrainElevation": 24.228
+       },
+       {
+        "id": "Sandbox_5_DeadGroup_exploration",
+        "map": "653e6760052c01c1c805532f",
+        "position": {
+         "x": -21.01,
+         "y": 24.23,
+         "z": -25.1
+        },
+        "outline": [
+         {
+          "x": -29.01,
+          "y": 22.73,
+          "z": -29.1
+         },
+         {
+          "x": -29.01,
+          "y": 22.73,
+          "z": -21.1
+         },
+         {
+          "x": -13.01,
+          "y": 22.73,
+          "z": -21.1
+         },
+         {
+          "x": -13.01,
+          "y": 22.73,
+          "z": -29.1
+         }
+        ],
+        "top": 25.73,
+        "bottom": 22.73
+       }
+      ],
+      "maps": [
+       "653e6760052c01c1c805532f",
+       "65b8d6f5cdde2479cb2a3125"
+      ]
+     },
+     {
+      "id": "6575a62a62028c6d5cb43cb7",
+      "description": "6575a62a62028c6d5cb43cb7",
+      "type": "visit",
+      "optional": true,
+      "zones": [
+       {
+        "id": "Sandbox_5_Laborant_exploration",
+        "map": "65b8d6f5cdde2479cb2a3125",
+        "position": {
+         "x": -60.45,
+         "y": 25.62,
+         "z": 27.42
+        },
+        "size": {
+         "x": 5,
+         "y": 3,
+         "z": 7
+        },
+        "outline": [
+         {
+          "x": -62.95,
+          "y": 25.62,
+          "z": 23.92
+         },
+         {
+          "x": -57.95,
+          "y": 25.62,
+          "z": 23.92
+         },
+         {
+          "x": -57.95,
+          "y": 25.62,
+          "z": 30.92
+         },
+         {
+          "x": -62.95,
+          "y": 25.62,
+          "z": 30.92
+         }
+        ],
+        "top": 27.12,
+        "bottom": 24.12,
+        "terrainElevation": 25.62
+       },
+       {
+        "id": "Sandbox_5_Laborant_exploration",
+        "map": "653e6760052c01c1c805532f",
+        "position": {
+         "x": -60.45,
+         "y": 25.62,
+         "z": 27.42
+        },
+        "outline": [
+         {
+          "x": -62.95,
+          "y": 24.12,
+          "z": 23.92
+         },
+         {
+          "x": -62.95,
+          "y": 24.12,
+          "z": 30.92
+         },
+         {
+          "x": -57.95,
+          "y": 24.12,
+          "z": 30.92
+         },
+         {
+          "x": -57.95,
+          "y": 24.12,
+          "z": 23.92
+         }
+        ],
+        "top": 27.12,
+        "bottom": 24.12
+       }
+      ],
+      "maps": [
+       "653e6760052c01c1c805532f",
+       "65b8d6f5cdde2479cb2a3125"
+      ]
+     },
+     {
+      "id": "65817fbbb454159976c91917",
+      "description": "65817fbbb454159976c91917",
+      "type": "findQuestItem",
+      "count": 1,
+      "optional": false,
+      "possibleLocations": [
+       {
+        "map": "653e6760052c01c1c805532f",
+        "positions": [
+         {
+          "x": -12.127326,
+          "y": 30.6906,
+          "z": 48.043213
+         },
+         {
+          "x": -11.949866,
+          "y": 30.2254,
+          "z": 49.585052
+         },
+         {
+          "x": -12.356882,
+          "y": 30.692001,
+          "z": 49.026344
+         }
+        ]
+       },
+       {
+        "map": "65b8d6f5cdde2479cb2a3125",
+        "positions": [
+         {
+          "x": -11.949866,
+          "y": 30.2254,
+          "z": 49.585052
+         },
+         {
+          "x": -12.127326,
+          "y": 30.6906,
+          "z": 48.043213
+         },
+         {
+          "x": -12.333414,
+          "y": 30.691,
+          "z": 49.01263
+         }
+        ]
+       }
+      ],
+      "maps": [
+       "653e6760052c01c1c805532f",
+       "65b8d6f5cdde2479cb2a3125"
+      ],
+      "questItem": "6575a6ca8778e96ded05a802"
+     },
+     {
+      "id": "65817fc99a039ed2e97896e4",
+      "description": "65817fc99a039ed2e97896e4",
+      "type": "giveQuestItem",
+      "count": 1,
+      "optional": false,
+      "maps": [],
+      "questItem": "6575a6ca8778e96ded05a802"
+     }
+    ],
+    "failConditions": [],
+    "startRewards": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "finishRewards": {
+     "traderStanding": [
+      {
+       "standing": 0.1,
+       "trader": "5a7c2eca46aef81a7ca2145d"
+      }
+     ],
+     "items": [
+      {
+       "item": "5449016a4bdc2d6f028b456f",
+       "count": 80000,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "failureOutcome": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "restartable": false,
+    "experience": 3000,
+    "factionName": "Any",
+    "neededKeys": [],
+    "availableDelaySecondsMin": 0,
+    "availableDelaySecondsMax": 0,
+    "otherRequirements": [
+     {
+      "id": "68dfd865aaf6f3c722200252",
+      "type": "dialogue",
+      "traders": [
+       "5a7c2eca46aef81a7ca2145d"
+      ]
+     }
+    ],
+    "normalizedName": "saving-the-mole",
+    "kappaRequired": false,
+    "lightkeeperRequired": false,
+    "taskImageLink": "https://assets.tarkov.dev/657315e4a6af4ab4b50f3459.webp",
+    "map": "653e6760052c01c1c805532f"
+   },
+   "59c9392986f7742f6923add2": {
+    "id": "59c9392986f7742f6923add2",
+    "name": "59c9392986f7742f6923add2 name",
+    "trader": "54cb57776803fa99248b456e",
+    "wikiLink": "https://escapefromtarkov.fandom.com/wiki/Aid_Stations",
+    "minPlayerLevel": 5,
+    "taskRequirements": [],
+    "traderRequirements": [
+     {
+      "id": "6a5672392ee61bd094c49e28",
+      "requirementType": "level",
+      "compareMethod": ">=",
+      "value": 2,
+      "trader": "54cb57776803fa99248b456e"
+     }
+    ],
+    "objectives": [
+     {
+      "id": "59c93bdb86f7742a19140434",
+      "description": "59c93bdb86f7742a19140434",
+      "type": "findItem",
+      "count": 1,
+      "optional": false,
+      "items": [
+       "593aa4be86f77457f56379f8"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false,
+      "zones": [],
+      "maps": []
+     },
+     {
+      "id": "59c93c1986f7742a424eaa33",
+      "description": "59c93c1986f7742a424eaa33",
+      "type": "findItem",
+      "count": 1,
+      "optional": false,
+      "items": [
+       "591afe0186f77431bd616a11"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false,
+      "zones": [],
+      "maps": []
+     },
+     {
+      "id": "59c93cbb86f7742a19140435",
+      "description": "59c93cbb86f7742a19140435",
+      "type": "findItem",
+      "count": 1,
+      "optional": false,
+      "items": [
+       "5913915886f774123603c392"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false,
+      "zones": [],
+      "maps": []
+     },
+     {
+      "id": "59c93cea86f7742a08623162",
+      "description": "59c93cea86f7742a08623162",
+      "type": "findItem",
+      "count": 1,
+      "optional": false,
+      "items": [
+       "5913877a86f774432f15d444"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false,
+      "zones": [],
+      "maps": []
+     },
+     {
+      "id": "59c93d4e86f774496b698953",
+      "description": "59c93d4e86f774496b698953",
+      "type": "giveItem",
+      "count": 1,
+      "optional": false,
+      "items": [
+       "593aa4be86f77457f56379f8"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false
+     },
+     {
+      "id": "59c93d8086f7742a19140436",
+      "description": "59c93d8086f7742a19140436",
+      "type": "giveItem",
+      "count": 1,
+      "optional": false,
+      "items": [
+       "591afe0186f77431bd616a11"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false
+     },
+     {
+      "id": "59c93d9c86f7742f6923add3",
+      "description": "59c93d9c86f7742f6923add3",
+      "type": "giveItem",
+      "count": 1,
+      "optional": false,
+      "items": [
+       "5913915886f774123603c392"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false
+     },
+     {
+      "id": "59c93dbf86f7742a424eaa34",
+      "description": "59c93dbf86f7742a424eaa34",
+      "type": "giveItem",
+      "count": 1,
+      "optional": false,
+      "items": [
+       "5913877a86f774432f15d444"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false
+     }
+    ],
+    "failConditions": [],
+    "startRewards": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "finishRewards": {
+     "traderStanding": [
+      {
+       "standing": 0.25,
+       "trader": "54cb57776803fa99248b456e"
+      }
+     ],
+     "items": [
+      {
+       "item": "5449016a4bdc2d6f028b456f",
+       "count": 165000,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "failureOutcome": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "restartable": false,
+    "experience": 10000,
+    "factionName": "Any",
+    "neededKeys": [],
+    "availableDelaySecondsMin": 0,
+    "availableDelaySecondsMax": 0,
+    "otherRequirements": [],
+    "normalizedName": "aid-stations",
+    "kappaRequired": false,
+    "lightkeeperRequired": false,
+    "taskImageLink": "https://assets.tarkov.dev/59c9392986f7742f6923add2.webp",
+    "map": null
+   },
+   "5a68663e86f774501078f78a": {
+    "id": "5a68663e86f774501078f78a",
+    "name": "5a68663e86f774501078f78a name",
+    "trader": "54cb57776803fa99248b456e",
+    "wikiLink": "https://escapefromtarkov.fandom.com/wiki/Health_Care_Privacy_-_Part_2",
+    "minPlayerLevel": 5,
+    "taskRequirements": [
+     {
+      "task": "5a68661a86f774500f48afb0",
+      "status": [
+       "complete"
+      ]
+     }
+    ],
+    "traderRequirements": [
+     {
+      "id": "6a6fd07faf1ea46db4d5ee1c",
+      "requirementType": "level",
+      "compareMethod": ">=",
+      "value": 2,
+      "trader": "54cb57776803fa99248b456e"
+     }
+    ],
+    "objectives": [
+     {
+      "id": "5a68760f86f7743cc55d8709",
+      "description": "5a68760f86f7743cc55d8709",
+      "type": "findQuestItem",
+      "count": 1,
+      "optional": false,
+      "possibleLocations": [
+       {
+        "map": "5704e554d2720bac5b8b456e",
+        "positions": [
+         {
+          "x": -218.02002,
+          "y": 2.815,
+          "z": -86.09
+         }
+        ]
+       }
+      ],
+      "requiredKeys": [
+       [
+        "5a13f46386f7741dd7384b04"
+       ]
+      ],
+      "maps": [
+       "5704e554d2720bac5b8b456e"
+      ],
+      "questItem": "5a6860d886f77411cd3a9e47"
+     },
+     {
+      "id": "5a68763786f77474c33a40a1",
+      "description": "5a68763786f77474c33a40a1",
+      "type": "giveQuestItem",
+      "count": 1,
+      "optional": false,
+      "maps": [],
+      "questItem": "5a6860d886f77411cd3a9e47"
+     },
+     {
+      "id": "5a68764c86f77474c4269f3c",
+      "description": "5a68764c86f77474c4269f3c",
+      "type": "extract",
+      "count": 1,
+      "optional": false,
+      "exitStatus": [
+       "ExpBonusSurvived",
+       "ExpBonusRunner"
+      ],
+      "maps": [
+       "5704e554d2720bac5b8b456e"
+      ]
+     }
+    ],
+    "failConditions": [],
+    "startRewards": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "finishRewards": {
+     "traderStanding": [],
+     "items": [
+      {
+       "item": "5449016a4bdc2d6f028b456f",
+       "count": 165000,
+       "attributes": {}
+      },
+      {
+       "item": "5c0e530286f7747fa1419862",
+       "count": 2,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [
+      {
+       "id": "6a6fd12710725cfea532e56b",
+       "level": 2,
+       "item": "5c0e530286f7747fa1419862",
+       "count": 1,
+       "contains": [],
+       "attributes": [],
+       "trader": "54cb57776803fa99248b456e"
+      }
+     ],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "failureOutcome": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "restartable": false,
+    "experience": 10000,
+    "factionName": "Any",
+    "neededKeys": [
+     {
+      "map": "5704e554d2720bac5b8b456e",
+      "keys": [
+       "5a13f46386f7741dd7384b04"
+      ]
+     }
+    ],
+    "availableDelaySecondsMin": 0,
+    "availableDelaySecondsMax": 0,
+    "otherRequirements": [],
+    "normalizedName": "health-care-privacy-part-2",
+    "kappaRequired": false,
+    "lightkeeperRequired": false,
+    "taskImageLink": "https://assets.tarkov.dev/5a68663e86f774501078f78a.webp",
+    "map": "5704e554d2720bac5b8b456e"
+   },
+   "5b4795fb86f7745876267770": {
+    "id": "5b4795fb86f7745876267770",
+    "name": "5b4795fb86f7745876267770 name",
+    "trader": "58330581ace78e27b8b10cee",
+    "wikiLink": "https://escapefromtarkov.fandom.com/wiki/Chumming",
+    "minPlayerLevel": 7,
+    "taskRequirements": [],
+    "traderRequirements": [
+     {
+      "id": "6a5a944e5e12536882583b02",
+      "requirementType": "level",
+      "compareMethod": ">=",
+      "value": 2,
+      "trader": "58330581ace78e27b8b10cee"
+     }
+    ],
+    "objectives": [
+     {
+      "id": "5b4796c086f7745877352c2c",
+      "description": "5b4796c086f7745877352c2c",
+      "type": "plantItem",
+      "count": 3,
+      "optional": false,
+      "items": [
+       "5734758f24597738025ee253"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false,
+      "zones": [
+       {
+        "id": "place_skier_12_2",
+        "map": "56f40101d2720b2a4d8b45d6",
+        "position": {
+         "x": 170.79,
+         "y": 6.88,
+         "z": 172
+        },
+        "outline": [
+         {
+          "x": 170.24,
+          "y": 6.38,
+          "z": 171.57
+         },
+         {
+          "x": 170.36,
+          "y": 6.38,
+          "z": 172.56
+         },
+         {
+          "x": 171.35,
+          "y": 6.38,
+          "z": 172.43
+         },
+         {
+          "x": 171.23,
+          "y": 6.38,
+          "z": 171.44
+         }
+        ],
+        "top": 7.38,
+        "bottom": 6.38
+       }
+      ],
+      "maps": [
+       "56f40101d2720b2a4d8b45d6"
+      ]
+     },
+     {
+      "id": "5b47971086f774587877ad34",
+      "description": "5b47971086f774587877ad34",
+      "type": "plantItem",
+      "count": 3,
+      "optional": false,
+      "items": [
+       "5734758f24597738025ee253"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false,
+      "zones": [
+       {
+        "id": "place_skier_12_3",
+        "map": "5704e3c2d2720bac5b8b4567",
+        "position": {
+         "x": -6.21,
+         "y": -0.49,
+         "z": -75.55
+        },
+        "outline": [
+         {
+          "x": -7.21,
+          "y": -1.49,
+          "z": -76.05
+         },
+         {
+          "x": -7.21,
+          "y": -1.49,
+          "z": -75.05
+         },
+         {
+          "x": -5.21,
+          "y": -1.49,
+          "z": -75.05
+         },
+         {
+          "x": -5.21,
+          "y": -1.49,
+          "z": -76.05
+         }
+        ],
+        "top": 0.51,
+        "bottom": -1.49
+       }
+      ],
+      "maps": [
+       "5704e3c2d2720bac5b8b4567"
+      ]
+     }
+    ],
+    "failConditions": [],
+    "startRewards": {
+     "traderStanding": [],
+     "items": [
+      {
+       "item": "5734758f24597738025ee253",
+       "count": 4,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "finishRewards": {
+     "traderStanding": [
+      {
+       "standing": 0.25,
+       "trader": "58330581ace78e27b8b10cee"
+      }
+     ],
+     "items": [
+      {
+       "item": "569668774bdc2da2298b4568",
+       "count": 1000,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "failureOutcome": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "restartable": false,
+    "experience": 10000,
+    "factionName": "Any",
+    "neededKeys": [],
+    "availableDelaySecondsMin": 0,
+    "availableDelaySecondsMax": 0,
+    "otherRequirements": [],
+    "normalizedName": "chumming",
+    "kappaRequired": false,
+    "lightkeeperRequired": false,
+    "taskImageLink": "https://assets.tarkov.dev/5b4795fb86f7745876267770.webp",
+    "map": null
+   },
+   "5a27b75b86f7742e97191958": {
+    "id": "5a27b75b86f7742e97191958",
+    "name": "5a27b75b86f7742e97191958 name",
+    "trader": "5935c25fb3acc3127c3d8cd9",
+    "wikiLink": "https://escapefromtarkov.fandom.com/wiki/Fishing_Gear",
+    "minPlayerLevel": 8,
+    "taskRequirements": [],
+    "traderRequirements": [
+     {
+      "id": "6a5ccb9c38a1dc09841e0002",
+      "requirementType": "level",
+      "compareMethod": ">=",
+      "value": 2,
+      "trader": "5935c25fb3acc3127c3d8cd9"
+     }
+    ],
+    "objectives": [
+     {
+      "id": "5a3ba11786f7742c9d4f5d29",
+      "description": "5a3ba11786f7742c9d4f5d29",
+      "type": "visit",
+      "optional": false,
+      "zones": [
+       {
+        "id": "place_peacemaker_001",
+        "map": "5704e554d2720bac5b8b456e",
+        "position": {
+         "x": -182.04,
+         "y": -63.72,
+         "z": 459.85
+        },
+        "outline": [
+         {
+          "x": -180.95,
+          "y": -65.22,
+          "z": 458.29
+         },
+         {
+          "x": -180.95,
+          "y": -65.22,
+          "z": 461.41
+         },
+         {
+          "x": -183.13,
+          "y": -65.22,
+          "z": 461.41
+         },
+         {
+          "x": -183.13,
+          "y": -65.22,
+          "z": 458.29
+         }
+        ],
+        "top": -62.22,
+        "bottom": -65.22
+       },
+       {
+        "id": "place_peacemaker_001",
+        "map": "5704e554d2720bac5b8b456e",
+        "position": {
+         "x": -182.04,
+         "y": -63.72,
+         "z": 459.85
+        },
+        "outline": [
+         {
+          "x": -180.95,
+          "y": -65.22,
+          "z": 458.29
+         },
+         {
+          "x": -180.95,
+          "y": -65.22,
+          "z": 461.41
+         },
+         {
+          "x": -183.13,
+          "y": -65.22,
+          "z": 461.41
+         },
+         {
+          "x": -183.13,
+          "y": -65.22,
+          "z": 458.29
+         }
+        ],
+        "top": -62.22,
+        "bottom": -65.22
+       }
+      ],
+      "maps": [
+       "5704e554d2720bac5b8b456e"
+      ]
+     },
+     {
+      "id": "5a27d81a86f774472a6e0456",
+      "description": "5a27d81a86f774472a6e0456",
+      "type": "plantItem",
+      "count": 1,
+      "optional": false,
+      "items": [
+       "5ab8e4ed86f7742d8e50c7fa"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false,
+      "zones": [
+       {
+        "id": "place_peacemaker_001",
+        "map": "5704e554d2720bac5b8b456e",
+        "position": {
+         "x": -182.04,
+         "y": -63.72,
+         "z": 459.85
+        },
+        "outline": [
+         {
+          "x": -180.95,
+          "y": -65.22,
+          "z": 458.29
+         },
+         {
+          "x": -180.95,
+          "y": -65.22,
+          "z": 461.41
+         },
+         {
+          "x": -183.13,
+          "y": -65.22,
+          "z": 461.41
+         },
+         {
+          "x": -183.13,
+          "y": -65.22,
+          "z": 458.29
+         }
+        ],
+        "top": -62.22,
+        "bottom": -65.22
+       },
+       {
+        "id": "place_peacemaker_001",
+        "map": "5704e554d2720bac5b8b456e",
+        "position": {
+         "x": -182.04,
+         "y": -63.72,
+         "z": 459.85
+        },
+        "outline": [
+         {
+          "x": -180.95,
+          "y": -65.22,
+          "z": 458.29
+         },
+         {
+          "x": -180.95,
+          "y": -65.22,
+          "z": 461.41
+         },
+         {
+          "x": -183.13,
+          "y": -65.22,
+          "z": 461.41
+         },
+         {
+          "x": -183.13,
+          "y": -65.22,
+          "z": 458.29
+         }
+        ],
+        "top": -62.22,
+        "bottom": -65.22
+       }
+      ],
+      "maps": [
+       "5704e554d2720bac5b8b456e"
+      ]
+     },
+     {
+      "id": "5a27d85286f77448d82084e7",
+      "description": "5a27d85286f77448d82084e7",
+      "type": "plantItem",
+      "count": 1,
+      "optional": false,
+      "items": [
+       "544fb5454bdc2df8738b456a"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false,
+      "zones": [
+       {
+        "id": "place_peacemaker_001",
+        "map": "5704e554d2720bac5b8b456e",
+        "position": {
+         "x": -182.04,
+         "y": -63.72,
+         "z": 459.85
+        },
+        "outline": [
+         {
+          "x": -180.95,
+          "y": -65.22,
+          "z": 458.29
+         },
+         {
+          "x": -180.95,
+          "y": -65.22,
+          "z": 461.41
+         },
+         {
+          "x": -183.13,
+          "y": -65.22,
+          "z": 461.41
+         },
+         {
+          "x": -183.13,
+          "y": -65.22,
+          "z": 458.29
+         }
+        ],
+        "top": -62.22,
+        "bottom": -65.22
+       },
+       {
+        "id": "place_peacemaker_001",
+        "map": "5704e554d2720bac5b8b456e",
+        "position": {
+         "x": -182.04,
+         "y": -63.72,
+         "z": 459.85
+        },
+        "outline": [
+         {
+          "x": -180.95,
+          "y": -65.22,
+          "z": 458.29
+         },
+         {
+          "x": -180.95,
+          "y": -65.22,
+          "z": 461.41
+         },
+         {
+          "x": -183.13,
+          "y": -65.22,
+          "z": 461.41
+         },
+         {
+          "x": -183.13,
+          "y": -65.22,
+          "z": 458.29
+         }
+        ],
+        "top": -62.22,
+        "bottom": -65.22
+       }
+      ],
+      "maps": [
+       "5704e554d2720bac5b8b456e"
+      ]
+     }
+    ],
+    "failConditions": [],
+    "startRewards": {
+     "traderStanding": [],
+     "items": [
+      {
+       "item": "544fb5454bdc2df8738b456a",
+       "count": 1,
+       "attributes": {}
+      },
+      {
+       "item": "5ab8e4ed86f7742d8e50c7fa",
+       "count": 1,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "finishRewards": {
+     "traderStanding": [
+      {
+       "standing": 0.25,
+       "trader": "5935c25fb3acc3127c3d8cd9"
+      }
+     ],
+     "items": [
+      {
+       "item": "5696686a4bdc2da3298b456a",
+       "count": 1100,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [
+      {
+       "id": "68efe00fc487dbe6f2d2ac54",
+       "level": 2,
+       "item": "68a639748e1fe612970728e9",
+       "count": 1,
+       "contains": [],
+       "attributes": [],
+       "trader": "5935c25fb3acc3127c3d8cd9"
+      }
+     ],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "failureOutcome": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "restartable": false,
+    "experience": 10000,
+    "factionName": "Any",
+    "neededKeys": [],
+    "availableDelaySecondsMin": 0,
+    "availableDelaySecondsMax": 0,
+    "otherRequirements": [],
+    "normalizedName": "fishing-gear",
+    "kappaRequired": false,
+    "lightkeeperRequired": false,
+    "taskImageLink": "https://assets.tarkov.dev/5a27b75b86f7742e97191958.webp",
+    "map": "5704e554d2720bac5b8b456e"
+   },
+   "5a27bbf886f774333a418eeb": {
+    "id": "5a27bbf886f774333a418eeb",
+    "name": "5a27bbf886f774333a418eeb name",
+    "trader": "5935c25fb3acc3127c3d8cd9",
+    "wikiLink": "https://escapefromtarkov.fandom.com/wiki/Wet_Job_-_Part_2",
+    "minPlayerLevel": 8,
+    "taskRequirements": [
+     {
+      "task": "5a27bb8386f7741c770d2d0a",
+      "status": [
+       "complete"
+      ]
+     }
+    ],
+    "traderRequirements": [],
+    "objectives": [
+     {
+      "id": "5a3ba97386f77459df27d10e",
+      "description": "5a3ba97386f77459df27d10e",
+      "type": "visit",
+      "optional": false,
+      "zones": [
+       {
+        "id": "place_peacemaker_010_2",
+        "map": "5704e554d2720bac5b8b456e",
+        "position": {
+         "x": 235.56,
+         "y": -64.46,
+         "z": 442.02
+        },
+        "outline": [
+         {
+          "x": 222.06,
+          "y": -65.46,
+          "z": 432.02
+         },
+         {
+          "x": 222.06,
+          "y": -65.46,
+          "z": 452.02
+         },
+         {
+          "x": 249.06,
+          "y": -65.46,
+          "z": 452.02
+         },
+         {
+          "x": 249.06,
+          "y": -65.46,
+          "z": 432.02
+         }
+        ],
+        "top": -63.46,
+        "bottom": -65.46
+       },
+       {
+        "id": "place_peacemaker_010_2",
+        "map": "5704e554d2720bac5b8b456e",
+        "position": {
+         "x": 235.56,
+         "y": -64.46,
+         "z": 442.02
+        },
+        "outline": [
+         {
+          "x": 222.06,
+          "y": -65.46,
+          "z": 432.02
+         },
+         {
+          "x": 222.06,
+          "y": -65.46,
+          "z": 452.02
+         },
+         {
+          "x": 249.06,
+          "y": -65.46,
+          "z": 452.02
+         },
+         {
+          "x": 249.06,
+          "y": -65.46,
+          "z": 432.02
+         }
+        ],
+        "top": -63.46,
+        "bottom": -65.46
+       }
+      ],
+      "maps": [
+       "5704e554d2720bac5b8b456e"
+      ]
+     },
+     {
+      "id": "5a281efe86f7745bc42005cc",
+      "description": "5a281efe86f7745bc42005cc",
+      "type": "mark",
+      "count": 1,
+      "optional": false,
+      "zones": [
+       {
+        "id": "place_peacemaker_010_2",
+        "map": "5704e554d2720bac5b8b456e",
+        "position": {
+         "x": 235.56,
+         "y": -64.46,
+         "z": 442.02
+        },
+        "outline": [
+         {
+          "x": 222.06,
+          "y": -65.46,
+          "z": 432.02
+         },
+         {
+          "x": 222.06,
+          "y": -65.46,
+          "z": 452.02
+         },
+         {
+          "x": 249.06,
+          "y": -65.46,
+          "z": 452.02
+         },
+         {
+          "x": 249.06,
+          "y": -65.46,
+          "z": 432.02
+         }
+        ],
+        "top": -63.46,
+        "bottom": -65.46
+       },
+       {
+        "id": "place_peacemaker_010_2",
+        "map": "5704e554d2720bac5b8b456e",
+        "position": {
+         "x": 235.56,
+         "y": -64.46,
+         "z": 442.02
+        },
+        "outline": [
+         {
+          "x": 222.06,
+          "y": -65.46,
+          "z": 432.02
+         },
+         {
+          "x": 222.06,
+          "y": -65.46,
+          "z": 452.02
+         },
+         {
+          "x": 249.06,
+          "y": -65.46,
+          "z": 452.02
+         },
+         {
+          "x": 249.06,
+          "y": -65.46,
+          "z": 432.02
+         }
+        ],
+        "top": -63.46,
+        "bottom": -65.46
+       }
+      ],
+      "maps": [
+       "5704e554d2720bac5b8b456e"
+      ],
+      "markerItem": "5991b51486f77447b112d44f"
+     }
+    ],
+    "failConditions": [],
+    "startRewards": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "finishRewards": {
+     "traderStanding": [],
+     "items": [
+      {
+       "item": "5696686a4bdc2da3298b456a",
+       "count": 1100,
+       "attributes": {}
+      },
+      {
+       "item": "6193e108c1982475fa2a7f16",
+       "count": 1,
+       "attributes": {}
+      },
+      {
+       "item": "5f5e467b0bc58666c37e7821",
+       "count": 1,
+       "attributes": {}
+      },
+      {
+       "item": "6570264d1419851aef03e736",
+       "count": 1,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [
+      {
+       "id": "6a706af135e535ab7bda28df",
+       "level": 2,
+       "item": "6193e108c1982475fa2a7f16",
+       "count": 1,
+       "contains": [
+        {
+         "item": "618428466ef05c2ce828f218",
+         "count": 1,
+         "attributes": []
+        },
+        {
+         "item": "571659bb2459771fb2755a12",
+         "count": 1,
+         "attributes": []
+        },
+        {
+         "item": "61840d85568c120fdd2962a5",
+         "count": 1,
+         "attributes": []
+        },
+        {
+         "item": "618426d96c780c1e710c9b9f",
+         "count": 1,
+         "attributes": []
+        },
+        {
+         "item": "6183fc15d3a39d50044c13e9",
+         "count": 1,
+         "attributes": []
+        },
+        {
+         "item": "618407a850224f204c1da549",
+         "count": 1,
+         "attributes": []
+        },
+        {
+         "item": "61816fcad92c473c770215cc",
+         "count": 1,
+         "attributes": []
+        },
+        {
+         "item": "61817865d3a39d50044c13a4",
+         "count": 1,
+         "attributes": []
+        },
+        {
+         "item": "61816df1d3a39d50044c139e",
+         "count": 1,
+         "attributes": []
+        },
+        {
+         "item": "61816dfa6ef05c2ce828f1ad",
+         "count": 1,
+         "attributes": []
+        },
+        {
+         "item": "61825d06d92c473c770215de",
+         "count": 1,
+         "attributes": []
+        },
+        {
+         "item": "61825d136ef05c2ce828f1cc",
+         "count": 1,
+         "attributes": []
+        },
+        {
+         "item": "618167616ef05c2ce828f1a8",
+         "count": 1,
+         "attributes": []
+        },
+        {
+         "item": "61825d24d3a39d50044c13af",
+         "count": 1,
+         "attributes": []
+        },
+        {
+         "item": "6181688c6c780c1e710c9b04",
+         "count": 1,
+         "attributes": []
+        }
+       ],
+       "attributes": [],
+       "trader": "5935c25fb3acc3127c3d8cd9"
+      }
+     ],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "failureOutcome": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "restartable": false,
+    "experience": 10000,
+    "factionName": "Any",
+    "neededKeys": [],
+    "availableDelaySecondsMin": 0,
+    "availableDelaySecondsMax": 0,
+    "otherRequirements": [],
+    "normalizedName": "wet-job-part-2",
+    "kappaRequired": false,
+    "lightkeeperRequired": false,
+    "taskImageLink": "https://assets.tarkov.dev/5a27bbf886f774333a418eeb.webp",
+    "map": "5704e554d2720bac5b8b456e"
+   },
+   "597a0f5686f774273b74f676": {
+    "id": "597a0f5686f774273b74f676",
+    "name": "597a0f5686f774273b74f676 name",
+    "trader": "58330581ace78e27b8b10cee",
+    "wikiLink": "https://escapefromtarkov.fandom.com/wiki/Chemical_-_Part_4",
+    "minPlayerLevel": 9,
+    "taskRequirements": [
+     {
+      "task": "597a0e5786f77426d66c0636",
+      "status": [
+       "complete"
+      ]
+     }
+    ],
+    "traderRequirements": [],
+    "objectives": [
+     {
+      "id": "5a3fbc9586f77459d52a16c4",
+      "description": "5a3fbc9586f77459d52a16c4",
+      "type": "visit",
+      "optional": false,
+      "zones": [
+       {
+        "id": "gazel",
+        "map": "56f40101d2720b2a4d8b45d6",
+        "position": {
+         "x": 480.77,
+         "y": 3.29,
+         "z": -76.69
+        },
+        "outline": [
+         {
+          "x": 480.62,
+          "y": 2.61,
+          "z": -78.93
+         },
+         {
+          "x": 478.83,
+          "y": 2.61,
+          "z": -75.57
+         },
+         {
+          "x": 480.92,
+          "y": 2.61,
+          "z": -74.45
+         },
+         {
+          "x": 482.72,
+          "y": 2.61,
+          "z": -77.81
+         }
+        ],
+        "top": 3.97,
+        "bottom": 2.61
+       },
+       {
+        "id": "gazel",
+        "map": "56f40101d2720b2a4d8b45d6",
+        "position": {
+         "x": 480.77,
+         "y": 3.29,
+         "z": -76.69
+        },
+        "outline": [
+         {
+          "x": 480.62,
+          "y": 2.61,
+          "z": -78.93
+         },
+         {
+          "x": 478.83,
+          "y": 2.61,
+          "z": -75.57
+         },
+         {
+          "x": 480.92,
+          "y": 2.61,
+          "z": -74.45
+         },
+         {
+          "x": 482.72,
+          "y": 2.61,
+          "z": -77.81
+         }
+        ],
+        "top": 3.97,
+        "bottom": 2.61
+       }
+      ],
+      "maps": [
+       "56f40101d2720b2a4d8b45d6"
+      ]
+     },
+     {
+      "id": "59b242ea86f7741e6e0e7a86",
+      "description": "59b242ea86f7741e6e0e7a86",
+      "type": "mark",
+      "count": 1,
+      "optional": false,
+      "zones": [
+       {
+        "id": "gazel",
+        "map": "56f40101d2720b2a4d8b45d6",
+        "position": {
+         "x": 480.77,
+         "y": 3.29,
+         "z": -76.69
+        },
+        "outline": [
+         {
+          "x": 480.62,
+          "y": 2.61,
+          "z": -78.93
+         },
+         {
+          "x": 478.83,
+          "y": 2.61,
+          "z": -75.57
+         },
+         {
+          "x": 480.92,
+          "y": 2.61,
+          "z": -74.45
+         },
+         {
+          "x": 482.72,
+          "y": 2.61,
+          "z": -77.81
+         }
+        ],
+        "top": 3.97,
+        "bottom": 2.61
+       },
+       {
+        "id": "gazel",
+        "map": "56f40101d2720b2a4d8b45d6",
+        "position": {
+         "x": 480.77,
+         "y": 3.29,
+         "z": -76.69
+        },
+        "outline": [
+         {
+          "x": 480.62,
+          "y": 2.61,
+          "z": -78.93
+         },
+         {
+          "x": 478.83,
+          "y": 2.61,
+          "z": -75.57
+         },
+         {
+          "x": 480.92,
+          "y": 2.61,
+          "z": -74.45
+         },
+         {
+          "x": 482.72,
+          "y": 2.61,
+          "z": -77.81
+         }
+        ],
+        "top": 3.97,
+        "bottom": 2.61
+       }
+      ],
+      "maps": [
+       "56f40101d2720b2a4d8b45d6"
+      ],
+      "markerItem": "5991b51486f77447b112d44f"
+     }
+    ],
+    "failConditions": [
+     {
+      "id": "597a19ff86f774792c2e36f2",
+      "description": "597a19ff86f774792c2e36f2",
+      "type": "taskStatus",
+      "count": null,
+      "optional": false,
+      "task": "597a171586f77405ba6887d3",
+      "status": [
+       "complete"
+      ],
+      "zones": [],
+      "maps": []
+     },
+     {
+      "id": "597a1a0486f774779c70e8a6",
+      "description": "597a1a0486f774779c70e8a6",
+      "type": "taskStatus",
+      "count": null,
+      "optional": false,
+      "task": "597a160786f77477531d39d2",
+      "status": [
+       "complete"
+      ],
+      "zones": [],
+      "maps": []
+     }
+    ],
+    "startRewards": {
+     "traderStanding": [],
+     "items": [
+      {
+       "item": "5991b51486f77447b112d44f",
+       "count": 1,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "finishRewards": {
+     "traderStanding": [],
+     "items": [
+      {
+       "item": "67d3ed3271c17ff82e0a5b0b",
+       "count": 1,
+       "attributes": {}
+      },
+      {
+       "item": "5c127c4486f7745625356c13",
+       "count": 1,
+       "attributes": {}
+      },
+      {
+       "item": "5c94bbff86f7747ee735c08f",
+       "count": 2,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "failureOutcome": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "restartable": false,
+    "experience": 10000,
+    "factionName": "Any",
+    "neededKeys": [],
+    "availableDelaySecondsMin": 0,
+    "availableDelaySecondsMax": 0,
+    "otherRequirements": [],
+    "normalizedName": "chemical-part-4",
+    "kappaRequired": false,
+    "lightkeeperRequired": false,
+    "taskImageLink": "https://assets.tarkov.dev/597a0f5686f774273b74f676.webp",
+    "map": "56f40101d2720b2a4d8b45d6"
+   },
+   "675c15fbf7da9792a4059871": {
+    "id": "675c15fbf7da9792a4059871",
+    "name": "675c15fbf7da9792a4059871 name",
+    "trader": "6617beeaa9cfa777ca915b7c",
+    "wikiLink": "https://escapefromtarkov.fandom.com/wiki/Provide_Viewership",
+    "minPlayerLevel": 10,
+    "taskRequirements": [
+     {
+      "task": "66058cb5ae4719735349b9e8",
+      "status": [
+       "active",
+       "complete"
+      ]
+     }
+    ],
+    "traderRequirements": [],
+    "objectives": [
+     {
+      "id": "675c1c87caddcfa893af10e9",
+      "description": "675c1c87caddcfa893af10e9",
+      "type": "plantItem",
+      "count": 1,
+      "optional": false,
+      "items": [
+       "5b4391a586f7745321235ab2"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false,
+      "zones": [
+       {
+        "id": "Camera_1",
+        "map": "56f40101d2720b2a4d8b45d6",
+        "position": {
+         "x": 256.98,
+         "y": 14.13,
+         "z": -75.38
+        },
+        "outline": [
+         {
+          "x": 255.42,
+          "y": 13.25,
+          "z": -75.65
+         },
+         {
+          "x": 255.67,
+          "y": 13.25,
+          "z": -74.49
+         },
+         {
+          "x": 258.55,
+          "y": 13.25,
+          "z": -75.11
+         },
+         {
+          "x": 258.3,
+          "y": 13.25,
+          "z": -76.27
+         }
+        ],
+        "top": 15,
+        "bottom": 13.25
+       }
+      ],
+      "maps": [
+       "56f40101d2720b2a4d8b45d6"
+      ]
+     },
+     {
+      "id": "676047054c9696a7d071bc08",
+      "description": "676047054c9696a7d071bc08",
+      "type": "plantItem",
+      "count": 1,
+      "optional": false,
+      "items": [
+       "5b4391a586f7745321235ab2"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false,
+      "zones": [
+       {
+        "id": "Camera_2",
+        "map": "56f40101d2720b2a4d8b45d6",
+        "position": {
+         "x": 254.7,
+         "y": 2.54,
+         "z": -75.2
+        },
+        "outline": [
+         {
+          "x": 253.43,
+          "y": 1.39,
+          "z": -75.82
+         },
+         {
+          "x": 253.8,
+          "y": 1.39,
+          "z": -74.12
+         },
+         {
+          "x": 255.96,
+          "y": 1.39,
+          "z": -74.58
+         },
+         {
+          "x": 255.59,
+          "y": 1.39,
+          "z": -76.29
+         }
+        ],
+        "top": 3.69,
+        "bottom": 1.39
+       }
+      ],
+      "maps": [
+       "56f40101d2720b2a4d8b45d6"
+      ]
+     },
+     {
+      "id": "6760470877d1b7790af5de11",
+      "description": "6760470877d1b7790af5de11",
+      "type": "plantItem",
+      "count": 1,
+      "optional": false,
+      "items": [
+       "5b4391a586f7745321235ab2"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false,
+      "zones": [
+       {
+        "id": "Camera_3",
+        "map": "56f40101d2720b2a4d8b45d6",
+        "position": {
+         "x": 264.03,
+         "y": 7.03,
+         "z": -38.9
+        },
+        "outline": [
+         {
+          "x": 261.03,
+          "y": 6.15,
+          "z": -40
+         },
+         {
+          "x": 261.75,
+          "y": 6.15,
+          "z": -36.67
+         },
+         {
+          "x": 267.03,
+          "y": 6.15,
+          "z": -37.81
+         },
+         {
+          "x": 266.3,
+          "y": 6.15,
+          "z": -41.14
+         }
+        ],
+        "top": 7.9,
+        "bottom": 6.15
+       }
+      ],
+      "maps": [
+       "56f40101d2720b2a4d8b45d6"
+      ]
+     },
+     {
+      "id": "6760470b7d65f702a6295820",
+      "description": "6760470b7d65f702a6295820",
+      "type": "plantItem",
+      "count": 1,
+      "optional": false,
+      "items": [
+       "5b4391a586f7745321235ab2"
+      ],
+      "dogTagLevel": 0,
+      "maxDurability": 100,
+      "minDurability": 0,
+      "foundInRaid": false,
+      "zones": [
+       {
+        "id": "Camera_4",
+        "map": "56f40101d2720b2a4d8b45d6",
+        "position": {
+         "x": 278.25,
+         "y": 2.71,
+         "z": -51.58
+        },
+        "outline": [
+         {
+          "x": 279,
+          "y": 1.84,
+          "z": -54.88
+         },
+         {
+          "x": 276.32,
+          "y": 1.84,
+          "z": -54.35
+         },
+         {
+          "x": 277.51,
+          "y": 1.84,
+          "z": -48.28
+         },
+         {
+          "x": 280.19,
+          "y": 1.84,
+          "z": -48.81
+         }
+        ],
+        "top": 3.58,
+        "bottom": 1.84
+       }
+      ],
+      "maps": [
+       "56f40101d2720b2a4d8b45d6"
+      ]
+     },
+     {
+      "id": "675c1c980fd114390c638b89",
+      "description": "675c1c980fd114390c638b89",
+      "type": "shoot",
+      "count": 15,
+      "optional": false,
+      "shotType": "kill",
+      "bodyParts": [],
+      "usingWeapon": [],
+      "usingWeaponMods": [],
+      "distance": {
+       "value": 0,
+       "compareMethod": ">="
+      },
+      "timeFromHour": 0,
+      "timeUntilHour": 0,
+      "wearing": [],
+      "notWearing": [],
+      "enemyHealthEffect": null,
+      "targetNames": [
+       "Any"
+      ],
+      "playerHealthEffect": null,
+      "zones": [
+       {
+        "id": "killCam",
+        "map": "56f40101d2720b2a4d8b45d6",
+        "position": {
+         "x": 267.13,
+         "y": 8.61,
+         "z": -51.6
+        },
+        "outline": [
+         {
+          "x": 199.49,
+          "y": -0.2,
+          "z": -111.07
+         },
+         {
+          "x": 227.94,
+          "y": -0.2,
+          "z": 29.48
+         },
+         {
+          "x": 334.77,
+          "y": -0.2,
+          "z": 7.86
+         },
+         {
+          "x": 306.33,
+          "y": -0.2,
+          "z": -132.69
+         }
+        ],
+        "top": 17.41,
+        "bottom": -0.2,
+        "name": "killCam"
+       }
+      ],
+      "maps": [
+       "56f40101d2720b2a4d8b45d6"
+      ]
+     }
+    ],
+    "failConditions": [],
+    "startRewards": {
+     "traderStanding": [],
+     "items": [
+      {
+       "item": "5b4391a586f7745321235ab2",
+       "count": 4,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "finishRewards": {
+     "traderStanding": [
+      {
+       "standing": 0.02,
+       "trader": "6617beeaa9cfa777ca915b7c"
+      }
+     ],
+     "items": [
+      {
+       "item": "5d235b4d86f7742e017bc88a",
+       "count": 45,
+       "attributes": {}
+      },
+      {
+       "item": "5d4d617f86f77449c463d107",
+       "count": 1,
+       "attributes": {}
+      },
+      {
+       "item": "5c6d42cb2e2216000e69d7d1",
+       "count": 3,
+       "attributes": {}
+      },
+      {
+       "item": "657024e3c5d7d4cb4d07856a",
+       "count": 3,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "failureOutcome": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "restartable": false,
+    "experience": 32000,
+    "factionName": "Any",
+    "neededKeys": [],
+    "availableDelaySecondsMin": 0,
+    "availableDelaySecondsMax": 0,
+    "otherRequirements": [],
+    "normalizedName": "provide-viewership",
+    "kappaRequired": false,
+    "lightkeeperRequired": false,
+    "taskImageLink": "https://assets.tarkov.dev/675c15fbf7da9792a4059871.webp",
+    "map": "56f40101d2720b2a4d8b45d6"
+   },
+   "666314b8312343839d032d24": {
+    "id": "666314b8312343839d032d24",
+    "name": "666314b8312343839d032d24 name",
+    "trader": "5a7c2eca46aef81a7ca2145d",
+    "wikiLink": "https://escapefromtarkov.fandom.com/wiki/Airmail",
+    "minPlayerLevel": 12,
+    "taskRequirements": [
+     {
+      "task": "666314b696a9349baa021bac",
+      "status": [
+       "complete"
+      ]
+     }
+    ],
+    "traderRequirements": [],
+    "objectives": [
+     {
+      "id": "6672edebec0c3e2ad7d4e489",
+      "description": "6672edebec0c3e2ad7d4e489",
+      "type": "useItem",
+      "count": 1,
+      "optional": false,
+      "useAny": [
+       "62178c4d4ecf221597654e3d",
+       "62389ba9a63f32501b1b4451"
+      ],
+      "compareMethod": ">=",
+      "zones": [
+       {
+        "id": "NosQuests_5_Flaer",
+        "map": "5704e3c2d2720bac5b8b4567",
+        "position": {
+         "x": -518.1,
+         "y": 18.2,
+         "z": -182.4
+        },
+        "outline": [
+         {
+          "x": -443.7,
+          "y": 10.7,
+          "z": -222.96
+         },
+         {
+          "x": -581.51,
+          "y": 10.7,
+          "z": -238.62
+         },
+         {
+          "x": -592.5,
+          "y": 10.7,
+          "z": -141.84
+         },
+         {
+          "x": -454.69,
+          "y": 10.7,
+          "z": -126.18
+         }
+        ],
+        "top": 25.7,
+        "bottom": 10.7,
+        "name": "NosQuests_5_Flaer"
+       }
+      ],
+      "maps": [
+       "5704e3c2d2720bac5b8b4567"
+      ]
+     }
+    ],
+    "failConditions": [],
+    "startRewards": {
+     "traderStanding": [],
+     "items": [
+      {
+       "item": "62178c4d4ecf221597654e3d",
+       "count": 1,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "finishRewards": {
+     "traderStanding": [],
+     "items": [
+      {
+       "item": "5449016a4bdc2d6f028b456f",
+       "count": 165000,
+       "attributes": {}
+      },
+      {
+       "item": "5cc9c20cd7f00c001336c65d",
+       "count": 2,
+       "attributes": {}
+      },
+      {
+       "item": "5a5f1ce64f39f90b401987bc",
+       "count": 2,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "failureOutcome": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "restartable": false,
+    "experience": 10000,
+    "factionName": "Any",
+    "neededKeys": [],
+    "availableDelaySecondsMin": 0,
+    "availableDelaySecondsMax": 0,
+    "otherRequirements": [],
+    "normalizedName": "airmail",
+    "kappaRequired": false,
+    "lightkeeperRequired": false,
+    "taskImageLink": "https://assets.tarkov.dev/666314b8312343839d032d24.webp",
+    "map": "5704e3c2d2720bac5b8b4567"
+   },
+   "64f5e20652fc01298e2c61e3": {
+    "id": "64f5e20652fc01298e2c61e3",
+    "name": "64f5e20652fc01298e2c61e3 name",
+    "trader": "58330581ace78e27b8b10cee",
+    "wikiLink": "https://escapefromtarkov.fandom.com/wiki/Beyond_the_Red_Meat",
+    "minPlayerLevel": 7,
+    "taskRequirements": [],
+    "traderRequirements": [
+     {
+      "id": "6a5a9410c2522cbbe5bcc808",
+      "requirementType": "level",
+      "compareMethod": ">=",
+      "value": 2,
+      "trader": "58330581ace78e27b8b10cee"
+     }
+    ],
+    "objectives": [
+     {
+      "id": "64f6a9e6dd44b6417729b535",
+      "description": "64f6a9e6dd44b6417729b535",
+      "type": "findQuestItem",
+      "count": 1,
+      "optional": false,
+      "possibleLocations": [
+       {
+        "map": "5714dc692459777137212e12",
+        "positions": [
+         {
+          "x": -29.297,
+          "y": 10.104,
+          "z": -70.153
+         },
+         {
+          "x": -41.380898,
+          "y": 5.9082,
+          "z": -42.932404
+         },
+         {
+          "x": -42.788002,
+          "y": 10.1146,
+          "z": -66.412
+         },
+         {
+          "x": -26.149,
+          "y": 10.6282,
+          "z": -56.0783
+         }
+        ]
+       }
+      ],
+      "requiredKeys": [
+       [
+        "64ccc1fe088064307e14a6f7"
+       ]
+      ],
+      "maps": [
+       "5714dc692459777137212e12"
+      ],
+      "questItem": "64f69b4267e11a7c6206e010"
+     },
+     {
+      "id": "64f6aa6cdd44b6417729b536",
+      "description": "64f6aa6cdd44b6417729b536",
+      "type": "giveQuestItem",
+      "count": 1,
+      "optional": false,
+      "maps": [],
+      "questItem": "64f69b4267e11a7c6206e010"
+     }
+    ],
+    "failConditions": [],
+    "startRewards": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "finishRewards": {
+     "traderStanding": [
+      {
+       "standing": 0.25,
+       "trader": "58330581ace78e27b8b10cee"
+      }
+     ],
+     "items": [
+      {
+       "item": "569668774bdc2da2298b4568",
+       "count": 1000,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "failureOutcome": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "restartable": false,
+    "experience": 10000,
+    "factionName": "Any",
+    "neededKeys": [
+     {
+      "map": "5714dc692459777137212e12",
+      "keys": [
+       "64ccc1fe088064307e14a6f7"
+      ]
+     }
+    ],
+    "availableDelaySecondsMin": 0,
+    "availableDelaySecondsMax": 0,
+    "otherRequirements": [],
+    "normalizedName": "beyond-the-red-meat",
+    "kappaRequired": false,
+    "lightkeeperRequired": false,
+    "taskImageLink": "https://assets.tarkov.dev/64f5e20652fc01298e2c61e3.webp",
+    "map": "5714dc692459777137212e12"
+   },
+   "669fa3a08b4a64b332041ff7": {
+    "id": "669fa3a08b4a64b332041ff7",
+    "name": "669fa3a08b4a64b332041ff7 name",
+    "trader": "5c0647fdd443bc2504c2d371",
+    "wikiLink": "https://escapefromtarkov.fandom.com/wiki/Dragnet",
+    "minPlayerLevel": 9,
+    "taskRequirements": [],
+    "traderRequirements": [
+     {
+      "id": "6a43d84b37bd0f8cc668b0ee",
+      "requirementType": "level",
+      "compareMethod": ">=",
+      "value": 2,
+      "trader": "5c0647fdd443bc2504c2d371"
+     }
+    ],
+    "objectives": [
+     {
+      "id": "66a0e692281e56a89b717b7d",
+      "description": "66a0e692281e56a89b717b7d",
+      "type": "findQuestItem",
+      "count": 1,
+      "optional": false,
+      "possibleLocations": [
+       {
+        "map": "55f2d3fd4bdc2d5f408b4567",
+        "positions": [
+         {
+          "x": -21.713234,
+          "y": -2.088474,
+          "z": 44.430035
+         },
+         {
+          "x": -18.40426,
+          "y": -1.9747472,
+          "z": 46.692566
+         },
+         {
+          "x": -22.717655,
+          "y": -1.8816979,
+          "z": 48.669617
+         },
+         {
+          "x": -23.265278,
+          "y": -1.8564624,
+          "z": 44.83158
+         }
+        ]
+       },
+       {
+        "map": "59fc81d786f774390775787e",
+        "positions": [
+         {
+          "x": -21.713234,
+          "y": -2.088474,
+          "z": 44.430035
+         },
+         {
+          "x": -22.717655,
+          "y": -1.8816979,
+          "z": 48.669617
+         },
+         {
+          "x": -18.40426,
+          "y": -1.9747472,
+          "z": 46.692566
+         },
+         {
+          "x": -23.265278,
+          "y": -1.8564624,
+          "z": 44.83158
+         }
+        ]
+       }
+      ],
+      "requiredKeys": [
+       [
+        "66acd6702b17692df20144c0"
+       ]
+      ],
+      "maps": [
+       "55f2d3fd4bdc2d5f408b4567",
+       "59fc81d786f774390775787e"
+      ],
+      "questItem": "66a0e523e749756c920d02d0"
+     },
+     {
+      "id": "66a0e69ec03c2dad1a84993a",
+      "description": "66a0e69ec03c2dad1a84993a",
+      "type": "giveQuestItem",
+      "count": 1,
+      "optional": false,
+      "maps": [],
+      "questItem": "66a0e523e749756c920d02d0"
+     }
+    ],
+    "failConditions": [],
+    "startRewards": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "finishRewards": {
+     "traderStanding": [
+      {
+       "standing": 0.25,
+       "trader": "5c0647fdd443bc2504c2d371"
+      }
+     ],
+     "items": [
+      {
+       "item": "5449016a4bdc2d6f028b456f",
+       "count": 165000,
+       "attributes": {}
+      }
+     ],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "failureOutcome": {
+     "traderStanding": [],
+     "items": [],
+     "offerUnlock": [],
+     "skillLevelReward": [],
+     "traderUnlock": [],
+     "craftUnlock": [],
+     "achievement": [],
+     "customization": [],
+     "traderDialogueUnlock": [],
+     "locationUnlock": []
+    },
+    "restartable": false,
+    "experience": 10000,
+    "factionName": "Any",
+    "neededKeys": [
+     {
+      "map": "55f2d3fd4bdc2d5f408b4567",
+      "keys": [
+       "66acd6702b17692df20144c0"
+      ]
+     }
+    ],
+    "availableDelaySecondsMin": 0,
+    "availableDelaySecondsMax": 0,
+    "otherRequirements": [],
+    "normalizedName": "dragnet",
+    "kappaRequired": false,
+    "lightkeeperRequired": false,
+    "taskImageLink": "https://assets.tarkov.dev/669fa3a08b4a64b332041ff7.webp",
+    "map": "55f2d3fd4bdc2d5f408b4567"
+   }
+  }
+ },
+ "translations": [
+  "$.data.tasks.*.name",
+  "$.data.tasks.*.objectives[*].description",
+  "$.data.tasks.*.objectives[*].exitName",
+  "$.data.tasks.*.objectives[*].exitStatus[*]",
+  "$.data.tasks.*.objectives[*].zones[*].name",
+  "$.data.tasks.*.objectives[*].targetNames[*]",
+  "$.data.tasks.*.objectives[*]..bodyParts[*]",
+  "$.data.tasks.*.objectives[*]['healthEffect','playerHealthEffect','enemyHealthEffect'].effects[*]",
+  "$.data.tasks.*['startRewards','finishRewards','failureOutcome'][*].customization[*].name",
+  "$.data.tasks.*['startRewards','finishRewards','failureOutcome'][*].customization[*].customizationTypeName",
+  "$.data.questItems.*.name",
+  "$.data.questItems.*.shortName",
+  "$.data.questItems.*.description",
+  "$.data.achievements.*.name",
+  "$.data.achievements.*.description",
+  "$.data.achievements.*.side",
+  "$.data.achievements.*.rarity",
+  "$.data.prestige[*].name",
+  "$.data.prestige[*].conditions[*].description",
+  "$.data.prestige[*].transferSettings[*].name",
+  "$.data.prestige.*.rewards.customization.*.name",
+  "$.data.prestige.*.rewards.customization.*.customizationTypeName",
+  "$.data.story.*.name",
+  "$.data.story.*.tasks.*.name",
+  "$.data.story.*.tasks.*.objectives[*].description",
+  "$.data.story.*.tasks.*.objectives[*].exitName",
+  "$.data.story.*.tasks.*.objectives[*].exitStatus[*]",
+  "$.data.story.*.tasks.*.objectives[*].zones[*].name",
+  "$.data.story.*.tasks.*.objectives[*].targetNames[*]",
+  "$.data.story.*.tasks.*.objectives[*]..bodyParts[*]",
+  "$.data.story.*.tasks.*.objectives[*]['healthEffect','playerHealthEffect','enemyHealthEffect'].effects[*]",
+  "$.data.story.*.tasks.*['startRewards','finishRewards','failureOutcome'][*].customization[*].name",
+  "$.data.story.*.tasks.*['startRewards','finishRewards','failureOutcome'][*].customization[*].customizationTypeName"
+ ]
+}

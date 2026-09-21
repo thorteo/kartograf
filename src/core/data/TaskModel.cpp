@@ -1,0 +1,293 @@
+#include "core/data/TaskModel.h"
+
+#include <algorithm>
+#include <cctype>
+
+#include <nlohmann/json.hpp>
+
+namespace tarkov::data {
+namespace {
+
+using nlohmann::json;
+
+const json* find(const json& object, const char* key) {
+    if (!object.is_object()) {
+        return nullptr;
+    }
+    const auto it = object.find(key);
+    return it == object.end() || it->is_null() ? nullptr : &*it;
+}
+
+std::string stringAt(const json& object, const char* key) {
+    const json* value = find(object, key);
+    return value != nullptr && value->is_string() ? value->get<std::string>()
+                                                  : std::string{};
+}
+
+int intAt(const json& object, const char* key, int fallback = 0) {
+    const json* value = find(object, key);
+    return value != nullptr && value->is_number() ? value->get<int>() : fallback;
+}
+
+bool boolAt(const json& object, const char* key) {
+    const json* value = find(object, key);
+    return value != nullptr && value->is_boolean() && value->get<bool>();
+}
+
+std::optional<double> doubleAt(const json& object, const char* key) {
+    const json* value = find(object, key);
+    if (value == nullptr || !value->is_number()) {
+        return std::nullopt;
+    }
+    return value->get<double>();
+}
+
+std::optional<geo::Vec3> readPosition(const json& object) {
+    if (!object.is_object()) {
+        return std::nullopt;
+    }
+    const auto x = doubleAt(object, "x");
+    const auto y = doubleAt(object, "y");
+    const auto z = doubleAt(object, "z");
+    if (!x || !y || !z) {
+        return std::nullopt;
+    }
+    return geo::Vec3{*x, *y, *z};
+}
+
+/// Collects key ids out of the API's list-of-alternatives shape.
+void readRequiredKeys(const json& objective, std::vector<std::string>& out) {
+    const json* required = find(objective, "requiredKeys");
+    if (required == nullptr || !required->is_array()) {
+        return;
+    }
+    for (const auto& alternatives : *required) {
+        if (alternatives.is_array()) {
+            for (const auto& key : alternatives) {
+                if (key.is_string()) {
+                    out.push_back(key.get<std::string>());
+                }
+            }
+        } else if (alternatives.is_string()) {
+            out.push_back(alternatives.get<std::string>());
+        }
+    }
+    std::sort(out.begin(), out.end());
+    out.erase(std::unique(out.begin(), out.end()), out.end());
+}
+
+void readZones(const json& objective, std::vector<TaskZone>& out) {
+    const json* zones = find(objective, "zones");
+    if (zones == nullptr || !zones->is_array()) {
+        return;
+    }
+    for (const auto& entry : *zones) {
+        const json* position = find(entry, "position");
+        if (position == nullptr) {
+            continue;
+        }
+        const auto world = readPosition(*position);
+        if (!world) {
+            continue;
+        }
+        TaskZone zone;
+        zone.id = stringAt(entry, "id");
+        zone.mapId = stringAt(entry, "map");
+        zone.position = *world;
+        zone.top = doubleAt(entry, "top");
+        zone.bottom = doubleAt(entry, "bottom");
+        out.push_back(std::move(zone));
+    }
+}
+
+void readQuestItemLocations(const json& objective,
+                            std::vector<QuestItemLocation>& out) {
+    const json* locations = find(objective, "possibleLocations");
+    if (locations == nullptr || !locations->is_array()) {
+        return;
+    }
+    for (const auto& entry : *locations) {
+        QuestItemLocation location;
+        location.mapId = stringAt(entry, "map");
+
+        const json* positions = find(entry, "positions");
+        if (positions != nullptr && positions->is_array()) {
+            for (const auto& position : *positions) {
+                if (const auto world = readPosition(position)) {
+                    location.positions.push_back(*world);
+                }
+            }
+        }
+        if (!location.positions.empty()) {
+            out.push_back(std::move(location));
+        }
+    }
+}
+
+}  // namespace
+
+bool TaskZone::coversElevation(double elevation) const {
+    if (!top && !bottom) {
+        return true;
+    }
+    if (bottom && elevation < *bottom) {
+        return false;
+    }
+    if (top && elevation > *top) {
+        return false;
+    }
+    return true;
+}
+
+std::string prettifyNormalizedName(std::string_view normalized) {
+    std::string out;
+    out.reserve(normalized.size());
+    bool startOfWord = true;
+    for (const char c : normalized) {
+        if (c == '-' || c == '_') {
+            out.push_back(' ');
+            startOfWord = true;
+            continue;
+        }
+        out.push_back(startOfWord
+                          ? static_cast<char>(std::toupper(
+                                static_cast<unsigned char>(c)))
+                          : c);
+        startOfWord = false;
+    }
+    return out;
+}
+
+std::string Task::displayName() const {
+    if (!name.empty()) {
+        return name;
+    }
+    // The locale can be missing entirely, or carry a blank entry for a task the
+    // translators have not reached. normalizedName is always present.
+    return prettifyNormalizedName(normalizedName);
+}
+
+std::vector<const Task*> TaskSet::onMap(std::string_view mapId) const {
+    std::vector<const Task*> found;
+    for (const auto& task : tasks) {
+        const bool relevant = std::any_of(
+            task.objectives.begin(), task.objectives.end(),
+            [&](const TaskObjective& objective) {
+                return std::any_of(objective.zones.begin(), objective.zones.end(),
+                                   [&](const TaskZone& zone) {
+                                       return zone.mapId == mapId;
+                                   }) ||
+                       std::any_of(objective.questItemLocations.begin(),
+                                   objective.questItemLocations.end(),
+                                   [&](const QuestItemLocation& location) {
+                                       return location.mapId == mapId;
+                                   });
+            });
+        if (relevant) {
+            found.push_back(&task);
+        }
+    }
+    std::sort(found.begin(), found.end(), [](const Task* a, const Task* b) {
+        return a->displayName() < b->displayName();
+    });
+    return found;
+}
+
+TaskLocale TaskLocale::parse(std::string_view text) {
+    TaskLocale locale;
+    const json root = json::parse(text, nullptr, /*allow_exceptions=*/false);
+    const json* data = find(root, "data");
+    if (data == nullptr || !data->is_object()) {
+        return locale;
+    }
+    locale.entries_.reserve(data->size());
+    for (const auto& [key, value] : data->items()) {
+        if (value.is_string()) {
+            locale.entries_.emplace_back(key, value.get<std::string>());
+        }
+    }
+    std::sort(locale.entries_.begin(), locale.entries_.end(),
+              [](const auto& a, const auto& b) { return a.first < b.first; });
+    return locale;
+}
+
+std::string_view TaskLocale::lookup(std::string_view key) const {
+    const auto it = std::lower_bound(
+        entries_.begin(), entries_.end(), key,
+        [](const auto& entry, std::string_view wanted) {
+            return entry.first < wanted;
+        });
+    if (it == entries_.end() || it->first != key) {
+        return {};
+    }
+    return it->second;
+}
+
+TaskSet parseTasks(std::string_view text, const TaskLocale& locale) {
+    TaskSet set;
+    const json root = json::parse(text, nullptr, /*allow_exceptions=*/false);
+    const json* data = find(root, "data");
+    if (data == nullptr) {
+        return set;
+    }
+    const json* tasks = find(*data, "tasks");
+    if (tasks == nullptr || !tasks->is_object()) {
+        return set;
+    }
+
+    set.tasks.reserve(tasks->size());
+    for (const auto& [id, entry] : tasks->items()) {
+        if (!entry.is_object()) {
+            continue;
+        }
+        Task task;
+        task.id = id;
+        task.normalizedName = stringAt(entry, "normalizedName");
+        // The name field holds a translation key, not text.
+        task.name = std::string(locale.lookup(stringAt(entry, "name")));
+        task.traderId = stringAt(entry, "trader");
+        task.mapId = stringAt(entry, "map");
+        task.wikiLink = stringAt(entry, "wikiLink");
+        task.minPlayerLevel = intAt(entry, "minPlayerLevel");
+        task.kappaRequired = boolAt(entry, "kappaRequired");
+        task.lightkeeperRequired = boolAt(entry, "lightkeeperRequired");
+
+        const json* objectives = find(entry, "objectives");
+        if (objectives != nullptr && objectives->is_array()) {
+            for (const auto& source : *objectives) {
+                if (!source.is_object()) {
+                    continue;
+                }
+                TaskObjective objective;
+                objective.id = stringAt(source, "id");
+                objective.type = stringAt(source, "type");
+                objective.description =
+                    std::string(locale.lookup(stringAt(source, "description")));
+                objective.optional = boolAt(source, "optional");
+                objective.count = intAt(source, "count");
+
+                if (const json* maps = find(source, "maps");
+                    maps != nullptr && maps->is_array()) {
+                    for (const auto& mapId : *maps) {
+                        if (mapId.is_string()) {
+                            objective.mapIds.push_back(mapId.get<std::string>());
+                        }
+                    }
+                }
+
+                readZones(source, objective.zones);
+                readQuestItemLocations(source, objective.questItemLocations);
+                readRequiredKeys(source, objective.requiredKeyIds);
+
+                task.objectives.push_back(std::move(objective));
+            }
+        }
+        set.tasks.push_back(std::move(task));
+    }
+
+    std::sort(set.tasks.begin(), set.tasks.end(),
+              [](const Task& a, const Task& b) { return a.id < b.id; });
+    return set;
+}
+
+}  // namespace tarkov::data

@@ -16,6 +16,7 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
 # maps.json is compiled in rather than shipped beside the executable, so a
 # release is one file and cannot be half-updated.
 set(TARKOV_EMBEDDED_MAPS ${CMAKE_CURRENT_BINARY_DIR}/generated/EmbeddedMaps.cpp)
+set(TARKOV_EMBEDDED_MAP_IDS ${CMAKE_CURRENT_BINARY_DIR}/generated/EmbeddedMapIds.cpp)
 add_custom_command(
     OUTPUT ${TARKOV_EMBEDDED_MAPS}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/generated
@@ -30,6 +31,20 @@ add_custom_command(
     VERBATIM
 )
 
+add_custom_command(
+    OUTPUT ${TARKOV_EMBEDDED_MAP_IDS}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/generated
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/scripts/embed_file.py
+            ${CMAKE_CURRENT_SOURCE_DIR}/data/map-ids.json
+            ${TARKOV_EMBEDDED_MAP_IDS}
+            tarkov::data kMapIdsJson
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/data/map-ids.json
+            ${CMAKE_CURRENT_SOURCE_DIR}/scripts/embed_file.py
+    COMMENT "Embedding map-ids.json"
+    VERBATIM
+)
+
 # ---------------------------------------------------------------------------
 # tarkov_core -- portable. Must never include <windows.h>; see CLAUDE.md.
 # ---------------------------------------------------------------------------
@@ -38,6 +53,9 @@ add_library(tarkov_core STATIC
     src/core/game/LogParser.cpp
     src/core/game/RaidState.cpp
     src/core/input/Hotkey.cpp
+    src/core/data/TaskModel.cpp
+    src/core/data/MapIds.cpp
+    ${TARKOV_EMBEDDED_MAP_IDS}
     src/core/map/TileMath.cpp
     ${TARKOV_EMBEDDED_MAPS}
     src/core/geo/Heading.cpp

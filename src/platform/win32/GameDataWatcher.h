@@ -70,6 +70,9 @@ private:
     LogTail outputLog_;
     game::LogParser applicationParser_;
     game::LogParser outputParser_;
+    /// Set when a session's logs have just been opened from the start: the next
+    /// pump replays what happened before we were watching, quietly.
+    bool catchingUp_ = false;
 
     data::QuestProgressStore* progress_ = nullptr;
     ProgressChanged onProgress_;

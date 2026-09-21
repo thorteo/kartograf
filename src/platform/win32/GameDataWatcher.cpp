@@ -16,6 +16,31 @@ namespace fs = std::filesystem;
 
 std::int64_t nowMillis() { return static_cast<std::int64_t>(GetTickCount64()); }
 
+/// When a log line was written, on the nowMillis() clock.
+///
+/// Lines replayed from before the overlay started must keep their own time, or
+/// a raid already under way would appear to have started just now. The game
+/// writes local time, so it is compared with local time.
+std::int64_t millisAt(const game::LogTimestamp& written) {
+    if (written.year == 0) {
+        return nowMillis();
+    }
+    SYSTEMTIME local{};
+    GetLocalTime(&local);
+    game::LogTimestamp now;
+    now.year = local.wYear;
+    now.month = local.wMonth;
+    now.day = local.wDay;
+    now.hour = local.wHour;
+    now.minute = local.wMinute;
+    now.second = local.wSecond;
+    now.millis = local.wMilliseconds;
+    // Never in the future: a skewed clock must not stop the raid timer.
+    const long long ago =
+        (std::max)(0LL, now.millisSinceEpoch() - written.millisSinceEpoch());
+    return (std::max)(std::int64_t{1}, nowMillis() - ago);
+}
+
 std::string narrow(const std::wstring& wide) {
     if (wide.empty()) {
         return {};
@@ -209,12 +234,17 @@ void GameDataWatcher::openNewestLogFolder() {
     outputParser_ = game::LogParser{};
     notificationsParser_ = game::QuestEventParser{};
 
+    // From the start: the overlay is often launched after the game, even
+    // mid-raid, and the map and raid timer are only ever announced once.
+    // Replaying the session ends in the state it is in now; both files carry
+    // the same raid events, and the output log also carries the raid's end.
     if (auto path = findLogFile(currentLogFolder_, "application_000.log")) {
-        applicationLog_.open(*path);
+        applicationLog_.open(*path, /*fromStart=*/true);
     }
     if (auto path = findLogFile(currentLogFolder_, "output_000.log")) {
-        outputLog_.open(*path);
+        outputLog_.open(*path, /*fromStart=*/true);
     }
+    catchingUp_ = true;
     if (progress_ != nullptr) {
         if (auto path = findLogFile(currentLogFolder_, "push-notifications_000.log")) {
             notificationsLog_.open(*path);
@@ -238,8 +268,8 @@ void GameDataWatcher::pumpLogs(game::RaidState& state) {
         }
         for (const auto& line : source.tail.readNewLines()) {
             if (auto event = source.parser.feedLine(line)) {
-                state.apply(*event, nowMillis());
-                if (event->type == game::RaidEventType::RaidCreated) {
+                state.apply(*event, millisAt(event->timestamp));
+                if (event->type == game::RaidEventType::RaidCreated && !catchingUp_) {
                     const auto normalized = geo::mapIdToNormalizedName(event->mapId);
                     say(ui::trf(ui::Str::StatusRaidOn,
                                 normalized ? ui::mapDisplayName(*normalized).c_str()
@@ -247,6 +277,18 @@ void GameDataWatcher::pumpLogs(game::RaidState& state) {
                                                                    : event->mapId.c_str())));
                 }
             }
+        }
+    }
+
+    if (catchingUp_) {
+        // Announce only where the replay ended up, not every raid on the way.
+        catchingUp_ = false;
+        const auto now = state.snapshot();
+        const bool raidUnderWay = now->phase != game::RaidPhase::Idle &&
+                                  now->phase != game::RaidPhase::Ended;
+        if (raidUnderWay && !now->mapNormalized.empty()) {
+            say(ui::trf(ui::Str::StatusRaidOn,
+                        ui::mapDisplayName(now->mapNormalized).c_str()));
         }
     }
 }

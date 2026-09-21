@@ -158,8 +158,18 @@ unknown id loudly rather than silently falling back to a default map.
   a new folder appears each time the game is relaunched.
 - Tail with `ReadDirectoryChangesW` on the folder plus a size-delta read; the game
   keeps the file handle open and appends.
-- Seek to the end on first open. Replaying an entire session's history on startup would
-  announce raids that ended hours ago.
+- ~~Seek to the end on first open.~~ Superseded 2026-09-21: read the current session
+  from the start, once. Seeking to the end loses the map for a raid already loading or
+  under way when the overlay starts -- the map is announced once, at load -- and
+  launching the overlay after the game is the normal order. Seen live: a Customs
+  training raid loaded at 20:04:32, the overlay started at 20:05, no map. The original
+  concern, announcing raids that ended hours ago, is handled by staying quiet during
+  the replay and announcing only where it ended. Events keep their logged time, so
+  the raid timer counts from the real start.
+- `application_000.log` and `output_000.log` carry the same raid events; only
+  `output_000.log` has the raid-end marker. Replaying one file after the other still
+  ends in the right state. Verified by counting each marker in both files across four
+  sessions.
 - `output_000.log` reached 59 306 lines in a single session, so never re-read from the
   start on each change notification.
 

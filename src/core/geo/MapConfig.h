@@ -52,11 +52,22 @@ struct MapVariant {
     std::array<Vec2, 2> bounds{};
     bool hasBounds = false;
 
+    /// Where the abstract SVG drawing sits, when it differs from `bounds`.
+    ///
+    /// tarkov.dev places the SVG with svgBounds if present and bounds
+    /// otherwise, so the drawing stretches to fill a world rectangle rather
+    /// than carrying a coordinate system of its own. Only Reserve declares it.
+    std::array<Vec2, 2> svgBounds{};
+    bool hasSvgBounds = false;
+
     int tileSize = 256;
     int minZoom = 0;
     int maxZoom = 0;
     std::string tilePath;
     std::string svgPath;
+    /// The group inside the SVG that is the map's base level, e.g.
+    /// "Ground_Level". Upper floors name their own in MapLayer::svgLayer.
+    std::string svgLayer;
 
     std::vector<MapLayer> layers;
 };

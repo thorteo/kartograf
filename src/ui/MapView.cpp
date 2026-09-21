@@ -138,7 +138,8 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                           const game::RaidSnapshot& snapshot,
                           std::int64_t nowMillis, bool interactive,
                           const TileTextureProvider& tiles,
-                          const std::vector<QuestPlace>& quests) {
+                          const std::vector<QuestPlace>& quests,
+                          const AbstractMapProvider& abstractMap) {
     MapViewResult result;
 
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -216,17 +217,17 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
 
     state.opacity = std::clamp(state.opacity, kMinOpacity, kMaxOpacity);
 
+    // Tiles and the abstract drawing carry the same alpha, so the game shows
+    // through the map itself rather than only around it.
+    const ImU32 tileTint =
+        ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, state.opacity));
+
     // A dim backdrop so map tiles read against a bright game scene. It fades
     // with the map, otherwise turning the map down would leave the scene behind
     // it just as obscured as before.
     draw->AddRectFilled(origin,
                         ImVec2(origin.x + canvasSize.x, origin.y + canvasSize.y),
                         rgba(0.03f, 0.04f, 0.04f, 0.88f * state.opacity));
-
-    // Tiles carry the same alpha, so the game shows through the map itself
-    // rather than only around it.
-    const ImU32 tileTint =
-        ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, state.opacity));
 
     // Which floor to show. Following the player's elevation is the point of
     // the feature: walking upstairs in Dorms should change the map without the
@@ -247,11 +248,44 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
         state.activeLayer = -1;
     }
 
+    // The abstract drawing, when this map has one and it is wanted. It is
+    // rendered for exactly the region on screen, so it is drawn as one image
+    // rather than as tiles.
+    bool drewAbstract = false;
+    if (state.preferAbstract && abstractMap) {
+        const auto wantMin = map::screenToBase(state.viewport, geo::Vec2{0.0, 0.0});
+        const auto wantMax = map::screenToBase(
+            state.viewport, geo::Vec2{static_cast<double>(width),
+                                      static_cast<double>(height)});
+        const AbstractMapImage image = abstractMap(wantMin, wantMax, width, height);
+
+        if (image.available) {
+            if (image.texture != 0) {
+                const auto topLeft = map::baseToScreen(state.viewport, image.imageMin);
+                const auto bottomRight =
+                    map::baseToScreen(state.viewport, image.imageMax);
+                draw->AddImage(image.texture,
+                               ImVec2(origin.x + static_cast<float>(topLeft.x),
+                                      origin.y + static_cast<float>(topLeft.y)),
+                               ImVec2(origin.x + static_cast<float>(bottomRight.x),
+                                      origin.y + static_cast<float>(bottomRight.y)),
+                               ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), tileTint);
+                ++result.tilesDrawn;
+            }
+            // Keep asking for frames while a render is in flight, or the new
+            // image would not appear until something else moved.
+            if (image.rendering || image.texture == 0) {
+                ++result.tilesRequested;
+            }
+            drewAbstract = true;
+        }
+    }
+
     // Three maps publish no raster tiles at all -- Streets, Lighthouse and
     // Terminal are SVG-only upstream, confirmed by probing the CDN. Drawing a
     // grid of empty placeholders for them would look like a broken download
     // rather than missing data, so say what is actually wrong.
-    if (map.tilePath.empty()) {
+    if (!drewAbstract && map.tilePath.empty()) {
         const ImVec2 centre(origin.x + canvasSize.x / 2.0f,
                             origin.y + canvasSize.y / 2.0f);
         const char* headline = "No map image available for this location yet.";
@@ -270,7 +304,9 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
     }
 
     const int zoom = map::chooseZoom(map, state.viewport.scale);
-    const auto visible = map::visibleTiles(map, state.viewport, zoom);
+    const auto visible =
+        drewAbstract ? std::vector<map::VisibleTile>{}
+                     : map::visibleTiles(map, state.viewport, zoom);
 
     // Ground first, then the active floor over it. Upper-floor tiles cover only
     // the buildings that have one, so the ground underneath has to stay drawn
@@ -492,7 +528,9 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
             std::snprintf(questText, sizeof(questText), "   %d objectives",
                           static_cast<int>(quests.size()));
         }
-        std::snprintf(text, sizeof(text), "%s   %s%s%s   %s%s%s", map.key.c_str(),
+        const char* renderer = drewAbstract ? "abstract" : "satellite";
+        std::snprintf(text, sizeof(text), "%s (%s)   %s%s%s   %s%s%s",
+                      map.key.c_str(), renderer,
                       layerName(map, state.activeLayer).c_str(),
                       state.layerAuto ? " (auto)" : "",
                       floorMissing ? " - no image for this floor" : "", mode, age,

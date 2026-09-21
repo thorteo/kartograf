@@ -125,6 +125,7 @@ std::vector<MapDefinition> parseMapsJson(std::string_view jsonText) {
             variant.projection = stringOr(variantJson, "projection");
             variant.tilePath = stringOr(variantJson, "tilePath");
             variant.svgPath = stringOr(variantJson, "svgPath");
+            variant.svgLayer = stringOr(variantJson, "svgLayer");
             variant.tileSize = static_cast<int>(numberOr(variantJson, "tileSize", 256));
             variant.minZoom = static_cast<int>(numberOr(variantJson, "minZoom", 0));
             variant.maxZoom = static_cast<int>(numberOr(variantJson, "maxZoom", 0));
@@ -146,6 +147,17 @@ std::vector<MapDefinition> parseMapsJson(std::string_view jsonText) {
                 if (c1 && c2) {
                     variant.bounds = {*c1, *c2};
                     variant.hasBounds = true;
+                }
+            }
+
+            const auto svgBoundsIt = variantJson.find("svgBounds");
+            if (svgBoundsIt != variantJson.end() && svgBoundsIt->is_array() &&
+                svgBoundsIt->size() >= 2) {
+                const auto c1 = readCorner((*svgBoundsIt)[0]);
+                const auto c2 = readCorner((*svgBoundsIt)[1]);
+                if (c1 && c2) {
+                    variant.svgBounds = {*c1, *c2};
+                    variant.hasSvgBounds = true;
                 }
             }
 

@@ -11,6 +11,7 @@
 
 #include "core/game/RaidState.h"
 #include "core/geo/MapConfig.h"
+#include "core/geo/Vec.h"
 #include "core/map/TileMath.h"
 
 namespace tarkov::ui {
@@ -23,6 +24,23 @@ namespace tarkov::ui {
 /// Direct3D and the view can be built and reasoned about on Linux.
 using TileTextureProvider =
     std::function<ImTextureID(int layer, int zoom, int x, int y)>;
+
+/// One rasterised piece of the abstract map.
+struct AbstractMapImage {
+    ImTextureID texture = 0;
+    /// The base-image rectangle the texture covers. It lags what was asked for
+    /// while a new render is in flight, so the caller positions by this and the
+    /// map stretches slightly instead of jumping.
+    geo::Vec2 imageMin;
+    geo::Vec2 imageMax;
+    bool available = false;  ///< A drawing exists for this map at all.
+    bool rendering = false;
+};
+
+/// Asks for the abstract drawing covering a base-image rectangle, at a pixel
+/// size. Returns whatever is ready now.
+using AbstractMapProvider = std::function<AbstractMapImage(
+    const geo::Vec2& imageMin, const geo::Vec2& imageMax, int width, int height)>;
 
 /// One place on the map a quest sends you.
 struct QuestPlace {
@@ -43,6 +61,13 @@ struct QuestPlace {
 
 /// Everything the map view remembers between frames.
 struct MapViewState {
+    /// Prefer the abstract vector drawing over photographic tiles.
+    ///
+    /// Abstract is the default: it reads far better over a game, and three maps
+    /// have no tiles at all. Three other maps have no drawing, so the raster
+    /// path stays as the fallback.
+    bool preferAbstract = true;
+
     /// Draw quest markers. Off hides them without losing the data.
     bool showQuests = true;
     /// Fade markers that are not on the player's floor rather than hiding them:
@@ -92,6 +117,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                           const game::RaidSnapshot& snapshot,
                           std::int64_t nowMillis, bool interactive,
                           const TileTextureProvider& tiles,
-                          const std::vector<QuestPlace>& quests = {});
+                          const std::vector<QuestPlace>& quests = {},
+                          const AbstractMapProvider& abstractMap = {});
 
 }  // namespace tarkov::ui

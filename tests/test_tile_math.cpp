@@ -5,6 +5,7 @@
 #include <string>
 
 #include "core/geo/Projection.h"
+#include "core/map/SvgPlacement.h"
 #include "core/map/TileMath.h"
 #include "core/game/ScreenshotName.h"
 #include "fixtures.h"
@@ -454,4 +455,93 @@ TEST_CASE("a real Dorms position selects the floor the player is on") {
     // The same elevation out in the open is still ground level. Height alone
     // never means "upstairs".
     CHECK(map::layerIndexOrGround(map, geo::Vec3{-50.0, 4.43, -50.0}) == -1);
+}
+
+TEST_CASE("the abstract drawing is placed over the map's world rectangle") {
+    const auto& map = customs();
+    // Customs declares no svgBounds, so the drawing fills the ordinary bounds.
+    CHECK_FALSE(map.hasSvgBounds);
+
+    const auto svgRect = map::svgImageRect(map);
+    const geo::Projection projection(map);
+    const auto bounds = projection.imageBounds();
+    REQUIRE(svgRect.has_value());
+    REQUIRE(bounds.has_value());
+    CHECK(svgRect->first.x == doctest::Approx(bounds->first.x));
+    CHECK(svgRect->second.y == doctest::Approx(bounds->second.y));
+}
+
+TEST_CASE("Reserve places its drawing on its own rectangle") {
+    // The one map that declares svgBounds. Using plain bounds for it would
+    // shift every marker on Reserve by a fixed offset -- consistent enough to
+    // look like the map is simply drawn slightly wrong.
+    static const std::vector<geo::MapDefinition> maps =
+        geo::parseMapsJson(test::readFile(test::dataPath("maps.json")));
+    const auto* reserve = geo::findMap(maps, "reserve")->interactiveVariant();
+    REQUIRE(reserve != nullptr);
+    REQUIRE(reserve->hasSvgBounds);
+
+    const auto svgRect = map::svgImageRect(*reserve);
+    const auto bounds = geo::Projection(*reserve).imageBounds();
+    REQUIRE(svgRect.has_value());
+    REQUIRE(bounds.has_value());
+    // They must genuinely differ, or the test is asserting nothing.
+    CHECK(svgRect->first.y != doctest::Approx(bounds->first.y));
+}
+
+TEST_CASE("image and SVG rectangles round-trip") {
+    const auto& map = customs();
+    const map::SvgSize size{1062.4827, 535.17401};
+
+    const geo::Vec2 imageMin{20.0, 80.0};
+    const geo::Vec2 imageMax{120.0, 150.0};
+
+    const auto svg = map::imageRectToSvg(map, size, imageMin, imageMax);
+    REQUIRE(svg.has_value());
+    CHECK(svg->width > 0.0);
+    CHECK(svg->height > 0.0);
+
+    const auto back = map::svgRectToImage(map, size, *svg);
+    REQUIRE(back.has_value());
+    CHECK(back->first.x == doctest::Approx(imageMin.x));
+    CHECK(back->first.y == doctest::Approx(imageMin.y));
+    CHECK(back->second.x == doctest::Approx(imageMax.x));
+    CHECK(back->second.y == doctest::Approx(imageMax.y));
+}
+
+TEST_CASE("the whole map maps onto the whole drawing") {
+    const auto& map = customs();
+    const map::SvgSize size{1062.4827, 535.17401};
+    const auto rect = map::svgImageRect(map);
+    REQUIRE(rect.has_value());
+
+    const auto svg = map::imageRectToSvg(map, size, rect->first, rect->second);
+    REQUIRE(svg.has_value());
+    CHECK(svg->x == doctest::Approx(0.0));
+    CHECK(svg->y == doctest::Approx(0.0));
+    CHECK(svg->width == doctest::Approx(size.width));
+    CHECK(svg->height == doctest::Approx(size.height));
+}
+
+TEST_CASE("layer ids always include the ground so the map does not vanish") {
+    const auto& map = customs();
+    REQUIRE_FALSE(map.svgLayer.empty());
+
+    const auto ground = map::svgLayerIdsFor(map, -1);
+    REQUIRE(ground.size() == 1);
+    CHECK(ground[0] == "Ground_Level");
+
+    const auto second = map::svgLayerIdsFor(map, 0);
+    REQUIRE(second.size() == 2);
+    CHECK(second[0] == "Ground_Level");   // the ground stays drawn underneath
+    CHECK(second[1] == "Second_Floor");
+
+    // Customs' 4th floor has no SVG layer at all; asking for it yields just the
+    // ground rather than an empty list.
+    const auto fourth = map::svgLayerIdsFor(map, 2);
+    CHECK(fourth.size() >= 1);
+    CHECK(fourth[0] == "Ground_Level");
+
+    // An index past the end is ignored.
+    CHECK(map::svgLayerIdsFor(map, 99).size() == 1);
 }

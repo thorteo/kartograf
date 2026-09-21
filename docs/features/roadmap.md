@@ -106,6 +106,16 @@ Not because they are hard, but because of `adr/0002-no-game-process-interaction.
 
 These are permanent exclusions, not deferred items.
 
+## Map rendering
+
+Abstract vector drawings are the default, with the photographic tiles as a
+fallback. Neither format covers every map, so both renderers are kept and the
+choice is per map. The footer says which one is in use.
+
+The abstract renderer draws only the region on screen, at screen resolution, on a
+worker thread. That keeps it sharp at any zoom for the cost of one texture, where a
+full-map texture sharp enough to zoom into would cost hundreds of megabytes.
+
 ## Known gap: three maps have no raster tiles
 
 Streets of Tarkov, Lighthouse and Terminal publish no tile pyramid upstream — only
@@ -113,10 +123,11 @@ SVG. Probing the CDN confirms the tiles genuinely do not exist rather than being
 absent from `maps.json`. Interchange and Shoreline draw at ground level but their
 upper floors are SVG-only too.
 
-The overlay says so plainly instead of drawing an empty grid, and position tracking
-still works on those maps. Closing the gap means rendering SVG, which is a real
-dependency (lunasvg or similar) and a decision of its own. `tests/test_tile_math.cpp`
-encodes the current coverage so a change upstream in either direction surfaces.
+**Closed.** Those three maps are exactly the ones with abstract drawings, so the SVG
+renderer covers them. The inverse gap remains and is covered the other way round:
+Icebreaker, The Lab and The Labyrinth have no drawing and fall back to tiles.
+`tests/test_tile_math.cpp` encodes the current coverage of both so a change upstream
+in either direction surfaces.
 
 ## Open questions
 

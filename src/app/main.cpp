@@ -32,6 +32,8 @@
 #include "platform/win32/GameWindow.h"
 #include "platform/win32/ImGuiLayer.h"
 #include "platform/win32/OverlayWindow.h"
+#include "core/map/SvgPlacement.h"
+#include "platform/win32/SvgMapStore.h"
 #include "platform/win32/TaskRepository.h"
 #include "platform/win32/TileStore.h"
 #include "ui/Hud.h"
@@ -293,6 +295,10 @@ int main(int argc, char** argv) {
     win32::TileStore tiles;
     tiles.start(overlay.device());
 
+    win32::SvgMapStore abstractMaps;
+    abstractMaps.start(overlay.device(),
+                       [](const std::string& line) { g_status.add(line); });
+
     const data::MapIdTable mapIds = data::MapIdTable::parse(data::kMapIdsJson);
     win32::TaskRepository quests;
     quests.start("regular", argumentValue(argc, argv, "--lang").empty()
@@ -341,6 +347,8 @@ int main(int argc, char** argv) {
     // map footer. Screen corners in a raid are worth more than telemetry.
     bool hudVisible = hasFlag(argc, argv, "--hud");
     std::string tiledMap;
+    std::string abstractMapKey;
+    int abstractMapLayer = -2;
     // Rebuilt only when the map or the quest data changes; walking through a
     // raid must not re-scan 515 tasks every frame.
     std::vector<ui::QuestPlace> questPlaces;
@@ -454,8 +462,10 @@ int main(int argc, char** argv) {
         // A tile arriving changes the picture even though no state did, so the
         // upload count is part of what makes a frame necessary.
         const int uploaded = tiles.pump();
+        const bool abstractUploaded = abstractMaps.pump();
         const bool needsFrame = interactive || stateChanged || secondTicked ||
-                                forceRedraw || uploaded > 0 || pendingTiles;
+                                forceRedraw || uploaded > 0 || abstractUploaded ||
+                                pendingTiles;
 
         if (!needsFrame) {
             // Wake early if a message arrives, so input stays responsive.
@@ -497,6 +507,17 @@ int main(int argc, char** argv) {
                 }
                 ImGui::End();
             } else {
+                // Point the abstract store at this map and floor. The layer
+                // set changes as the player walks upstairs, which re-renders.
+                if (abstractMapKey != variant->key ||
+                    abstractMapLayer != mapState.activeLayer) {
+                    abstractMapKey = variant->key;
+                    abstractMapLayer = mapState.activeLayer;
+                    abstractMaps.setMap(
+                        variant->key, variant->svgPath,
+                        map::svgLayerIdsFor(*variant, mapState.activeLayer));
+                }
+
                 if (tiledMap != variant->key) {
                     tiledMap = variant->key;
                     std::vector<std::string> layerTemplates;
@@ -523,7 +544,33 @@ int main(int argc, char** argv) {
                         return reinterpret_cast<ImTextureID>(
                             tiles.acquire({layer, zoom, x, y}));
                     },
-                    questPlaces);
+                    questPlaces,
+                    [&abstractMaps, variant](const geo::Vec2& imageMin,
+                                             const geo::Vec2& imageMax, int w,
+                                             int h) -> ui::AbstractMapImage {
+                        ui::AbstractMapImage out;
+                        if (variant->svgPath.empty()) {
+                            return out;  // This map has no drawing.
+                        }
+                        const auto size = abstractMaps.documentSize();
+                        const auto wanted =
+                            map::imageRectToSvg(*variant, size, imageMin, imageMax);
+                        const auto view = abstractMaps.acquire(
+                            wanted ? *wanted : map::SvgRect{}, w, h);
+
+                        out.available = true;
+                        out.rendering = view.rendering || !view.haveDocument;
+                        if (view.texture != nullptr) {
+                            if (const auto rect = map::svgRectToImage(*variant, size,
+                                                                     view.region)) {
+                                out.texture =
+                                    reinterpret_cast<ImTextureID>(view.texture);
+                                out.imageMin = rect->first;
+                                out.imageMax = rect->second;
+                            }
+                        }
+                        return out;
+                    });
                 // Keep drawing while tiles are still arriving, then stop.
                 pendingTiles = result.tilesRequested > 0;
                 if (result.wantsRedraw) {
@@ -545,6 +592,7 @@ int main(int argc, char** argv) {
 
     watcher.stop();
     quests.stop();
+    abstractMaps.stop();
     tiles.stop();
     UnregisterHotKey(nullptr, kMapHotkeyId);
     UnregisterHotKey(nullptr, kHudHotkeyId);

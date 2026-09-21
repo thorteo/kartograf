@@ -61,6 +61,7 @@ add_library(tarkov_core STATIC
     ${TARKOV_EMBEDDED_MAP_IDS}
     src/core/map/TileMath.cpp
     src/core/map/SvgRenderer.cpp
+    src/core/map/SvgPlacement.cpp
     ${TARKOV_EMBEDDED_MAPS}
     src/core/geo/Heading.cpp
     src/core/geo/MapConfig.cpp
@@ -150,6 +151,7 @@ if(WIN32)
         src/platform/win32/HttpClient.cpp
         src/platform/win32/TileStore.cpp
         src/platform/win32/TaskRepository.cpp
+        src/platform/win32/SvgMapStore.cpp
         src/platform/win32/ImGuiLayer.cpp
         third_party/imgui/backends/imgui_impl_win32.cpp
         third_party/imgui/backends/imgui_impl_dx11.cpp

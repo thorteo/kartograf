@@ -1,3 +1,4 @@
+#include "ui/Strings.h"
 #include "platform/win32/TarkovDataRepository.h"
 
 #include <windows.h>
@@ -192,7 +193,7 @@ bool TarkovDataRepository::loadFromCache(const std::string& mode) {
 
     const std::size_t count = set.tasks.size();
     publish(std::move(set), std::move(features), writtenAt);
-    say("quests: " + std::to_string(count) + " loaded from cache");
+    say(ui::trf(ui::Str::StatusQuestsFromCache, static_cast<int>(count)));
     return true;
 }
 
@@ -206,8 +207,8 @@ bool TarkovDataRepository::downloadAndCache(const std::string& mode) {
     // The task document is a couple of megabytes; allow room but not unbounded.
     const auto tasksResponse = client.get(base + "/tasks", 32u * 1024 * 1024);
     if (!tasksResponse.ok) {
-        say("quests: download failed (HTTP " +
-            std::to_string(tasksResponse.status) + ")");
+        say(ui::trf(ui::Str::StatusQuestsDownloadFailed,
+                    static_cast<int>(tasksResponse.status)));
         return false;
     }
 
@@ -221,13 +222,13 @@ bool TarkovDataRepository::downloadAndCache(const std::string& mode) {
     if (localeResponse.ok) {
         localeBody.assign(localeResponse.body.begin(), localeResponse.body.end());
     } else {
-        say("quests: no '" + language_ + "' translations, using plain names");
+        say(ui::trf(ui::Str::StatusNoTranslations, language_.c_str()));
     }
 
     const data::TaskLocale locale = data::TaskLocale::parse(localeBody);
     data::TaskSet set = data::parseTasks(body, locale);
     if (set.tasks.empty()) {
-        say("quests: downloaded data did not parse");
+        say(ui::tr(ui::Str::StatusQuestsDidNotParse));
         return false;
     }
 
@@ -245,7 +246,7 @@ bool TarkovDataRepository::downloadAndCache(const std::string& mode) {
             mapsLocaleBody.assign(mapsLocale.body.begin(), mapsLocale.body.end());
         }
     } else {
-        say("maps: extract and spawn data could not be downloaded");
+        say(ui::tr(ui::Str::StatusMapsUnavailable));
     }
     MapFeatureSet features = data::parseMapFeatures(
         mapsBody, data::TaskLocale::parse(mapsLocaleBody));
@@ -267,8 +268,8 @@ bool TarkovDataRepository::downloadAndCache(const std::string& mode) {
     const std::size_t count = set.tasks.size();
     const std::size_t mapCount = features.size();
     publish(std::move(set), std::move(features), writtenAt);
-    say("quests: " + std::to_string(count) + " and " + std::to_string(mapCount) +
-        " maps downloaded");
+    say(ui::trf(ui::Str::StatusDataDownloaded, static_cast<int>(count),
+                static_cast<int>(mapCount)));
     return true;
 }
 

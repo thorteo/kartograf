@@ -2,6 +2,8 @@
 
 #include <imgui.h>
 
+#include "ui/Strings.h"
+
 #include <cmath>
 #include <cstdio>
 
@@ -27,11 +29,17 @@ void labelled(const char* label, const char* value, ImVec4 colour) {
     ImGui::TextColored(colour, "%s", value);
 }
 
-const char* compassPoint(double degrees) {
-    static const char* kPoints[] = {"N",  "NE", "E",  "SE",
-                                    "S",  "SW", "W",  "NW"};
-    const int index = static_cast<int>(std::lround(degrees / 45.0)) & 7;
-    return kPoints[index];
+
+const char* phaseName(game::RaidPhase phase) {
+    switch (phase) {
+        case game::RaidPhase::Idle: return tr(Str::PhaseIdle);
+        case game::RaidPhase::Loading: return tr(Str::PhaseLoading);
+        case game::RaidPhase::Matching: return tr(Str::PhaseMatching);
+        case game::RaidPhase::Loaded: return tr(Str::PhaseLoaded);
+        case game::RaidPhase::InRaid: return tr(Str::PhaseInRaid);
+        case game::RaidPhase::Ended: return tr(Str::PhaseEnded);
+    }
+    return "";
 }
 
 }  // namespace
@@ -103,21 +111,21 @@ void drawHud(const game::RaidSnapshot& snapshot, std::int64_t nowMillis,
 
     // Map
     if (!snapshot.mapNormalized.empty()) {
-        labelled("map", snapshot.mapNormalized.c_str(), kFresh);
+        labelled(tr(Str::HudMap), mapDisplayName(snapshot.mapNormalized).c_str(), kFresh);
     } else if (!snapshot.mapId.empty()) {
         // An id we do not recognise is worth showing rather than hiding: it
         // means a new map shipped and the lookup table needs an entry.
-        labelled("map", snapshot.mapId.c_str(), kAging);
-        ImGui::TextColored(kStale, "unrecognised map id");
+        labelled(tr(Str::HudMap), snapshot.mapId.c_str(), kAging);
+        ImGui::TextColored(kStale, "%s", tr(Str::HudUnrecognisedMap));
     } else {
-        labelled("map", "--", kMuted);
+        labelled(tr(Str::HudMap), "--", kMuted);
     }
 
-    labelled("state", game::raidPhaseName(snapshot.phase), kMuted);
+    labelled(tr(Str::HudState), phaseName(snapshot.phase), kMuted);
 
     if (snapshot.phase == game::RaidPhase::InRaid) {
         formatDuration(snapshot.raidElapsedSeconds(nowMillis), buffer, sizeof(buffer));
-        labelled("elapsed", buffer, kFresh);
+        labelled(tr(Str::HudElapsed), buffer, kFresh);
     }
 
     ImGui::Separator();
@@ -128,35 +136,35 @@ void drawHud(const game::RaidSnapshot& snapshot, std::int64_t nowMillis,
 
         std::snprintf(buffer, sizeof(buffer), "%.0f, %.0f",
                       snapshot.fix.world.x, snapshot.fix.world.z);
-        labelled("pos", buffer, colour);
+        labelled(tr(Str::HudPosition), buffer, colour);
 
         std::snprintf(buffer, sizeof(buffer), "%.0f m", snapshot.fix.world.y);
-        labelled("elev", buffer, colour);
+        labelled(tr(Str::HudElevation), buffer, colour);
 
         std::snprintf(buffer, sizeof(buffer), "%s  %.0f deg",
                       compassPoint(snapshot.fix.headingDegrees),
                       snapshot.fix.headingDegrees);
-        labelled("facing", buffer, colour);
+        labelled(tr(Str::HudFacing), buffer, colour);
 
         formatGameClock(snapshot.fix.gameTimeHours, buffer, sizeof(buffer));
-        labelled("in-game", buffer, kMuted);
+        labelled(tr(Str::HudInGame), buffer, kMuted);
 
         formatDuration(age, buffer, sizeof(buffer));
-        labelled("fix age", buffer, colour);
+        labelled(tr(Str::HudFixAge), buffer, colour);
         if (age >= 60.0) {
-            ImGui::TextColored(kStale, "press the screenshot key to update");
+            ImGui::TextColored(kStale, "%s", tr(Str::HudPressToUpdate));
         }
     } else {
-        ImGui::TextColored(kMuted, "no position yet");
-        ImGui::TextColored(kMuted, "press the in-game screenshot key");
+        ImGui::TextColored(kMuted, "%s", tr(Str::HudNoPosition));
+        ImGui::TextColored(kMuted, "%s", tr(Str::HudPressKey));
     }
 
     if (options.showDebug) {
         ImGui::Separator();
         std::snprintf(buffer, sizeof(buffer), "%d", snapshot.fixCount);
-        labelled("fixes", buffer, kMuted);
+        labelled(tr(Str::HudFixes), buffer, kMuted);
         if (!snapshot.shortId.empty()) {
-            labelled("raid", snapshot.shortId.c_str(), kMuted);
+            labelled(tr(Str::HudRaid), snapshot.shortId.c_str(), kMuted);
         }
         ImGui::TextColored(kMuted, "%.0f fps", ImGui::GetIO().Framerate);
     }

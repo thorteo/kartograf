@@ -1,3 +1,4 @@
+#include "ui/Strings.h"
 #include "platform/win32/SvgMapStore.h"
 
 #include <shlobj.h>
@@ -183,7 +184,7 @@ bool SvgMapStore::ensureDocument() {
                 svg.assign(response.body.begin(), response.body.end());
                 writeFile(cached, svg);
             } else {
-                say("map: could not download the drawing for " + key);
+                say(ui::trf(ui::Str::StatusDrawingDownloadFailed, ui::mapDisplayName(key).c_str()));
             }
         }
     }
@@ -196,7 +197,7 @@ bool SvgMapStore::ensureDocument() {
         // A cached file that will not parse would fail forever; drop it.
         std::error_code ec;
         fs::remove(cached, ec);
-        say("map: the drawing for " + key + " did not parse");
+        say(ui::trf(ui::Str::StatusDrawingDidNotParse, ui::mapDisplayName(key).c_str()));
         return false;
     }
     const map::SvgSize size = document.size();

@@ -45,6 +45,7 @@
 #include "ui/Hud.h"
 #include "ui/MapView.h"
 #include "ui/QuestList.h"
+#include "ui/Strings.h"
 
 namespace {
 
@@ -97,12 +98,13 @@ tarkov::input::Hotkey resolveHotkey(const std::string& text,
     }
     const auto parsed = parseHotkey(text);
     if (!parsed) {
-        g_status.add("could not parse '" + text + "', using " +
-                     formatHotkey(fallback));
+        g_status.add(tarkov::ui::trf(tarkov::ui::Str::StatusCouldNotParseKey, text.c_str(),
+                                     formatHotkey(fallback).c_str()));
         return fallback;
     }
     if (isReservedCombination(*parsed)) {
-        g_status.add("'" + text + "' is reserved, using " + formatHotkey(fallback));
+        g_status.add(tarkov::ui::trf(tarkov::ui::Str::StatusReservedKey, text.c_str(),
+                                     formatHotkey(fallback).c_str()));
         return fallback;
     }
     return *parsed;
@@ -130,16 +132,17 @@ void registerOrReport(int id, const tarkov::input::Hotkey& hotkey,
                       const char* purpose) {
     if (RegisterHotKey(nullptr, id, hotkey.modifiers | MOD_NOREPEAT,
                        hotkey.virtualKey)) {
-        g_status.add(std::string(purpose) + ": " +
-                     tarkov::input::formatHotkey(hotkey));
+        g_status.add(tarkov::ui::trf(tarkov::ui::Str::StatusHotkeyBound, purpose,
+                                     tarkov::input::formatHotkey(hotkey).c_str()));
         return;
     }
     const DWORD error = GetLastError();
     if (error == ERROR_HOTKEY_ALREADY_REGISTERED) {
-        g_status.add(tarkov::input::formatHotkey(hotkey) +
-                     " is already claimed by another application");
+        g_status.add(tarkov::ui::trf(tarkov::ui::Str::StatusHotkeyClaimed,
+                                     tarkov::input::formatHotkey(hotkey).c_str()));
     } else {
-        g_status.add("could not bind " + tarkov::input::formatHotkey(hotkey));
+        g_status.add(tarkov::ui::trf(tarkov::ui::Str::StatusHotkeyFailed,
+                                     tarkov::input::formatHotkey(hotkey).c_str()));
     }
 }
 
@@ -274,6 +277,11 @@ std::vector<tarkov::ui::QuestPlace> buildQuestPlaces(
 int main(int argc, char** argv) {
     using namespace tarkov;
 
+    // First, before anything can report a status line: Russian unless asked
+    // otherwise. The player runs the game in Russian, and quest and extract
+    // names arrive from tarkov.dev in the same language.
+    ui::setLanguage(ui::parseLanguage(argumentValue(argc, argv, "--lang")));
+
     const input::Hotkey mapKey =
         resolveHotkey(argumentValue(argc, argv, "--toggle-key"),
                       input::defaultToggleHotkey());
@@ -316,31 +324,36 @@ int main(int argc, char** argv) {
 
     win32::ImGuiLayer imgui;
     if (!imgui.initialise(overlay.handle(), overlay.device(), overlay.context())) {
-        MessageBoxA(nullptr, "Could not initialise the interface layer.",
-                    "tarkov-help", MB_ICONERROR | MB_OK);
+        // MessageBoxW: the text may be Russian, which the ANSI variant would
+        // mangle through the system code page.
+        const char* message = ui::tr(ui::Str::ErrorInterfaceInit);
+        const int length = MultiByteToWideChar(CP_UTF8, 0, message, -1, nullptr, 0);
+        std::wstring wide(static_cast<std::size_t>(length > 0 ? length : 1), L'\0');
+        MultiByteToWideChar(CP_UTF8, 0, message, -1, wide.data(), length);
+        MessageBoxW(nullptr, wide.c_str(), L"tarkov-help", MB_ICONERROR | MB_OK);
         return 1;
     }
 
     switch (overlay.setExcludedFromCapture(!allowCapture)) {
         case win32::OverlayWindow::CaptureExclusion::kHidden:
-            g_status.add("hidden from screen capture");
+            g_status.add(ui::tr(ui::Str::StatusCaptureHidden));
             break;
         case win32::OverlayWindow::CaptureExclusion::kBlanked:
-            g_status.add("blanked in screen capture (Windows 10 2004+ hides it)");
+            g_status.add(ui::tr(ui::Str::StatusCaptureBlanked));
             break;
         case win32::OverlayWindow::CaptureExclusion::kUnavailable:
-            g_status.add(allowCapture ? "visible to screen capture"
-                                      : "could not exclude from screen capture");
+            g_status.add(allowCapture ? ui::tr(ui::Str::StatusCaptureVisible)
+                                      : ui::tr(ui::Str::StatusCaptureFailed));
             break;
     }
 
-    registerOrReport(kMapHotkeyId, mapKey, "map");
-    registerOrReport(kInteractHotkeyId, interact, "interact");
-    registerOrReport(kHudHotkeyId, hudKey, "hud");
+    registerOrReport(kMapHotkeyId, mapKey, ui::tr(ui::Str::HotkeyPurposeMap));
+    registerOrReport(kInteractHotkeyId, interact, ui::tr(ui::Str::HotkeyPurposeInteract));
+    registerOrReport(kHudHotkeyId, hudKey, ui::tr(ui::Str::HotkeyPurposeHud));
 
     const std::vector<geo::MapDefinition> maps = geo::parseMapsJson(data::kMapsJson);
     if (maps.empty()) {
-        g_status.add("embedded map data failed to parse -- the map view is disabled");
+        g_status.add(ui::tr(ui::Str::StatusMapDataBroken));
     }
 
     win32::TileStore tiles;
@@ -358,9 +371,7 @@ int main(int argc, char** argv) {
 
     const data::MapIdTable mapIds = data::MapIdTable::parse(data::kMapIdsJson);
     win32::TarkovDataRepository quests;
-    quests.start("regular", argumentValue(argc, argv, "--lang").empty()
-                                ? std::string("ru")
-                                : argumentValue(argc, argv, "--lang"),
+    quests.start("regular", ui::language() == ui::Lang::En ? "en" : "ru",
                  [](const std::string& line) { g_status.add(line); });
 
     data::QuestProgressStore progress;
@@ -372,15 +383,15 @@ int main(int argc, char** argv) {
         forced.type = game::RaidEventType::MapLoading;
         forced.mapId = forcedMap;
         raidState.apply(forced, static_cast<std::int64_t>(GetTickCount64()));
-        g_status.add("forced map: " + forcedMap);
+        g_status.add(ui::trf(ui::Str::StatusForcedMap, forcedMap.c_str()));
     }
     if (!fakeShot.empty()) {
         if (const auto shot = game::parseScreenshotName(fakeShot)) {
             raidState.applyPosition(*shot,
                                     static_cast<std::int64_t>(GetTickCount64()));
-            g_status.add("injected position from screenshot name");
+            g_status.add(ui::tr(ui::Str::StatusInjectedPosition));
         } else {
-            g_status.add("could not parse the screenshot name given to --fake-shot");
+            g_status.add(ui::tr(ui::Str::StatusInjectedPositionBad));
         }
     }
 
@@ -388,7 +399,7 @@ int main(int argc, char** argv) {
     if (!watcher.start(
             raidState, [](const std::string& line) { g_status.add(line); }, &progress,
             [&progress] { saveProgress(progress); })) {
-        g_status.add("running without game data");
+        g_status.add(ui::tr(ui::Str::StatusNoGameData));
     }
 
     win32::GameWindowTracker tracker;
@@ -440,7 +451,7 @@ int main(int argc, char** argv) {
 
     const ULONGLONG startedAt = GetTickCount64();
     if (standalone) {
-        g_status.add("standalone preview -- not attached to the game");
+        g_status.add(ui::tr(ui::Str::StatusStandalone));
     }
 
     while (overlay.pumpMessages()) {
@@ -462,8 +473,8 @@ int main(int argc, char** argv) {
                 // swallow clicks meant for the game.
                 overlay.setClickThrough(!interactive);
                 overlay.setInteractive(interactive);
-                g_status.add(interactive ? "interactive -- clicks go to the overlay"
-                                         : "click-through");
+                g_status.add(interactive ? ui::tr(ui::Str::StatusInteractive)
+                                         : ui::tr(ui::Str::StatusClickThrough));
             }
         }
 
@@ -504,7 +515,7 @@ int main(int argc, char** argv) {
             win32::GameWindowTracker::looksLikeExclusiveFullscreen(
                 GetForegroundWindow())) {
             warnedAboutFullscreen = true;
-            g_status.add("if nothing shows, switch the game to borderless");
+            g_status.add(ui::tr(ui::Str::StatusSwitchToBorderless));
         }
 
         const auto snapshot = raidState.snapshot();
@@ -577,9 +588,8 @@ int main(int argc, char** argv) {
                                      ImGuiWindowFlags_NoSavedSettings |
                                      ImGuiWindowFlags_NoNav |
                                      ImGuiWindowFlags_NoMove)) {
-                    ImGui::Text("Waiting for a raid to start.");
-                    ImGui::TextDisabled("The map opens by itself once the game "
-                                        "says which one you are on.");
+                    ImGui::TextUnformatted(ui::tr(ui::Str::WaitingForRaid));
+                    ImGui::TextDisabled("%s", ui::tr(ui::Str::WaitingForRaidDetail));
                 }
                 ImGui::End();
             } else {
@@ -633,7 +643,7 @@ int main(int argc, char** argv) {
                         for (const auto* spawn : data::notableSpawns(it->second)) {
                             ui::MapPoint point;
                             point.world = spawn->position;
-                            point.label = spawn->boss ? "boss spawn" : "PMC spawn";
+                            point.label = spawn->boss ? ui::tr(ui::Str::BossSpawn) : ui::tr(ui::Str::PmcSpawn);
                             point.icon = spawn->boss ? ui::MarkerIcon::SpawnBoss
                                                      : ui::MarkerIcon::SpawnPmc;
                             overlaysForMap.spawns.push_back(std::move(point));
@@ -642,10 +652,12 @@ int main(int argc, char** argv) {
                             ui::MapPoint point;
                             point.world = transit.position;
                             const auto target = mapIds.drawnAs(transit.targetMapId);
-                            point.label = transit.description.empty()
-                                              ? "transit to " +
-                                                    std::string(target ? *target : "?")
-                                              : transit.description;
+                            point.label =
+                                transit.description.empty()
+                                    ? ui::trf(ui::Str::TransitTo,
+                                              target ? ui::mapDisplayName(*target).c_str()
+                                                     : "?")
+                                    : transit.description;
                             point.icon = ui::MarkerIcon::Transit;
                             overlaysForMap.transits.push_back(std::move(point));
                         }

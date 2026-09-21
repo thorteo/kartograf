@@ -9,12 +9,15 @@
 
 #include "core/geo/Heading.h"
 #include "core/geo/Projection.h"
+#include "ui/Strings.h"
 
 namespace tarkov::ui {
 namespace {
 
 constexpr float kMinOpacity = 0.15f;
 constexpr float kMaxOpacity = 1.00f;
+
+constexpr float kLabelFontSize = 14.0f;
 
 constexpr double kMinScale = 0.05;
 constexpr double kMaxScale = 24.0;
@@ -162,20 +165,20 @@ std::string formatFixAge(double seconds) {
     }
     const int total = static_cast<int>(seconds);
     if (total < 60) {
-        return std::to_string(total) + "s";
+        return trf(Str::AgeSeconds, total);
     }
-    return std::to_string(total / 60) + "m" + std::to_string(total % 60) + "s";
+    return trf(Str::AgeMinutesSeconds, total / 60, total % 60);
 }
 
 std::string layerName(const geo::MapVariant& map, int layer) {
     if (layer < 0) {
-        return "Ground";
+        return tr(Str::Ground);
     }
     if (static_cast<std::size_t>(layer) >= map.layers.size()) {
-        return "Layer " + std::to_string(layer);
+        return trf(Str::LayerN, layer);
     }
     const std::string& name = map.layers[static_cast<std::size_t>(layer)].name;
-    return name.empty() ? ("Layer " + std::to_string(layer)) : name;
+    return name.empty() ? trf(Str::LayerN, layer) : floorDisplayName(name);
 }
 
 MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
@@ -332,10 +335,8 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
     if (!drewAbstract && map.tilePath.empty()) {
         const ImVec2 centre(origin.x + canvasSize.x / 2.0f,
                             origin.y + canvasSize.y / 2.0f);
-        const char* headline = "No map image available for this location yet.";
-        const char* detail =
-            "This map is published as vector art only. Position tracking still "
-            "works; the HUD has your coordinates.";
+        const char* headline = tr(Str::NoMapImageHeadline);
+        const char* detail = tr(Str::NoMapImageDetail);
         const ImVec2 headlineSize = ImGui::CalcTextSize(headline);
         const ImVec2 detailSize = ImGui::CalcTextSize(detail);
         draw->AddText(ImVec2(centre.x - headlineSize.x / 2.0f, centre.y - 16.0f),
@@ -452,21 +453,38 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
             }
         };
 
-        const auto drawPoints = [&](const std::vector<MapPoint>& points, float size) {
+        struct Label {
+            ImVec2 at;
+            float iconHalf;
+            const std::string* text;
+            float alpha;
+        };
+        std::vector<Label> labels;
+
+        // Exits and spawns are never dimmed by floor. Dimming makes sense for
+        // a quest objective inside a building; an exit matters wherever you
+        // stand, and whether its zone happens to carry a height band in the
+        // data would otherwise decide which exits look greyed out.
+        const auto drawPoints = [&](const std::vector<MapPoint>& points, float size,
+                                    bool labelled) {
             for (const auto& point : points) {
                 ImVec2 at;
                 if (!toScreen(point.world, at)) {
                     continue;
                 }
-                const bool level = onLevel(point.top, point.bottom);
-                drawIcon(draw, overlays.icons, point.icon, at, size, level ? 1.0f : 0.4f);
-                consider(at, point.label, {}, level ? std::string{} : "other floor");
+                const bool level = true;
+                const float alpha = level ? 1.0f : 0.4f;
+                drawIcon(draw, overlays.icons, point.icon, at, size, alpha);
+                consider(at, point.label, {}, level ? std::string{} : std::string(tr(Str::OtherFloor)));
+                if (labelled && !point.label.empty()) {
+                    labels.push_back(Label{at, size / 2.0f, &point.label, alpha});
+                }
             }
         };
 
-        if (state.showSpawns) drawPoints(overlays.spawns, 16.0f);
-        if (state.showExtracts) drawPoints(overlays.extracts, 24.0f);
-        if (state.showTransits) drawPoints(overlays.transits, 24.0f);
+        if (state.showSpawns) drawPoints(overlays.spawns, 16.0f, false);
+        if (state.showExtracts) drawPoints(overlays.extracts, 24.0f, true);
+        if (state.showTransits) drawPoints(overlays.transits, 24.0f, true);
 
         if (state.showQuests) {
             for (const auto& place : overlays.quests) {
@@ -483,17 +501,51 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                 const float size = place.optional ? 16.0f : 22.0f;
                 drawIcon(draw, overlays.icons, icon, at, size, level ? 1.0f : 0.4f);
                 std::string note;
-                if (place.optional) note = "optional";
+                if (place.optional) note = tr(Str::Optional);
                 if (place.isQuestItem) {
                     note += note.empty() ? "" : ", ";
-                    note += "one of several possible spawns";
+                    note += tr(Str::OneOfSeveralSpawns);
                 }
                 if (!level) {
                     note += note.empty() ? "" : ", ";
-                    note += "other floor";
+                    note += tr(Str::OtherFloor);
                 }
                 consider(at, place.taskName, place.detail, note);
             }
+        }
+
+        // Extract names, drawn after the quest markers so no icon covers them.
+        // A label that would overlap one already placed is skipped: zoomed out,
+        // 27 names on Customs would otherwise pile into an unreadable block,
+        // and the hover tooltip still names every extract.
+        if (!labels.empty()) {
+            ImGui::PushFont(nullptr, kLabelFontSize);
+            std::vector<ImVec4> placed;  // x0, y0, x1, y1
+            for (const auto& label : labels) {
+                const ImVec2 size = ImGui::CalcTextSize(label.text->c_str());
+                const float padX = 4.0f;
+                const float padY = 1.0f;
+                const ImVec2 min(label.at.x + label.iconHalf + 3.0f,
+                                 label.at.y - size.y / 2.0f - padY);
+                const ImVec2 max(min.x + size.x + padX * 2.0f, min.y + size.y + padY * 2.0f);
+                bool overlaps = false;
+                for (const auto& other : placed) {
+                    if (min.x < other.z && max.x > other.x && min.y < other.w &&
+                        max.y > other.y) {
+                        overlaps = true;
+                        break;
+                    }
+                }
+                if (overlaps) {
+                    continue;
+                }
+                placed.push_back(ImVec4(min.x, min.y, max.x, max.y));
+                draw->AddRectFilled(min, max, rgba(0.04f, 0.05f, 0.05f, 0.78f * label.alpha),
+                                    3.0f);
+                draw->AddText(ImVec2(min.x + padX, min.y + padY),
+                              rgba(0.90f, 0.91f, 0.87f, label.alpha), label.text->c_str());
+            }
+            ImGui::PopFont();
         }
 
         if (snapshot.fix.valid) {
@@ -583,24 +635,24 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                              ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove)) {
             ImGui::SetNextItemWidth(130.0f);
             if (ImGui::SliderFloat("##opacity", &state.opacity, kMinOpacity,
-                                   kMaxOpacity, "opacity %.2f")) {
+                                   kMaxOpacity, tr(Str::OpacityFormat))) {
                 result.wantsRedraw = true;
             }
-            ImGui::Checkbox("quests", &state.showQuests);
+            ImGui::Checkbox(tr(Str::LayerQuests), &state.showQuests);
             ImGui::SameLine();
-            ImGui::Checkbox("extracts", &state.showExtracts);
-            ImGui::Checkbox("transits", &state.showTransits);
+            ImGui::Checkbox(tr(Str::LayerExtracts), &state.showExtracts);
+            ImGui::Checkbox(tr(Str::LayerTransits), &state.showTransits);
             ImGui::SameLine();
-            ImGui::Checkbox("spawns", &state.showSpawns);
+            ImGui::Checkbox(tr(Str::LayerSpawns), &state.showSpawns);
             if (ImGui::IsItemEdited()) {
                 result.wantsRedraw = true;
             }
             ImGui::Separator();
             if (map.layers.empty()) {
-                ImGui::TextDisabled("no upper floors");
+                ImGui::TextDisabled("%s", tr(Str::NoUpperFloors));
             } else {
                 ImGui::Separator();
-                if (ImGui::Checkbox("auto", &state.layerAuto)) {
+                if (ImGui::Checkbox(tr(Str::FloorAuto), &state.layerAuto)) {
                     result.wantsRedraw = true;
                 }
             }
@@ -620,8 +672,8 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
 
     // Footer: the state of the view, and how to get back to the player.
     {
-        char text[340];
-        const char* mode = state.followPlayer ? "following" : "free";
+        char text[512];
+        const char* mode = state.followPlayer ? tr(Str::Following) : tr(Str::FreeView);
         // Interchange and Shoreline declare upper floors with no tiles. Saying
         // so beats silently showing the ground level and letting the player
         // believe they are looking at the floor they are standing on.
@@ -630,28 +682,30 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
         // The age of the fix is the one thing the map cannot show by itself and
         // the game does not show at all. It decides whether the marker means
         // anything, so it belongs where the marker is.
-        char age[48];
+        std::string age = "   ";
         if (snapshot.fix.valid) {
             const double seconds = snapshot.fix.ageSeconds(nowMillis);
-            std::snprintf(age, sizeof(age), "   fix %s%s",
-                          formatFixAge(seconds).c_str(),
-                          seconds >= 60.0 ? " - press screenshot" : "");
+            age += trf(Str::FixAge, formatFixAge(seconds).c_str());
+            if (seconds >= 60.0) {
+                age += tr(Str::PressScreenshot);
+            }
         } else {
-            std::snprintf(age, sizeof(age), "   no position - press screenshot");
+            age += tr(Str::NoPositionPressScreenshot);
         }
 
-        char questText[48] = "";
+        std::string questText;
         if (!overlays.quests.empty()) {
-            std::snprintf(questText, sizeof(questText), "   %d objectives",
-                          static_cast<int>(overlays.quests.size()));
+            questText = "   " + trf(Str::ObjectivesCount,
+                                    static_cast<int>(overlays.quests.size()));
         }
-        const char* renderer = drewAbstract ? "abstract" : "satellite";
+        const char* renderer = drewAbstract ? tr(Str::RendererAbstract) : tr(Str::RendererSatellite);
+        const std::string mapName = mapDisplayName(map.key);
         std::snprintf(text, sizeof(text), "%s (%s)   %s%s%s   %s%s%s",
-                      map.key.c_str(), renderer,
+                      mapName.c_str(), renderer,
                       layerName(map, state.activeLayer).c_str(),
-                      state.layerAuto ? " (auto)" : "",
-                      floorMissing ? " - no image for this floor" : "", mode, age,
-                      questText);
+                      state.layerAuto ? tr(Str::AutoSuffix) : "",
+                      floorMissing ? tr(Str::NoImageForFloor) : "", mode, age.c_str(),
+                      questText.c_str());
 
         const ImVec2 size = ImGui::CalcTextSize(text);
         // Bottom centre: the status log lives bottom-left and the HUD

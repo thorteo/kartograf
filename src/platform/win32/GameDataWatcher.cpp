@@ -1,3 +1,4 @@
+#include "ui/Strings.h"
 #include "platform/win32/GameDataWatcher.h"
 
 #include <algorithm>
@@ -6,6 +7,7 @@
 #include <vector>
 
 #include "core/game/ScreenshotName.h"
+#include "core/geo/MapConfig.h"
 
 namespace tarkov::win32 {
 namespace {
@@ -153,16 +155,16 @@ bool GameDataWatcher::start(game::RaidState& state, Logger logger,
 
     auto discovered = discoverGamePaths();
     if (!discovered) {
-        say("could not find the game's folders; is Escape from Tarkov installed?");
+        say(ui::tr(ui::Str::StatusGameNotFound));
         return false;
     }
     paths_ = *discovered;
 
     if (paths_.logsRoot.empty()) {
-        say("no log folder found -- map detection will not work");
+        say(ui::tr(ui::Str::StatusNoLogFolder));
     }
     if (paths_.screenshots.empty()) {
-        say("no screenshots folder found -- position tracking will not work");
+        say(ui::tr(ui::Str::StatusNoScreenshotFolder));
     }
 
     stopEvent_ = CreateEventW(nullptr, TRUE, FALSE, nullptr);
@@ -219,7 +221,7 @@ void GameDataWatcher::openNewestLogFolder() {
         }
     }
 
-    say("watching log session " + currentLogFolder_.filename().string());
+    say(ui::trf(ui::Str::StatusWatchingSession, currentLogFolder_.filename().string().c_str()));
 }
 
 void GameDataWatcher::pumpLogs(game::RaidState& state) {
@@ -238,8 +240,11 @@ void GameDataWatcher::pumpLogs(game::RaidState& state) {
             if (auto event = source.parser.feedLine(line)) {
                 state.apply(*event, nowMillis());
                 if (event->type == game::RaidEventType::RaidCreated) {
-                    say("raid on " + (event->mapId.empty() ? std::string("?")
-                                                           : event->mapId));
+                    const auto normalized = geo::mapIdToNormalizedName(event->mapId);
+                    say(ui::trf(ui::Str::StatusRaidOn,
+                                normalized ? ui::mapDisplayName(*normalized).c_str()
+                                           : (event->mapId.empty() ? "?"
+                                                                   : event->mapId.c_str())));
                 }
             }
         }
@@ -281,8 +286,8 @@ void GameDataWatcher::importQuestHistory() {
         }
     }
     if (events > 0) {
-        say("quests: " + std::to_string(events) + " events read from " +
-            std::to_string(folders.size()) + " log sessions");
+        say(ui::trf(ui::Str::StatusQuestEventsImported, events,
+                    static_cast<int>(folders.size())));
         if (onProgress_) {
             onProgress_();
         }

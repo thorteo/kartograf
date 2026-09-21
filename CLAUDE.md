@@ -170,6 +170,9 @@ Documentation is meant to be extended, not rewritten. Follow the existing shape:
 ## Language
 
 The user plays the game in Russian (confirmed from `"Language": "ru"` in the game's
-own settings log) and communicates in Russian. UI strings go through the i18n table in
-`src/ui/strings`; Russian is the default locale, English is kept in sync. Code,
-comments, commit messages and documentation are in English.
+own settings log) and communicates in Russian. Every string the player can see goes
+through the table in `src/ui/Strings.{h,cpp}` — add a `Str` id and both languages,
+never a literal in UI code. Russian is the default; `--lang en` switches. Tests check
+the table is in enum order and that both languages take identical printf arguments.
+Map and floor names from `maps.json` are English and go through `mapDisplayName` /
+`floorDisplayName`. Code, comments, commit messages and documentation are in English.

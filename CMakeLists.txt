@@ -138,7 +138,12 @@ target_include_directories(tarkov_imgui SYSTEM PUBLIC
 # tarkov_ui -- views. Portable: ImGui draws into a vertex buffer, so the HUD
 # can be built and its formatting tested without a Windows build.
 # ---------------------------------------------------------------------------
-add_library(tarkov_ui STATIC src/ui/Hud.cpp src/ui/MapView.cpp src/ui/QuestList.cpp)
+add_library(tarkov_ui STATIC
+    src/ui/Hud.cpp
+    src/ui/MapView.cpp
+    src/ui/QuestList.cpp
+    src/ui/Strings.cpp
+)
 target_link_libraries(tarkov_ui PUBLIC tarkov_core tarkov_imgui)
 
 # ---------------------------------------------------------------------------

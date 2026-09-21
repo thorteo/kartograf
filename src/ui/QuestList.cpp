@@ -2,7 +2,10 @@
 
 #include <imgui.h>
 
+#include "ui/Strings.h"
+
 #include <algorithm>
+#include <cstdio>
 
 namespace tarkov::ui {
 namespace {
@@ -34,7 +37,9 @@ bool drawQuestList(const std::vector<QuestListEntry>& entries, bool filteredToAc
     ImGui::SetNextWindowBgAlpha(0.90f);
 
     bool changed = false;
-    if (!ImGui::Begin("Quests", nullptr,
+    char title[96];
+    std::snprintf(title, sizeof(title), "%s###quests", tr(Str::QuestsTitle));
+    if (!ImGui::Begin(title, nullptr,
                       ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove |
                           ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
         ImGui::End();
@@ -42,14 +47,10 @@ bool drawQuestList(const std::vector<QuestListEntry>& entries, bool filteredToAc
     }
 
     if (filteredToActive) {
-        ImGui::TextColored(kMuted, "%d active quests. Markers show only those.",
-                           activeTotal);
+        ImGui::TextColored(kMuted, "%s", trf(Str::ActiveQuestsFiltered, activeTotal).c_str());
     } else {
         ImGui::PushTextWrapPos(0.0f);
-        ImGui::TextColored(kActive,
-                           "No quest progress known yet, so every quest on this "
-                           "map is shown. Progress fills in by itself as the game "
-                           "reports quests; mark what you already have below.");
+        ImGui::TextColored(kActive, "%s", tr(Str::NoProgressKnown));
         ImGui::PopTextWrapPos();
     }
     ImGui::Separator();
@@ -75,7 +76,7 @@ bool drawQuestList(const std::vector<QuestListEntry>& entries, bool filteredToAc
             changed = true;
         }
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Mark as done");
+            ImGui::SetTooltip("%s", tr(Str::MarkAsDone));
         }
         ImGui::SameLine();
 
@@ -88,22 +89,21 @@ bool drawQuestList(const std::vector<QuestListEntry>& entries, bool filteredToAc
 
         if (entry->inferred) {
             ImGui::SameLine();
-            ImGui::TextColored(kMuted, "assumed");
+            ImGui::TextColored(kMuted, "%s", tr(Str::Assumed));
             if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("A later quest you took requires this one, so it "
-                                  "must be done.");
+                ImGui::SetTooltip("%s", tr(Str::AssumedTooltip));
             }
         }
         if (entry->manual) {
             ImGui::SameLine();
-            if (ImGui::SmallButton("undo") && actions.clearCorrection) {
+            if (ImGui::SmallButton(tr(Str::Undo)) && actions.clearCorrection) {
                 actions.clearCorrection(entry->id);
                 changed = true;
             }
         }
         if (entry->state == data::QuestState::Unknown) {
             ImGui::SameLine();
-            if (ImGui::SmallButton("taking it") && actions.setState) {
+            if (ImGui::SmallButton(tr(Str::TakingIt)) && actions.setState) {
                 actions.setState(entry->id, data::QuestState::Active);
                 changed = true;
             }

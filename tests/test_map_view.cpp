@@ -8,6 +8,7 @@
 #include "core/geo/Projection.h"
 #include "imgui_harness.h"
 #include "ui/MapView.h"
+#include "ui/Strings.h"
 
 using namespace tarkov;
 
@@ -214,12 +215,19 @@ TEST_CASE("a map with no tiles draws an explanation instead of empty placeholder
 
 TEST_CASE("the fix age reads at a glance") {
     using ui::formatFixAge;
+    const ui::Lang saved = ui::language();
+    ui::setLanguage(ui::Lang::En);
     CHECK(formatFixAge(0.0) == "0s");
     CHECK(formatFixAge(9.4) == "9s");
     CHECK(formatFixAge(59.0) == "59s");
     CHECK(formatFixAge(60.0) == "1m0s");
     CHECK(formatFixAge(200.0) == "3m20s");
     CHECK(formatFixAge(-5.0) == "0s");
+
+    ui::setLanguage(ui::Lang::Ru);
+    CHECK(formatFixAge(14.0) == "14 \xd1\x81");                       // "14 с"
+    CHECK(formatFixAge(200.0) == "3 \xd0\xbc\xd0\xb8\xd0\xbd 20 \xd1\x81");  // "3 мин 20 с"
+    ui::setLanguage(saved);
 }
 
 TEST_CASE("overlay layers follow their toggles") {

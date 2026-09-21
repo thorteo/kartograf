@@ -80,8 +80,8 @@ records what that means concretely, in the order we intend to earn it.
       persisted (the game keeps ~5 days), and extended by inference through quest
       prerequisites. Markers show only active quests; a panel allows corrections.
 - [x] Extracts (by faction), transits, PMC and boss spawns, with icons
-- [ ] UI strings in Russian through a locale table (currently English, with Russian
-      data — CLAUDE.md requires this and it is not done)
+- [x] UI in Russian by default through a string table, English via `--lang en`
+- [x] Extract and transit names drawn on the map, with overlap culling
 
 ## M3 — Beyond TarkovQuestie
 

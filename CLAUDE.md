@@ -54,6 +54,14 @@ This split exists because development happens in WSL/Linux while the target is W
 Keeping the core portable means most of the codebase is testable without a Windows
 build. **Do not include `<windows.h>` from anything under `src/core/`.**
 
+## The overlay must stay see-through
+
+It is an overlay, not a screenshot: the game has to remain readable underneath.
+The map draws its tiles with an alpha tint and its backdrop fades with the same
+value, adjustable at runtime and via `--map-opacity`. Anything new drawn full-screen
+follows the same rule. Panel borders are fine on small HUD windows and wrong on a
+full-screen one, where they frame the whole monitor.
+
 ## Rendering is reactive, and must stay that way
 
 A frame is drawn only when the RaidState snapshot pointer changes, a displayed second
@@ -79,8 +87,10 @@ src/core/game/    log parser, screenshot parser, RaidState
 src/core/input/   hotkey parsing and validation (the portable half of binding)
 src/core/data/    tarkov.dev models, GraphQL queries, local cache (not yet written)
 src/platform/     win32/: overlay window, file watchers, game-window tracking
-src/ui/           ImGui views. Portable -- ImGui core builds on Linux, so the
-                  HUD and its formatting are unit tested without Windows.
+src/ui/           ImGui views. Portable -- ImGui core builds on Linux, and
+                  tests/imgui_harness.h runs ImGui with no backend, so the map
+                  view's behaviour (floor switching, following, clamping) is
+                  unit tested without Windows or a GPU.
 src/app/          entry point and wiring
 third_party/      vendored: imgui, nlohmann/json, doctest
 data/             pinned copy of tarkov.dev maps.json

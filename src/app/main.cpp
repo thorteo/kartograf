@@ -11,6 +11,7 @@
 
 #include <cstdarg>
 #include <cstdio>
+#include <algorithm>
 #include <cstdlib>
 #include <deque>
 #include <memory>
@@ -178,6 +179,13 @@ int main(int argc, char** argv) {
     // marker be checked against the map without playing.
     const std::string forcedMap = argumentValue(argc, argv, "--map");
     const std::string fakeShot = argumentValue(argc, argv, "--fake-shot");
+    const float mapOpacity = [&] {
+        const std::string value = argumentValue(argc, argv, "--map-opacity");
+        if (value.empty()) {
+            return 0.80f;
+        }
+        return std::clamp(static_cast<float>(std::atof(value.c_str())), 0.15f, 1.0f);
+    }();
     const bool allowCapture = hasFlag(argc, argv, "--allow-capture");
     const int runSeconds = [&] {
         const std::string value = argumentValue(argc, argv, "--run-seconds");
@@ -257,6 +265,7 @@ int main(int argc, char** argv) {
     hudOptions.showDebug = debug;
 
     ui::MapViewState mapState;
+    mapState.opacity = mapOpacity;
     // Asking for a map on the command line means you want to see it.
     bool mapVisible = !forcedMap.empty();
     bool hudVisible = true;

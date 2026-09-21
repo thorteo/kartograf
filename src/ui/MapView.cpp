@@ -13,6 +13,9 @@
 namespace tarkov::ui {
 namespace {
 
+constexpr float kMinOpacity = 0.15f;
+constexpr float kMaxOpacity = 1.00f;
+
 constexpr double kMinScale = 0.05;
 constexpr double kMaxScale = 24.0;
 
@@ -102,8 +105,14 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus |
         ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
-    if (!ImGui::Begin("tarkov-help-map", nullptr, flags)) {
+    // The overlay style gives panels a border, which is right for the HUD but
+    // draws a frame around the whole monitor when the window is fullscreen.
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    const bool open = ImGui::Begin("tarkov-help-map", nullptr, flags);
+    if (!open) {
         ImGui::End();
+        ImGui::PopStyleVar(2);
         return result;
     }
 
@@ -158,10 +167,19 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
     ImDrawList* draw = ImGui::GetWindowDrawList();
     const ImVec2 origin = ImGui::GetCursorScreenPos();
 
-    // A dim backdrop so map tiles read against a bright game scene.
+    state.opacity = std::clamp(state.opacity, kMinOpacity, kMaxOpacity);
+
+    // A dim backdrop so map tiles read against a bright game scene. It fades
+    // with the map, otherwise turning the map down would leave the scene behind
+    // it just as obscured as before.
     draw->AddRectFilled(origin,
                         ImVec2(origin.x + canvasSize.x, origin.y + canvasSize.y),
-                        rgba(0.03f, 0.04f, 0.04f, 0.90f));
+                        rgba(0.03f, 0.04f, 0.04f, 0.88f * state.opacity));
+
+    // Tiles carry the same alpha, so the game shows through the map itself
+    // rather than only around it.
+    const ImU32 tileTint =
+        ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, state.opacity));
 
     // Which floor to show. Following the player's elevation is the point of
     // the feature: walking upstairs in Dorms should change the map without the
@@ -200,6 +218,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
         draw->AddText(ImVec2(centre.x - detailSize.x / 2.0f, centre.y + 8.0f),
                       rgba(0.58f, 0.60f, 0.55f, 1.0f), detail);
         ImGui::End();
+        ImGui::PopStyleVar(2);
         return result;
     }
 
@@ -229,15 +248,17 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
             const ImTextureID texture =
                 tiles ? tiles(layer, tile.zoom, tile.x, tile.y) : 0;
             if (texture != 0) {
-                draw->AddImage(texture, topLeft, bottomRight);
+                draw->AddImage(texture, topLeft, bottomRight, ImVec2(0.0f, 0.0f),
+                               ImVec2(1.0f, 1.0f), tileTint);
                 ++result.tilesDrawn;
             } else if (layer == -1) {
                 // A placeholder rather than a hole: an empty rectangle reads as
                 // "loading", while nothing at all reads as "broken". Only for
                 // ground -- a missing upper-floor tile usually means that floor
                 // simply does not cover this spot.
-                draw->AddRectFilled(topLeft, bottomRight,
-                                    rgba(0.09f, 0.10f, 0.10f, 0.55f));
+                draw->AddRectFilled(
+                    topLeft, bottomRight,
+                    rgba(0.09f, 0.10f, 0.10f, 0.55f * state.opacity));
                 ++result.tilesRequested;
             }
         }
@@ -282,7 +303,13 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
             result.wantsRedraw = true;
         }
 
-        if (ImGui::IsItemHovered() && io.MouseWheel != 0.0f) {
+        if (ImGui::IsItemHovered() && io.MouseWheel != 0.0f && io.KeyCtrl) {
+            // Ctrl+wheel adjusts how much of the game shows through, which is
+            // the thing most worth reaching for mid-raid.
+            state.opacity = std::clamp(state.opacity + io.MouseWheel * 0.05f,
+                                       kMinOpacity, kMaxOpacity);
+            result.wantsRedraw = true;
+        } else if (ImGui::IsItemHovered() && io.MouseWheel != 0.0f) {
             const geo::Vec2 anchor{io.MousePos.x - origin.x, io.MousePos.y - origin.y};
             const double factor = std::pow(1.2, io.MouseWheel);
             state.viewport =
@@ -293,7 +320,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
     }
 
     // Floor selector, only while the overlay takes input.
-    if (interactive && !map.layers.empty()) {
+    if (interactive) {
         ImGui::SetNextWindowPos(ImVec2(origin.x + 16.0f, origin.y + 16.0f),
                                 ImGuiCond_Always);
         ImGui::SetNextWindowBgAlpha(0.85f);
@@ -302,13 +329,22 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                              ImGuiWindowFlags_AlwaysAutoResize |
                              ImGuiWindowFlags_NoSavedSettings |
                              ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove)) {
-            if (ImGui::Checkbox("auto", &state.layerAuto)) {
+            ImGui::SetNextItemWidth(130.0f);
+            if (ImGui::SliderFloat("##opacity", &state.opacity, kMinOpacity,
+                                   kMaxOpacity, "opacity %.2f")) {
                 result.wantsRedraw = true;
             }
-            ImGui::Separator();
+            if (map.layers.empty()) {
+                ImGui::TextDisabled("no upper floors");
+            } else {
+                ImGui::Separator();
+                if (ImGui::Checkbox("auto", &state.layerAuto)) {
+                    result.wantsRedraw = true;
+                }
+            }
             // Listed top-down, the way a building reads.
-            for (int index = static_cast<int>(map.layers.size()) - 1; index >= -1;
-                 --index) {
+            for (int index = static_cast<int>(map.layers.size()) - 1;
+                 !map.layers.empty() && index >= -1; --index) {
                 const bool selected = state.activeLayer == index;
                 if (ImGui::Selectable(layerName(map, index).c_str(), selected)) {
                     state.activeLayer = index;
@@ -345,6 +381,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
     }
 
     ImGui::End();
+    ImGui::PopStyleVar(2);
     return result;
 }
 

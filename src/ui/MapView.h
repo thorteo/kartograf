@@ -23,6 +23,13 @@ using TileTextureProvider =
 
 /// Everything the map view remembers between frames.
 struct MapViewState {
+    /// How solid the map is drawn, 0.15 to 1.0.
+    ///
+    /// This is an overlay: the game has to stay readable through it, and a map
+    /// you cannot see past is a screenshot you have to dismiss rather than a
+    /// heads-up display. Adjustable at runtime because the right value depends
+    /// on the map and on how bright the scene is.
+    float opacity = 0.80f;
     map::Viewport viewport;
     std::string mapName;      ///< The map the viewport was built for.
     bool followPlayer = true; ///< Re-centre on each new position fix.

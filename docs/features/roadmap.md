@@ -57,6 +57,8 @@ records what that means concretely, in the order we intend to earn it.
       A manual override with an auto toggle is available while interactive.
 - [x] The map fills the screen when centred on the player, rather than letterboxing
       or leaving the map's edge inside the viewport
+- [x] The map is see-through, with adjustable opacity (`--map-opacity`, a slider,
+      and Ctrl+wheel), and no window border framing the monitor
 - [ ] Quest objectives on the map
 - [ ] Automatic map detection from logs — the overlay opens the right map by itself
 - [ ] Live position marker with heading, and a visible **age indicator** on the fix

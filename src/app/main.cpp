@@ -47,6 +47,7 @@
 #include "platform/win32/TileStore.h"
 #include "ui/Hud.h"
 #include "ui/MapView.h"
+#include "ui/QuestGlyphs.h"
 #include "ui/QuestList.h"
 #include "ui/SettingsView.h"
 #include "ui/Strings.h"
@@ -308,6 +309,7 @@ std::vector<tarkov::ui::QuestPlace> buildQuestPlaces(
                 place.taskName = name;
                 place.detail = objective.description;
                 place.optional = objective.optional;
+                place.kind = data::objectiveKind(objective.type);
                 place.top = zone.top;
                 place.bottom = zone.bottom;
                 places.push_back(std::move(place));
@@ -322,6 +324,7 @@ std::vector<tarkov::ui::QuestPlace> buildQuestPlaces(
                     place.taskName = name;
                     place.detail = objective.description;
                     place.optional = objective.optional;
+                    place.kind = data::objectiveKind(objective.type);
                     place.isQuestItem = true;
                     places.push_back(std::move(place));
                 }
@@ -454,9 +457,17 @@ int main(int argc, char** argv) {
 
     win32::IconStore icons;
     icons.start(overlay.device(),
-                {"quest_objective", "quest_item", "extract_pmc",
+                {"quest_objective", "extract_pmc",
                  "extract_scav", "extract_shared", "extract_transit", "spawn_pmc",
                  "spawn_boss"});
+
+    // Quest glyphs are ours, not downloaded: rasterise them now, at twice the
+    // size they are drawn so they stay sharp.
+    for (const auto kind : {data::ObjectiveKind::Visit, data::ObjectiveKind::Mark,
+                            data::ObjectiveKind::Plant, data::ObjectiveKind::Find,
+                            data::ObjectiveKind::Shoot, data::ObjectiveKind::Use}) {
+        icons.add(ui::questGlyphName(kind), ui::renderQuestGlyph(kind, 32));
+    }
 
     win32::SvgMapStore abstractMaps;
     abstractMaps.start(overlay.device(),
@@ -912,9 +923,9 @@ int main(int argc, char** argv) {
                     // With no known progress, filtering would show nothing and
                     // look broken. Show everything and say why instead.
                     questPlacesFiltered = activeQuestCount > 0;
-                    questPlaces = buildQuestPlaces(
+                    questPlaces = ui::mergeNearbyQuestPlaces(buildQuestPlaces(
                         *questData, mapIds, snapshot->mapNormalized,
-                        questPlacesFiltered ? &effective : nullptr);
+                        questPlacesFiltered ? &effective : nullptr));
 
                     // The list covers every quest with a place on this map,
                     // whatever its state, so it can be corrected from here.
@@ -962,7 +973,6 @@ int main(int argc, char** argv) {
                             const char* name = "";
                             switch (icon) {
                                 case ui::MarkerIcon::QuestObjective: name = "quest_objective"; break;
-                                case ui::MarkerIcon::QuestItem: name = "quest_item"; break;
                                 case ui::MarkerIcon::ExtractPmc: name = "extract_pmc"; break;
                                 case ui::MarkerIcon::ExtractScav: name = "extract_scav"; break;
                                 case ui::MarkerIcon::ExtractShared: name = "extract_shared"; break;
@@ -971,6 +981,10 @@ int main(int argc, char** argv) {
                                 case ui::MarkerIcon::SpawnBoss: name = "spawn_boss"; break;
                             }
                             return reinterpret_cast<ImTextureID>(icons.get(name));
+                        };
+                        overlaysForMap.glyphs = [&icons](data::ObjectiveKind kind) -> ImTextureID {
+                            return reinterpret_cast<ImTextureID>(
+                                icons.get(ui::questGlyphName(kind)));
                         };
                         return std::cref(overlaysForMap);
                     }(),

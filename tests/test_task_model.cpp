@@ -266,3 +266,16 @@ TEST_CASE("every map id in the task fixture is one we can place") {
         CHECK(table.drawnAs(mapId).has_value());
     }
 }
+
+TEST_CASE("objective types map to the kind of place they mark") {
+    CHECK(objectiveKind("visit") == ObjectiveKind::Visit);
+    CHECK(objectiveKind("mark") == ObjectiveKind::Mark);
+    CHECK(objectiveKind("plantItem") == ObjectiveKind::Plant);
+    CHECK(objectiveKind("plantQuestItem") == ObjectiveKind::Plant);
+    CHECK(objectiveKind("findQuestItem") == ObjectiveKind::Find);
+    CHECK(objectiveKind("shoot") == ObjectiveKind::Shoot);
+    CHECK(objectiveKind("useItem") == ObjectiveKind::Use);
+    // Types with no places, and ones not invented yet, fall back.
+    CHECK(objectiveKind("giveItem") == ObjectiveKind::Other);
+    CHECK(objectiveKind("") == ObjectiveKind::Other);
+}

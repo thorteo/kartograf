@@ -9,6 +9,7 @@
 
 #include <imgui.h>
 
+#include "core/data/TaskModel.h"
 #include "core/game/RaidState.h"
 #include "core/geo/MapConfig.h"
 #include "core/geo/Vec.h"
@@ -48,6 +49,8 @@ struct QuestPlace {
     std::string taskName;
     std::string detail;      ///< Objective description; may be empty.
     bool optional = false;
+    /// What to do there; chooses the glyph inside the marker.
+    data::ObjectiveKind kind = data::ObjectiveKind::Other;
     /// True for a quest item spawn, which is drawn differently: the game picks
     /// one of several per raid, so these are possibilities, not destinations.
     bool isQuestItem = false;
@@ -59,11 +62,26 @@ struct QuestPlace {
     bool onSameLevelAs(double elevation) const;
 };
 
+/// Folds one quest's objectives that share a spot into a single marker.
+///
+/// The data often splits one errand into several objectives at the same place:
+/// "locate the boat" and "plant the vest in the boat" and "plant the multitool
+/// in the boat" are three zones on one point. Drawn separately they stack into
+/// a column of icons. Counted in tarkov.dev's tasks on 2026-09-21, objectives
+/// of one task within 15 m of each other: plant+plant 47, visit+mark 46,
+/// visit+visit 41, visit+plant 41.
+///
+/// The merged marker shows the most specific thing to do there -- mark, then
+/// plant, use, shoot, pick up, and plain locating last -- and its tooltip lists
+/// every objective. Quest item spawns are left alone: each is a separate
+/// possibility, not a step.
+std::vector<QuestPlace> mergeNearbyQuestPlaces(std::vector<QuestPlace> places);
+
 /// Which icon a marker uses. The icons themselves are tarkov.dev's, fetched at
 /// runtime; until one arrives, a vector shape in the same colour stands in.
 enum class MarkerIcon {
+    /// tarkov.dev's generic quest icon, for objectives with no glyph of ours.
     QuestObjective,
-    QuestItem,
     ExtractPmc,
     ExtractScav,
     ExtractShared,
@@ -74,6 +92,9 @@ enum class MarkerIcon {
 
 /// Supplies an icon texture, or 0 while it is not available.
 using IconProvider = std::function<ImTextureID(MarkerIcon)>;
+
+/// Supplies the white glyph for a quest objective kind, or 0 when there is none.
+using GlyphProvider = std::function<ImTextureID(data::ObjectiveKind)>;
 
 /// A fixed point of interest: an extract, a spawn, a transit.
 struct MapPoint {
@@ -91,6 +112,7 @@ struct MapOverlays {
     std::vector<MapPoint> spawns;
     std::vector<MapPoint> transits;
     IconProvider icons;
+    GlyphProvider glyphs;
 };
 
 /// Everything the map view remembers between frames.
@@ -157,6 +179,21 @@ std::string layerName(const geo::MapVariant& map, int layer);
 /// the most expensive thing the overlay can put on screen.
 /// Formats the age of a position fix for the map footer, e.g. "12s" or "3m20s".
 std::string formatFixAge(double seconds);
+
+/// A rectangle on screen, min and max corners.
+struct ScreenRect {
+    ImVec2 min;
+    ImVec2 max;
+};
+
+/// Where to put a marker's name: beside the icon, to the right by default, to
+/// the left when the right would leave the screen or cover a name already
+/// placed. A name wider than the room on either side is pushed back inside the
+/// screen. Returns nullopt when every place overlaps one in `placed` -- the
+/// hover tooltip still names the marker.
+std::optional<ScreenRect> placeMarkerLabel(const ImVec2& anchor, float iconHalf,
+                                           const ImVec2& boxSize, const ScreenRect& screen,
+                                           const std::vector<ScreenRect>& placed);
 
 MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                           const game::RaidSnapshot& snapshot,

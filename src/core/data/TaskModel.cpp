@@ -308,4 +308,14 @@ TaskSet parseTasks(std::string_view text, const TaskLocale& locale) {
     return set;
 }
 
+ObjectiveKind objectiveKind(std::string_view type) {
+    if (type == "visit") return ObjectiveKind::Visit;
+    if (type == "mark") return ObjectiveKind::Mark;
+    if (type == "plantItem" || type == "plantQuestItem") return ObjectiveKind::Plant;
+    if (type == "findQuestItem" || type == "findItem") return ObjectiveKind::Find;
+    if (type == "shoot") return ObjectiveKind::Shoot;
+    if (type == "useItem") return ObjectiveKind::Use;
+    return ObjectiveKind::Other;
+}
+
 }  // namespace tarkov::data

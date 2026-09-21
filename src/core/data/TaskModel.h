@@ -33,6 +33,27 @@ struct QuestItemLocation {
     std::vector<geo::Vec3> positions;
 };
 
+/// What an objective asks the player to do at a place, for choosing its icon.
+///
+/// Only the types that put something on a map are told apart. Counted in
+/// tarkov.dev's task data on 2026-09-21: visit 197 objectives with places,
+/// plantItem 122, findQuestItem 110, mark 83, shoot 22, plantQuestItem 13,
+/// useItem 9. Every other type has none.
+enum class ObjectiveKind {
+    /// visit: reach a place. Nearly always worded "locate": 138 of the 197
+    /// begin "Найти", about 30 more "Проверить", "Осмотреть", "Обнаружить";
+    /// 9 say "Посетить".
+    Visit,
+    Mark,   ///< mark: set an MS2000 marker.
+    Plant,  ///< plantItem, plantQuestItem: leave an item.
+    Find,   ///< findQuestItem, findItem: pick an item up.
+    Shoot,  ///< shoot: kill, within a zone.
+    Use,    ///< useItem: use an item at a place.
+    Other,  ///< Anything else, including types added later.
+};
+
+ObjectiveKind objectiveKind(std::string_view type);
+
 /// One objective, reduced to what the overlay can draw or say.
 struct TaskObjective {
     std::string id;

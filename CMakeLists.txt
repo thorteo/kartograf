@@ -139,12 +139,37 @@ target_include_directories(tarkov_imgui SYSTEM PUBLIC
 # tarkov_ui -- views. Portable: ImGui draws into a vertex buffer, so the HUD
 # can be built and its formatting tested without a Windows build.
 # ---------------------------------------------------------------------------
+# Quest objective glyphs, from game-icons.net (CC BY 3.0). Compiled in like
+# maps.json; the files in third_party/game-icons/icons are the source.
+set(TARKOV_QUEST_GLYPHS magnifying-glass radio-tower cardboard-box light-backpack crosshair hand)
+set(TARKOV_EMBEDDED_GLYPHS)
+foreach(glyph ${TARKOV_QUEST_GLYPHS})
+    string(REPLACE "-" "_" symbol "kGlyph_${glyph}")
+    set(output ${CMAKE_CURRENT_BINARY_DIR}/generated/Glyph_${glyph}.cpp)
+    add_custom_command(
+        OUTPUT ${output}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/generated
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/scripts/embed_file.py
+                ${CMAKE_CURRENT_SOURCE_DIR}/third_party/game-icons/icons/${glyph}.svg
+                ${output}
+                tarkov::ui ${symbol}
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/game-icons/icons/${glyph}.svg
+                ${CMAKE_CURRENT_SOURCE_DIR}/scripts/embed_file.py
+        COMMENT "Embedding ${glyph}.svg"
+        VERBATIM
+    )
+    list(APPEND TARKOV_EMBEDDED_GLYPHS ${output})
+endforeach()
+
 add_library(tarkov_ui STATIC
     src/ui/Hud.cpp
     src/ui/MapView.cpp
+    src/ui/QuestGlyphs.cpp
     src/ui/QuestList.cpp
     src/ui/Strings.cpp
     src/ui/SettingsView.cpp
+    ${TARKOV_EMBEDDED_GLYPHS}
 )
 target_link_libraries(tarkov_ui PUBLIC tarkov_core tarkov_imgui)
 

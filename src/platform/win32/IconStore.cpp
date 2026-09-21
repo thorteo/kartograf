@@ -104,6 +104,14 @@ void IconStore::run(std::vector<std::string> names) {
     }
 }
 
+void IconStore::add(const std::string& name, const map::RenderedImage& image) {
+    if (!image.valid()) {
+        return;
+    }
+    const std::lock_guard<std::mutex> lock(mutex_);
+    decoded_.push_back(Decoded{name, image.width, image.height, image.pixels});
+}
+
 ID3D11ShaderResourceView* IconStore::get(const std::string& name) const {
     const std::lock_guard<std::mutex> lock(mutex_);
     const auto it = textures_.find(name);

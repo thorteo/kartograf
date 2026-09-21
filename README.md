@@ -23,7 +23,9 @@ hooking. That is a hard design constraint, not a current limitation:
 - Live position and heading on the correct map, detected automatically from the game's
   own logs
 - Automatic floor switching on multi-level maps
-- Your active quests' objectives, from the game's own logs — no account linking
+- Your active quests' objectives, from the game's own logs — no account linking;
+  each marker says what to do there (locate, mark, plant, pick up, kill, use), and
+  hovering one from the inventory or a menu explains it
 - Extracts by faction, transits, and PMC and boss spawns, with the same icons as tarkov.dev
 - Abstract vector maps by default, satellite tiles where no drawing exists
 - Raid timer and in-game clock
@@ -57,6 +59,10 @@ history records them as taken from the
 [Escape from Tarkov Wiki](https://escapefromtarkov.fandom.com/), whose content is
 licensed CC BY-SA. They are downloaded at runtime and cached, not distributed with this
 program.
+
+Quest objective glyphs are from [game-icons.net](https://game-icons.net) by Lorc and
+Delapouite, licensed [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/); see
+`third_party/game-icons/`.
 
 No game assets are bundled. Vendored code: Dear ImGui, nlohmann/json, stb_image,
 lunasvg and plutovg (all MIT or public domain), doctest for tests.

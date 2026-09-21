@@ -135,32 +135,40 @@ TEST_CASE("a hand-picked floor is not overridden by the next fix") {
     CHECK_FALSE(state.layerAuto);
 }
 
-TEST_CASE("the first fix fills the screen and centres on the player") {
+TEST_CASE("the whole map stays in view, as large as the screen allows") {
     test::HeadlessImGui imgui(2560.0f, 1440.0f);
     const auto& map = customsVariant();
     ui::MapViewState state;
     RecordingTiles tiles;
 
-    // The position that produced the "map is not fullscreen" report: near the
-    // southern edge of Customs.
-    const auto snapshot = snapshotAt(236.21, 4.43, 165.98);
-    imgui.frame([&] {
-        ui::drawMapView(state, map, snapshot, 1000, false, tiles.provider());
-    });
-
     const geo::Projection projection(map);
     const auto bounds = projection.imageBounds();
     REQUIRE(bounds.has_value());
 
-    const auto topLeft = map::screenToBase(state.viewport, geo::Vec2{0.0, 0.0});
-    const auto bottomRight = map::screenToBase(
-        state.viewport, geo::Vec2{static_cast<double>(state.viewport.screenWidth),
-                                  static_cast<double>(state.viewport.screenHeight)});
+    // Positions at the western and eastern ends of Customs, and near its
+    // southern edge: wherever the player is, no part of the map is cut off.
+    for (const auto& snapshot : {snapshotAt(236.21, 4.43, 165.98, 1000),
+                                 snapshotAt(-330.0, 0.0, -100.0, 2000),
+                                 snapshotAt(600.0, 0.0, -100.0, 3000)}) {
+        imgui.frame([&] {
+            ui::drawMapView(state, map, snapshot, snapshot.fix.receivedAtMillis, false,
+                            tiles.provider());
+        });
 
-    CHECK(topLeft.x >= bounds->first.x - 1e-6);
-    CHECK(topLeft.y >= bounds->first.y - 1e-6);
-    CHECK(bottomRight.x <= bounds->second.x + 1e-6);
-    CHECK(bottomRight.y <= bounds->second.y + 1e-6);
+        const auto topLeft = map::baseToScreen(state.viewport, bounds->first);
+        const auto bottomRight = map::baseToScreen(state.viewport, bounds->second);
+        CHECK(topLeft.x >= -0.5);
+        CHECK(topLeft.y >= -0.5);
+        CHECK(bottomRight.x <= state.viewport.screenWidth + 0.5);
+        CHECK(bottomRight.y <= state.viewport.screenHeight + 0.5);
+
+        // And it is as large as it can be: it touches both edges of one axis.
+        const double width = bottomRight.x - topLeft.x;
+        const double height = bottomRight.y - topLeft.y;
+        const bool fillsWidth = width >= state.viewport.screenWidth - 1.0;
+        const bool fillsHeight = height >= state.viewport.screenHeight - 1.0;
+        CHECK((fillsWidth || fillsHeight));
+    }
 }
 
 TEST_CASE("opacity is clamped to a range that keeps the map usable") {
@@ -334,4 +342,85 @@ TEST_CASE("hovering a quest marker explains it without making the overlay intera
     CHECK_FALSE(tooltipShown(ImVec2(at.x + 200.0f, at.y + 200.0f)));
     // No usable pointer -- the game has it pinned for mouselook: nothing.
     CHECK_FALSE(tooltipShown(ImVec2(-FLT_MAX, -FLT_MAX)));
+}
+
+TEST_CASE("marker names stay on screen, beside the icon where there is room") {
+    const ui::ScreenRect screen{ImVec2(0.0f, 0.0f), ImVec2(2560.0f, 1440.0f)};
+    const ImVec2 box(180.0f, 22.0f);
+    const float iconHalf = 15.0f;
+
+    // In open space: to the right of the icon.
+    auto label = ui::placeMarkerLabel(ImVec2(1000.0f, 700.0f), iconHalf, box, screen, {});
+    REQUIRE(label);
+    CHECK(label->min.x > 1000.0f + iconHalf);
+
+    // An exit on the right edge of a fitted map: to the left, whole.
+    label = ui::placeMarkerLabel(ImVec2(2550.0f, 700.0f), iconHalf, box, screen, {});
+    REQUIRE(label);
+    CHECK(label->max.x < 2550.0f - iconHalf);
+    CHECK(label->min.x >= 0.0f);
+
+    // On the bottom edge: lifted back inside.
+    label = ui::placeMarkerLabel(ImVec2(1000.0f, 1438.0f), iconHalf, box, screen, {});
+    REQUIRE(label);
+    CHECK(label->max.y <= 1440.0f);
+
+    // Right side taken by another name: moves to the left rather than vanishing.
+    const auto first = ui::placeMarkerLabel(ImVec2(1000.0f, 700.0f), iconHalf, box, screen, {});
+    REQUIRE(first);
+    label = ui::placeMarkerLabel(ImVec2(1000.0f, 705.0f), iconHalf, box, screen, {*first});
+    REQUIRE(label);
+    CHECK(label->max.x < 1000.0f);
+
+    // Both sides taken: skipped; the tooltip still names it.
+    const std::vector<ui::ScreenRect> both{*first, *label};
+    CHECK_FALSE(ui::placeMarkerLabel(ImVec2(1000.0f, 702.0f), iconHalf, box, screen, both));
+}
+
+TEST_CASE("one quest's objectives at one spot become one marker") {
+    const auto place = [](const char* task, data::ObjectiveKind kind, double x, double y,
+                          double z, const char* detail, bool optional = false) {
+        ui::QuestPlace p;
+        p.taskName = task;
+        p.kind = kind;
+        p.world = {x, y, z};
+        p.detail = detail;
+        p.optional = optional;
+        return p;
+    };
+    using data::ObjectiveKind;
+
+    // Fishing Gear, as the data has it: locate the boat, then two items to
+    // plant in it, all on one point.
+    const auto merged = ui::mergeNearbyQuestPlaces({
+        place("Fishing Gear", ObjectiveKind::Visit, 10, 0, 10, "Locate the boat"),
+        place("Fishing Gear", ObjectiveKind::Plant, 10, 0, 10, "Plant the vest"),
+        place("Fishing Gear", ObjectiveKind::Plant, 11, 0, 12, "Plant the multitool"),
+    });
+    REQUIRE(merged.size() == 1);
+    CHECK(merged[0].kind == ObjectiveKind::Plant);  // the thing to do there
+    CHECK(merged[0].detail == "Locate the boat\nPlant the vest\nPlant the multitool");
+
+    // Locate-then-mark takes the marker.
+    const auto marked = ui::mergeNearbyQuestPlaces({
+        place("Q", ObjectiveKind::Visit, 0, 0, 0, "Locate"),
+        place("Q", ObjectiveKind::Mark, 3, 0, 4, "Mark", true),
+    });
+    REQUIRE(marked.size() == 1);
+    CHECK(marked[0].kind == ObjectiveKind::Mark);
+    CHECK_FALSE(marked[0].optional);  // one required part makes it required
+
+    // Kept apart: another quest, another spot, another floor, item spawns.
+    auto spawnA = place("Q", ObjectiveKind::Find, 0, 0, 0, "Pick up");
+    spawnA.isQuestItem = true;
+    auto spawnB = spawnA;
+    CHECK(ui::mergeNearbyQuestPlaces({
+                  place("Q", ObjectiveKind::Visit, 0, 0, 0, "a"),
+                  place("R", ObjectiveKind::Mark, 0, 0, 0, "b"),
+                  place("Q", ObjectiveKind::Mark, 30, 0, 0, "c"),
+                  place("Q", ObjectiveKind::Mark, 0, 6, 0, "d"),
+                  spawnA,
+                  spawnB,
+              })
+              .size() == 6);
 }

@@ -14,6 +14,7 @@
 
 #include <d3d11.h>
 
+#include "core/map/SvgRenderer.h"
 #include "platform/win32/ComPtr.h"
 
 namespace tarkov::win32 {
@@ -35,6 +36,10 @@ public:
     /// Starts fetching the named icons, e.g. "quest_objective".
     bool start(ID3D11Device* device, std::vector<std::string> names);
     void stop();
+
+    /// Adds an icon made here rather than downloaded, uploaded on the next
+    /// pump. An empty image is ignored.
+    void add(const std::string& name, const map::RenderedImage& image);
 
     /// The texture for an icon, or nullptr until it has arrived.
     ID3D11ShaderResourceView* get(const std::string& name) const;

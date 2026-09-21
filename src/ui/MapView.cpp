@@ -17,15 +17,23 @@ namespace {
 constexpr float kMinOpacity = 0.15f;
 constexpr float kMaxOpacity = 1.00f;
 
-constexpr float kLabelFontSize = 14.0f;
+// Marker and label sizes, in screen pixels: they do not scale with the map, so
+// they stay legible when a large map is fitted to the screen.
+constexpr float kLabelFontSize = 17.0f;
+constexpr float kQuestSize = 28.0f;
+constexpr float kOptionalQuestSize = 21.0f;
+constexpr float kExtractSize = 30.0f;
+constexpr float kSpawnSize = 20.0f;
+/// How close the pointer must be to a marker's centre to explain it.
+constexpr float kHoverRadius = 18.0f;
 
 constexpr double kMinScale = 0.05;
 constexpr double kMaxScale = 24.0;
 
-/// Zoom used the first time the view has a position to centre on. Chosen to
-/// show a few hundred metres around the player, which is the range that matters
-/// while moving.
-constexpr double kDefaultPlayerScale = 3.0;
+/// How much of the screen the fitted map takes. All of it: the whole map in
+/// view and as large as it will go. Margins are the game showing through, not
+/// wasted space.
+constexpr double kFitPadding = 1.0;
 
 ImU32 rgba(float r, float g, float b, float a) {
     return ImGui::GetColorU32(ImVec4(r, g, b, a));
@@ -131,7 +139,6 @@ void drawPlayerMarker(ImDrawList* draw, const ImVec2& at, double headingDegrees,
 ImU32 fallbackColour(MarkerIcon icon, float alpha) {
     switch (icon) {
         case MarkerIcon::QuestObjective: return rgba(0.96f, 0.82f, 0.36f, alpha);
-        case MarkerIcon::QuestItem: return rgba(0.62f, 0.78f, 0.36f, alpha);
         case MarkerIcon::ExtractPmc: return rgba(0.25f, 0.85f, 0.55f, alpha);
         case MarkerIcon::ExtractScav: return rgba(0.95f, 0.62f, 0.20f, alpha);
         case MarkerIcon::ExtractShared: return rgba(0.25f, 0.85f, 0.85f, alpha);
@@ -157,18 +164,157 @@ void drawIcon(ImDrawList* draw, const IconProvider& icons, MarkerIcon icon,
     const ImU32 fill = fallbackColour(icon, alpha);
     const ImU32 edge = rgba(0.05f, 0.06f, 0.05f, alpha * 0.9f);
     const float r = half * 0.6f;
-    if (icon == MarkerIcon::QuestItem) {
-        const ImVec2 points[4] = {{at.x, at.y - r}, {at.x + r, at.y}, {at.x, at.y + r},
-                                  {at.x - r, at.y}};
-        draw->AddConvexPolyFilled(points, 4, fill);
-        draw->AddPolyline(points, 4, edge, 1.5f, ImDrawFlags_Closed);
+    draw->AddCircleFilled(at, r, fill);
+    draw->AddCircle(at, r, edge, 0, 1.5f);
+}
+
+/// The colour that says what an objective asks for.
+ImVec4 objectiveColour(data::ObjectiveKind kind, float alpha) {
+    switch (kind) {
+        case data::ObjectiveKind::Visit: return ImVec4(0.30f, 0.64f, 1.00f, alpha);
+        case data::ObjectiveKind::Mark: return ImVec4(1.00f, 0.54f, 0.16f, alpha);
+        case data::ObjectiveKind::Plant: return ImVec4(0.69f, 0.49f, 1.00f, alpha);
+        case data::ObjectiveKind::Find: return ImVec4(0.95f, 0.79f, 0.30f, alpha);
+        case data::ObjectiveKind::Shoot: return ImVec4(0.92f, 0.34f, 0.34f, alpha);
+        case data::ObjectiveKind::Use: return ImVec4(0.26f, 0.77f, 0.54f, alpha);
+        case data::ObjectiveKind::Other: break;
+    }
+    return ImVec4(0.96f, 0.82f, 0.36f, alpha);
+}
+
+/// A quest marker: a disc in the colour of what to do there, with a white ring
+/// and a white glyph -- a magnifier to find, a radio tower to mark. Colour and
+/// glyph tell the objectives apart; the white ring holds the disc against any
+/// part of the map.
+void drawQuestMarker(ImDrawList* draw, const MapOverlays& overlays,
+                     const QuestPlace& place, const ImVec2& at, float size, float alpha) {
+    if (place.kind == data::ObjectiveKind::Other) {
+        drawIcon(draw, overlays.icons, MarkerIcon::QuestObjective, at, size, alpha);
+        return;
+    }
+    const ImTextureID glyph = overlays.glyphs ? overlays.glyphs(place.kind) : 0;
+    const ImU32 colour = ImGui::GetColorU32(objectiveColour(place.kind, alpha));
+    const ImU32 white = rgba(1.0f, 1.0f, 1.0f, alpha);
+    const float r = size / 2.0f;
+    draw->AddCircleFilled(at, r + 3.0f, rgba(0.03f, 0.04f, 0.03f, 0.6f * alpha), 24);
+    draw->AddCircleFilled(at, r + 1.8f, white, 24);
+    draw->AddCircleFilled(at, r, colour, 24);
+    if (glyph != 0) {
+        const float g = r * 0.6f;
+        draw->AddImage(glyph, ImVec2(at.x - g, at.y - g), ImVec2(at.x + g, at.y + g),
+                       ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), white);
     } else {
-        draw->AddCircleFilled(at, r, fill);
-        draw->AddCircle(at, r, edge, 0, 1.5f);
+        // Until the glyph is rasterised, which is a frame or two at startup.
+        draw->AddCircleFilled(at, r * 0.3f, white, 12);
     }
 }
 
 }  // namespace
+
+std::optional<ScreenRect> placeMarkerLabel(const ImVec2& anchor, float iconHalf,
+                                           const ImVec2& boxSize, const ScreenRect& screen,
+                                           const std::vector<ScreenRect>& placed) {
+    constexpr float kGap = 3.0f;
+    const auto overlaps = [&](const ScreenRect& box) {
+        for (const auto& other : placed) {
+            if (box.min.x < other.max.x && box.max.x > other.min.x &&
+                box.min.y < other.max.y && box.max.y > other.min.y) {
+                return true;
+            }
+        }
+        return false;
+    };
+    const auto at = [&](float left) {
+        // Kept inside the screen: an exit on the very edge of the map is on
+        // the very edge of the screen once the map is fitted.
+        left = std::clamp(left, screen.min.x, std::max(screen.min.x, screen.max.x - boxSize.x));
+        float top = anchor.y - boxSize.y / 2.0f;
+        top = std::clamp(top, screen.min.y, std::max(screen.min.y, screen.max.y - boxSize.y));
+        return ScreenRect{ImVec2(left, top), ImVec2(left + boxSize.x, top + boxSize.y)};
+    };
+
+    const float rightOf = anchor.x + iconHalf + kGap;
+    const float leftOf = anchor.x - iconHalf - kGap - boxSize.x;
+    const bool fitsRight = rightOf + boxSize.x <= screen.max.x;
+    const bool fitsLeft = leftOf >= screen.min.x;
+
+    // Beside the icon on a side with room, right first; then pushed inside
+    // the screen, which may cover the icon but not cut the name.
+    for (const auto& candidate : {fitsRight ? std::optional<float>(rightOf) : std::nullopt,
+                                  fitsLeft ? std::optional<float>(leftOf) : std::nullopt,
+                                  std::optional<float>(fitsRight || !fitsLeft ? rightOf
+                                                                              : leftOf)}) {
+        if (!candidate) {
+            continue;
+        }
+        const ScreenRect box = at(*candidate);
+        if (!overlaps(box)) {
+            return box;
+        }
+    }
+    return std::nullopt;
+}
+
+namespace {
+
+/// How specific an objective is about what to do at its place; the merged
+/// marker takes the highest.
+int specificity(data::ObjectiveKind kind) {
+    switch (kind) {
+        case data::ObjectiveKind::Mark: return 6;
+        case data::ObjectiveKind::Plant: return 5;
+        case data::ObjectiveKind::Use: return 4;
+        case data::ObjectiveKind::Shoot: return 3;
+        case data::ObjectiveKind::Find: return 2;
+        case data::ObjectiveKind::Visit: return 1;
+        case data::ObjectiveKind::Other: return 0;
+    }
+    return 0;
+}
+
+}  // namespace
+
+std::vector<QuestPlace> mergeNearbyQuestPlaces(std::vector<QuestPlace> places) {
+    // Horizontal and vertical reach, in metres. Wide enough for "locate the
+    // room" and "mark the room" set a few metres apart; the height limit keeps
+    // an objective on the floor above from being folded into this one.
+    constexpr double kReach = 10.0;
+    constexpr double kHeight = 3.0;
+
+    std::vector<QuestPlace> merged;
+    merged.reserve(places.size());
+    for (auto& place : places) {
+        QuestPlace* into = nullptr;
+        if (!place.isQuestItem) {
+            for (auto& existing : merged) {
+                const double dx = existing.world.x - place.world.x;
+                const double dz = existing.world.z - place.world.z;
+                if (!existing.isQuestItem && existing.taskName == place.taskName &&
+                    dx * dx + dz * dz <= kReach * kReach &&
+                    std::abs(existing.world.y - place.world.y) <= kHeight) {
+                    into = &existing;
+                    break;
+                }
+            }
+        }
+        if (into == nullptr) {
+            merged.push_back(std::move(place));
+            continue;
+        }
+        if (specificity(place.kind) > specificity(into->kind)) {
+            into->kind = place.kind;
+        }
+        // Required if any part is required.
+        into->optional = into->optional && place.optional;
+        if (!place.detail.empty() && into->detail.find(place.detail) == std::string::npos) {
+            if (!into->detail.empty()) {
+                into->detail += "\n";
+            }
+            into->detail += place.detail;
+        }
+    }
+    return merged;
+}
 
 bool QuestPlace::onSameLevelAs(double elevation) const {
     if (!top && !bottom) {
@@ -243,7 +389,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
     if (!state.initialised || mapChanged ||
         state.viewport.screenWidth != width || state.viewport.screenHeight != height) {
         if (!state.initialised || mapChanged) {
-            state.viewport = map::fitToBounds(map, width, height);
+            state.viewport = map::fitToBounds(map, width, height, kFitPadding);
             state.mapName = map.key;
             state.followPlayer = true;
             state.initialised = true;
@@ -267,24 +413,17 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
     // the position: standing still is not a reason to stop following.
     if (state.followPlayer && snapshot.fix.valid &&
         snapshot.fix.receivedAtMillis != state.lastFollowedFix) {
-        const bool first = state.lastFollowedFix == 0;
         state.lastFollowedFix = snapshot.fix.receivedAtMillis;
         state.viewport.centerBase = projection.toImage(snapshot.fix.world);
 
-        // Opening the map in a raid should show the surroundings, not the whole
-        // location, and it should fill the screen. Fitting the map letterboxes
-        // whenever the aspect ratios differ, and empty margins around a map
-        // centred on the player read as a broken map rather than as the edge of
-        // the world.
-        if (first) {
-            const double cover =
-                map::coverScale(map, state.viewport.screenWidth,
-                                state.viewport.screenHeight);
-            state.viewport.scale =
-                std::max({state.viewport.scale, cover, kDefaultPlayerScale});
-        }
+        // No zoom: the fitted map already shows everything as large as the
+        // screen allows. Zooming in to cover the screen used to cut off up to a
+        // sixth of a wide map like Customs, out of reach without Alt+N. Only a
+        // view the user zoomed into by hand actually moves here.
+        //
         // Following the player must not drag the map off the screen edge any
-        // more than dragging by hand may.
+        // more than dragging by hand may; on an axis where the map fits, this
+        // keeps it centred.
         state.viewport = map::clampToBounds(map, state.viewport);
         result.wantsRedraw = true;
     }
@@ -422,19 +561,6 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
         }
     }
 
-    // The map's own extent, so the player can see where the data stops.
-    if (const auto bounds = projection.imageBounds()) {
-        const auto a = map::baseToScreen(state.viewport, bounds->first);
-        const auto b = map::baseToScreen(state.viewport, bounds->second);
-        draw->AddRect(ImVec2(origin.x + static_cast<float>(a.x),
-                             origin.y + static_cast<float>(a.y)),
-                      ImVec2(origin.x + static_cast<float>(b.x),
-                             origin.y + static_cast<float>(b.y)),
-                      // ImGui 1.92.8 swapped thickness and flags; this is
-                      // (rounding, thickness).
-                      rgba(0.45f, 0.50f, 0.42f, 0.55f), 0.0f, 1.5f);
-    }
-
     // Points of interest, drawn bottom to top by importance: spawns, extracts,
     // transits, quests, then the player, so the player is never hidden.
     {
@@ -481,7 +607,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
             const float dx = mouse.x - at.x;
             const float dy = mouse.y - at.y;
             const float d = dx * dx + dy * dy;
-            if (d < 14.0f * 14.0f && d < hover.distanceSq) {
+            if (d < kHoverRadius * kHoverRadius && d < hover.distanceSq) {
                 hover = Hover{title, detail, note, at, d};
             }
         };
@@ -515,9 +641,9 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
             }
         };
 
-        if (state.showSpawns) drawPoints(overlays.spawns, 16.0f, false);
-        if (state.showExtracts) drawPoints(overlays.extracts, 24.0f, true);
-        if (state.showTransits) drawPoints(overlays.transits, 24.0f, true);
+        if (state.showSpawns) drawPoints(overlays.spawns, kSpawnSize, false);
+        if (state.showExtracts) drawPoints(overlays.extracts, kExtractSize, true);
+        if (state.showTransits) drawPoints(overlays.transits, kExtractSize, true);
 
         if (state.showQuests) {
             for (const auto& place : overlays.quests) {
@@ -527,12 +653,10 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                 }
                 const bool level = place.onSameLevelAs(playerElevation) ||
                                    !state.dimOtherFloors || !snapshot.fix.valid;
-                const MarkerIcon icon =
-                    place.isQuestItem ? MarkerIcon::QuestItem : MarkerIcon::QuestObjective;
                 // Optional objectives are drawn smaller rather than in a
                 // different colour, so the icon keeps its meaning.
-                const float size = place.optional ? 16.0f : 22.0f;
-                drawIcon(draw, overlays.icons, icon, at, size, level ? 1.0f : 0.4f);
+                const float size = place.optional ? kOptionalQuestSize : kQuestSize;
+                drawQuestMarker(draw, overlays, place, at, size, level ? 1.0f : 0.4f);
                 std::string note;
                 if (place.optional) note = tr(Str::Optional);
                 if (place.isQuestItem) {
@@ -553,29 +677,23 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
         // and the hover tooltip still names every extract.
         if (!labels.empty()) {
             ImGui::PushFont(nullptr, kLabelFontSize);
-            std::vector<ImVec4> placed;  // x0, y0, x1, y1
+            const ScreenRect screen{origin, ImVec2(origin.x + canvasSize.x,
+                                                   origin.y + canvasSize.y)};
+            std::vector<ScreenRect> placed;
             for (const auto& label : labels) {
                 const ImVec2 size = ImGui::CalcTextSize(label.text->c_str());
                 const float padX = 4.0f;
                 const float padY = 1.0f;
-                const ImVec2 min(label.at.x + label.iconHalf + 3.0f,
-                                 label.at.y - size.y / 2.0f - padY);
-                const ImVec2 max(min.x + size.x + padX * 2.0f, min.y + size.y + padY * 2.0f);
-                bool overlaps = false;
-                for (const auto& other : placed) {
-                    if (min.x < other.z && max.x > other.x && min.y < other.w &&
-                        max.y > other.y) {
-                        overlaps = true;
-                        break;
-                    }
-                }
-                if (overlaps) {
+                const auto box = placeMarkerLabel(
+                    label.at, label.iconHalf,
+                    ImVec2(size.x + padX * 2.0f, size.y + padY * 2.0f), screen, placed);
+                if (!box) {
                     continue;
                 }
-                placed.push_back(ImVec4(min.x, min.y, max.x, max.y));
-                draw->AddRectFilled(min, max, rgba(0.04f, 0.05f, 0.05f, 0.78f * label.alpha),
-                                    3.0f);
-                draw->AddText(ImVec2(min.x + padX, min.y + padY),
+                placed.push_back(*box);
+                draw->AddRectFilled(box->min, box->max,
+                                    rgba(0.04f, 0.05f, 0.05f, 0.78f * label.alpha), 3.0f);
+                draw->AddText(ImVec2(box->min.x + padX, box->min.y + padY),
                               rgba(0.90f, 0.91f, 0.87f, label.alpha), label.text->c_str());
             }
             ImGui::PopFont();

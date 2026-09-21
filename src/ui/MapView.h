@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
+#include <vector>
 #include <functional>
 #include <string>
 
@@ -22,8 +24,30 @@ namespace tarkov::ui {
 using TileTextureProvider =
     std::function<ImTextureID(int layer, int zoom, int x, int y)>;
 
+/// One place on the map a quest sends you.
+struct QuestPlace {
+    geo::Vec3 world;
+    std::string taskName;
+    std::string detail;      ///< Objective description; may be empty.
+    bool optional = false;
+    /// True for a quest item spawn, which is drawn differently: the game picks
+    /// one of several per raid, so these are possibilities, not destinations.
+    bool isQuestItem = false;
+    /// The zone's elevation band, when it declares one.
+    std::optional<double> top;
+    std::optional<double> bottom;
+
+    /// True when the band contains this elevation, or there is no band.
+    bool onSameLevelAs(double elevation) const;
+};
+
 /// Everything the map view remembers between frames.
 struct MapViewState {
+    /// Draw quest markers. Off hides them without losing the data.
+    bool showQuests = true;
+    /// Fade markers that are not on the player's floor rather than hiding them:
+    /// knowing an objective is directly above you is useful.
+    bool dimOtherFloors = true;
     /// How solid the map is drawn, 0.15 to 1.0.
     ///
     /// This is an overlay: the game has to stay readable through it, and a map
@@ -67,6 +91,7 @@ std::string formatFixAge(double seconds);
 MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                           const game::RaidSnapshot& snapshot,
                           std::int64_t nowMillis, bool interactive,
-                          const TileTextureProvider& tiles);
+                          const TileTextureProvider& tiles,
+                          const std::vector<QuestPlace>& quests = {});
 
 }  // namespace tarkov::ui

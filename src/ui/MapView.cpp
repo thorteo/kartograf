@@ -75,7 +75,42 @@ void drawPlayerMarker(ImDrawList* draw, const ImVec2& at, double headingDegrees,
     }
 }
 
+void drawQuestMarker(ImDrawList* draw, const ImVec2& at, bool questItem,
+                     bool optional, bool onLevel) {
+    const float alpha = onLevel ? 1.0f : 0.35f;
+    const ImU32 fill = optional ? rgba(0.62f, 0.68f, 0.82f, alpha)
+                                : rgba(0.96f, 0.82f, 0.36f, alpha);
+    const ImU32 edge = rgba(0.05f, 0.06f, 0.05f, alpha * 0.9f);
+
+    if (questItem) {
+        // A diamond: a possible spawn, not a fixed destination.
+        const float r = 7.0f;
+        const ImVec2 points[4] = {{at.x, at.y - r},
+                                  {at.x + r, at.y},
+                                  {at.x, at.y + r},
+                                  {at.x - r, at.y}};
+        draw->AddConvexPolyFilled(points, 4, fill);
+        draw->AddPolyline(points, 4, edge, 1.5f, ImDrawFlags_Closed);
+    } else {
+        draw->AddCircleFilled(at, 6.0f, fill);
+        draw->AddCircle(at, 6.0f, edge, 0, 1.5f);
+    }
+}
+
 }  // namespace
+
+bool QuestPlace::onSameLevelAs(double elevation) const {
+    if (!top && !bottom) {
+        return true;
+    }
+    if (bottom && elevation < *bottom) {
+        return false;
+    }
+    if (top && elevation > *top) {
+        return false;
+    }
+    return true;
+}
 
 std::string formatFixAge(double seconds) {
     if (seconds < 0.0) {
@@ -102,7 +137,8 @@ std::string layerName(const geo::MapVariant& map, int layer) {
 MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                           const game::RaidSnapshot& snapshot,
                           std::int64_t nowMillis, bool interactive,
-                          const TileTextureProvider& tiles) {
+                          const TileTextureProvider& tiles,
+                          const std::vector<QuestPlace>& quests) {
     MapViewResult result;
 
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -288,6 +324,68 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                       rgba(0.45f, 0.50f, 0.42f, 0.55f), 0.0f, 1.5f);
     }
 
+    // Quest markers, under the player so the player is never hidden by one.
+    if (state.showQuests && !quests.empty()) {
+        const double playerElevation =
+            snapshot.fix.valid ? snapshot.fix.world.y : 0.0;
+        const ImVec2 mouse = ImGui::GetIO().MousePos;
+        const QuestPlace* hovered = nullptr;
+        ImVec2 hoveredAt{};
+
+        for (const auto& place : quests) {
+            const auto screen =
+                map::baseToScreen(state.viewport, projection.toImage(place.world));
+            if (screen.x < -32.0 || screen.y < -32.0 ||
+                screen.x > state.viewport.screenWidth + 32.0 ||
+                screen.y > state.viewport.screenHeight + 32.0) {
+                continue;  // Off screen; nothing to draw or hit-test.
+            }
+            const ImVec2 at(origin.x + static_cast<float>(screen.x),
+                            origin.y + static_cast<float>(screen.y));
+
+            const bool onLevel = !state.dimOtherFloors || !snapshot.fix.valid ||
+                                 place.onSameLevelAs(playerElevation);
+            drawQuestMarker(draw, at, place.isQuestItem, place.optional, onLevel);
+
+            if (interactive) {
+                const float dx = mouse.x - at.x;
+                const float dy = mouse.y - at.y;
+                if (dx * dx + dy * dy < 12.0f * 12.0f) {
+                    hovered = &place;
+                    hoveredAt = at;
+                }
+            }
+        }
+
+        if (hovered != nullptr) {
+            ImGui::SetNextWindowPos(ImVec2(hoveredAt.x + 14.0f, hoveredAt.y + 14.0f));
+            ImGui::SetNextWindowBgAlpha(0.92f);
+            if (ImGui::Begin("tarkov-help-quest-tip", nullptr,
+                             ImGuiWindowFlags_NoDecoration |
+                                 ImGuiWindowFlags_AlwaysAutoResize |
+                                 ImGuiWindowFlags_NoSavedSettings |
+                                 ImGuiWindowFlags_NoNav |
+                                 ImGuiWindowFlags_NoMove |
+                                 ImGuiWindowFlags_NoFocusOnAppearing)) {
+                ImGui::TextUnformatted(hovered->taskName.c_str());
+                if (!hovered->detail.empty()) {
+                    ImGui::PushTextWrapPos(420.0f);
+                    ImGui::TextColored(ImVec4(0.72f, 0.74f, 0.68f, 1.0f), "%s",
+                                       hovered->detail.c_str());
+                    ImGui::PopTextWrapPos();
+                }
+                if (hovered->optional) {
+                    ImGui::TextColored(ImVec4(0.62f, 0.68f, 0.82f, 1.0f), "optional");
+                }
+                if (hovered->isQuestItem) {
+                    ImGui::TextColored(ImVec4(0.72f, 0.74f, 0.68f, 1.0f),
+                                       "one of several possible spawns");
+                }
+            }
+            ImGui::End();
+        }
+    }
+
     if (snapshot.fix.valid) {
         const auto base = projection.toImage(snapshot.fix.world);
         const auto screen = map::baseToScreen(state.viewport, base);
@@ -369,7 +467,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
 
     // Footer: the state of the view, and how to get back to the player.
     {
-        char text[280];
+        char text[340];
         const char* mode = state.followPlayer ? "following" : "free";
         // Interchange and Shoreline declare upper floors with no tiles. Saying
         // so beats silently showing the ground level and letting the player
@@ -389,10 +487,16 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
             std::snprintf(age, sizeof(age), "   no position - press screenshot");
         }
 
-        std::snprintf(text, sizeof(text), "%s   %s%s%s   %s%s", map.key.c_str(),
+        char questText[48] = "";
+        if (!quests.empty()) {
+            std::snprintf(questText, sizeof(questText), "   %d objectives",
+                          static_cast<int>(quests.size()));
+        }
+        std::snprintf(text, sizeof(text), "%s   %s%s%s   %s%s%s", map.key.c_str(),
                       layerName(map, state.activeLayer).c_str(),
                       state.layerAuto ? " (auto)" : "",
-                      floorMissing ? " - no image for this floor" : "", mode, age);
+                      floorMissing ? " - no image for this floor" : "", mode, age,
+                      questText);
 
         const ImVec2 size = ImGui::CalcTextSize(text);
         // Bottom centre: the status log lives bottom-left and the HUD

@@ -22,6 +22,8 @@
 #include <imgui.h>
 
 #include "core/data/EmbeddedMaps.h"
+#include "core/data/MapIds.h"
+#include "core/data/TaskModel.h"
 #include "core/game/RaidState.h"
 #include "core/game/ScreenshotName.h"
 #include "core/geo/MapConfig.h"
@@ -30,6 +32,7 @@
 #include "platform/win32/GameWindow.h"
 #include "platform/win32/ImGuiLayer.h"
 #include "platform/win32/OverlayWindow.h"
+#include "platform/win32/TaskRepository.h"
 #include "platform/win32/TileStore.h"
 #include "ui/Hud.h"
 #include "ui/MapView.h"
@@ -156,6 +159,63 @@ void drawStatus(unsigned long long nowMillis) {
     ImGui::End();
 }
 
+/// Builds the markers for one map out of the quest data.
+///
+/// A task can reference a map through several ids -- night Factory and Factory
+/// share a picture -- so every id that draws as this map is collected, or
+/// quests would vanish depending on which variant the raid used.
+std::vector<tarkov::ui::QuestPlace> buildQuestPlaces(
+    const tarkov::data::TaskSet& tasks, const tarkov::data::MapIdTable& mapIds,
+    const std::string& drawnAsName) {
+    using namespace tarkov;
+
+    std::vector<ui::QuestPlace> places;
+    if (drawnAsName.empty()) {
+        return places;
+    }
+    const auto ids = mapIds.idsFor(drawnAsName);
+    if (ids.empty()) {
+        return places;
+    }
+    const auto belongs = [&](const std::string& mapId) {
+        return std::find(ids.begin(), ids.end(), mapId) != ids.end();
+    };
+
+    for (const auto& task : tasks.tasks) {
+        const std::string name = task.displayName();
+        for (const auto& objective : task.objectives) {
+            for (const auto& zone : objective.zones) {
+                if (!belongs(zone.mapId)) {
+                    continue;
+                }
+                ui::QuestPlace place;
+                place.world = zone.position;
+                place.taskName = name;
+                place.detail = objective.description;
+                place.optional = objective.optional;
+                place.top = zone.top;
+                place.bottom = zone.bottom;
+                places.push_back(std::move(place));
+            }
+            for (const auto& location : objective.questItemLocations) {
+                if (!belongs(location.mapId)) {
+                    continue;
+                }
+                for (const auto& position : location.positions) {
+                    ui::QuestPlace place;
+                    place.world = position;
+                    place.taskName = name;
+                    place.detail = objective.description;
+                    place.optional = objective.optional;
+                    place.isQuestItem = true;
+                    places.push_back(std::move(place));
+                }
+            }
+        }
+    }
+    return places;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -233,6 +293,13 @@ int main(int argc, char** argv) {
     win32::TileStore tiles;
     tiles.start(overlay.device());
 
+    const data::MapIdTable mapIds = data::MapIdTable::parse(data::kMapIdsJson);
+    win32::TaskRepository quests;
+    quests.start("regular", argumentValue(argc, argv, "--lang").empty()
+                                ? std::string("ru")
+                                : argumentValue(argc, argv, "--lang"),
+                 [](const std::string& line) { g_status.add(line); });
+
     game::RaidState raidState;
     if (!forcedMap.empty()) {
         game::RaidEvent forced;
@@ -274,6 +341,12 @@ int main(int argc, char** argv) {
     // map footer. Screen corners in a raid are worth more than telemetry.
     bool hudVisible = hasFlag(argc, argv, "--hud");
     std::string tiledMap;
+    // Rebuilt only when the map or the quest data changes; walking through a
+    // raid must not re-scan 515 tasks every frame.
+    std::vector<ui::QuestPlace> questPlaces;
+    std::string questPlacesFor;
+    const data::TaskSet* questPlacesFrom = nullptr;
+    std::string lastRaidMode;
 
     std::shared_ptr<const game::RaidSnapshot> lastSnapshot;
     unsigned long long lastDisplaySecond = 0;
@@ -355,6 +428,15 @@ int main(int argc, char** argv) {
         const auto snapshot = raidState.snapshot();
         const auto nowTicks = GetTickCount64();
 
+        // The game's own logs say whether this is PvE, so the right dataset can
+        // be chosen without asking.
+        if (snapshot->raidMode != lastRaidMode) {
+            lastRaidMode = snapshot->raidMode;
+            if (!lastRaidMode.empty()) {
+                quests.setGameMode(lastRaidMode == "Online" ? "regular" : "pve");
+            }
+        }
+
         // Reactive rendering.
         //
         // The overlay is static almost all of the time: a position arrives only
@@ -424,13 +506,24 @@ int main(int argc, char** argv) {
                     }
                     tiles.setMap(variant->key, variant->tilePath, layerTemplates);
                 }
+                const auto questData = quests.tasks();
+                if (questPlacesFor != variant->key ||
+                    questPlacesFrom != questData.get()) {
+                    questPlacesFor = variant->key;
+                    questPlacesFrom = questData.get();
+                    questPlaces = buildQuestPlaces(*questData, mapIds,
+                                                   snapshot->mapNormalized);
+                    forceRedraw = true;
+                }
+
                 const auto result = ui::drawMapView(
                     mapState, *variant, *snapshot,
                     static_cast<std::int64_t>(nowTicks), interactive,
                     [&tiles](int layer, int zoom, int x, int y) -> ImTextureID {
                         return reinterpret_cast<ImTextureID>(
                             tiles.acquire({layer, zoom, x, y}));
-                    });
+                    },
+                    questPlaces);
                 // Keep drawing while tiles are still arriving, then stop.
                 pendingTiles = result.tilesRequested > 0;
                 if (result.wantsRedraw) {
@@ -451,6 +544,7 @@ int main(int argc, char** argv) {
     }
 
     watcher.stop();
+    quests.stop();
     tiles.stop();
     UnregisterHotKey(nullptr, kMapHotkeyId);
     UnregisterHotKey(nullptr, kHudHotkeyId);

@@ -110,6 +110,7 @@ if(WIN32)
         src/platform/win32/GameDataWatcher.cpp
         src/platform/win32/HttpClient.cpp
         src/platform/win32/TileStore.cpp
+        src/platform/win32/TaskRepository.cpp
         src/platform/win32/ImGuiLayer.cpp
         third_party/imgui/backends/imgui_impl_win32.cpp
         third_party/imgui/backends/imgui_impl_dx11.cpp

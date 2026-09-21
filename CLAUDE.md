@@ -54,6 +54,14 @@ This split exists because development happens in WSL/Linux while the target is W
 Keeping the core portable means most of the codebase is testable without a Windows
 build. **Do not include `<windows.h>` from anything under `src/core/`.**
 
+## ImGui 1.92.8 swapped `thickness` and `flags`
+
+`AddRect`, `AddPolyline` and friends take `(…, col, rounding/thickness, flags)` now,
+the reverse of older code and of most examples online. The old ordering is an
+explicitly deleted overload, so it fails to compile rather than silently drawing
+something different — but only if you do not "fix" it by reordering blindly. Check
+the signature in `third_party/imgui/imgui.h`.
+
 ## The overlay must stay see-through
 
 It is an overlay, not a screenshot: the game has to remain readable underneath.

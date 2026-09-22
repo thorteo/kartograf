@@ -593,15 +593,6 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                          origin.y + static_cast<float>(screen.y));
             return true;
         };
-        const auto onLevel = [&](const std::optional<double>& top,
-                                 const std::optional<double>& bottom) {
-            if (!state.dimOtherFloors || !snapshot.fix.valid) {
-                return true;
-            }
-            if (bottom && playerElevation < *bottom) return false;
-            if (top && playerElevation > *top) return false;
-            return true;
-        };
         const auto consider = [&](const ImVec2& at, const std::string& title,
                                   const std::string& detail, const std::string& note,
                                   const std::vector<std::string>* needs = nullptr) {
@@ -638,12 +629,10 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                 if (!toScreen(point.world, at)) {
                     continue;
                 }
-                const bool level = true;
-                const float alpha = level ? 1.0f : 0.4f;
-                drawIcon(draw, overlays.icons, point.icon, at, size, alpha);
-                consider(at, point.label, {}, level ? std::string{} : std::string(tr(Str::OtherFloor)));
+                drawIcon(draw, overlays.icons, point.icon, at, size, 1.0f);
+                consider(at, point.label, {}, {});
                 if (labelled && !point.label.empty()) {
-                    labels.push_back(Label{at, size / 2.0f, &point.label, alpha});
+                    labels.push_back(Label{at, size / 2.0f, &point.label, 1.0f});
                 }
             }
         };

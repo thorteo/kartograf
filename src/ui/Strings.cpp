@@ -193,6 +193,8 @@ constexpr Entry kTable[] = {
     {Str::ShowOnMap, "Show on the map", "Показывать на карте"},
     {Str::DimOtherFloors, "Fade objectives on other floors", "Приглушать цели на других этажах"},
     {Str::Language, "Language", "Язык"},
+    {Str::LanguageRussian, "Русский", "Русский"},
+    {Str::LanguageEnglish, "English", "English"},
     {Str::ExcludeFromCapture, "Hide the overlay from screen recording and streams", "Скрывать оверлей от записи экрана и стримов"},
     {Str::ShowHud, "Show the detail panel", "Показывать подробную панель"},
     {Str::ShowOnStart, "Show this window at start", "Показывать это окно при запуске"},

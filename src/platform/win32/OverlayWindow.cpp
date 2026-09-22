@@ -244,7 +244,6 @@ void OverlayWindow::setClickThrough(bool enabled) {
         style &= ~static_cast<LONG_PTR>(WS_EX_TRANSPARENT);
     }
     SetWindowLongPtrW(hwnd_, GWL_EXSTYLE, style);
-    clickThrough_ = enabled;
 }
 
 OverlayWindow::CaptureExclusion OverlayWindow::setExcludedFromCapture(bool enabled) {
@@ -339,11 +338,6 @@ void OverlayWindow::present(bool vsync) {
     if (swapChain_) {
         swapChain_->Present(vsync ? 1 : 0, 0);
     }
-}
-
-void OverlayWindow::renderFrame(float r, float g, float b, float a) {
-    beginFrame(r, g, b, a);
-    present(true);
 }
 
 }  // namespace tarkov::win32

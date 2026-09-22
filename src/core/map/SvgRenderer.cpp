@@ -29,61 +29,6 @@ SvgSize svgNaturalSize(std::string_view svg) {
     return SvgSize{document->width(), document->height()};
 }
 
-RenderedImage renderSvgLayers(std::string_view svg,
-                              const std::vector<std::string>& visibleLayerIds,
-                              int width, int height) {
-    RenderedImage image;
-    if (width <= 0 || height <= 0 || width > kMaxDimension ||
-        height > kMaxDimension) {
-        return image;
-    }
-
-    auto document = load_(svg);
-    if (!document) {
-        return image;
-    }
-
-    if (!visibleLayerIds.empty()) {
-        // Show exactly the layers asked for. Ids that are not in the document
-        // simply match nothing, which is what we want -- maps.json names floors
-        // that some SVGs do not carry.
-        std::string sheet;
-        for (const auto& id : visibleLayerIds) {
-            if (id.empty()) {
-                continue;
-            }
-            sheet += "#";
-            sheet += id;
-            sheet += "{display:inline!important;visibility:visible!important}";
-        }
-        if (!sheet.empty()) {
-            document->applyStyleSheet(sheet);
-            document->updateLayout();
-        }
-    }
-
-    lunasvg::Bitmap bitmap = document->renderToBitmap(width, height);
-    if (bitmap.isNull() || bitmap.data() == nullptr) {
-        return image;
-    }
-    // lunasvg renders premultiplied ARGB32; the GPU wants plain RGBA.
-    bitmap.convertToRGBA();
-
-    image.width = bitmap.width();
-    image.height = bitmap.height();
-    image.pixels.resize(static_cast<std::size_t>(image.width) * image.height * 4);
-
-    const int stride = bitmap.stride();
-    const std::uint8_t* source = bitmap.data();
-    for (int y = 0; y < image.height; ++y) {
-        std::copy(source + static_cast<std::size_t>(y) * stride,
-                  source + static_cast<std::size_t>(y) * stride + image.width * 4,
-                  image.pixels.begin() +
-                      static_cast<std::size_t>(y) * image.width * 4);
-    }
-    return image;
-}
-
 namespace {
 
 void applyLayerVisibility(lunasvg::Document& document,
@@ -111,6 +56,7 @@ RenderedImage bitmapToImage(lunasvg::Bitmap& bitmap) {
     if (bitmap.isNull() || bitmap.data() == nullptr) {
         return image;
     }
+    // lunasvg renders premultiplied ARGB32; the GPU wants plain RGBA.
     bitmap.convertToRGBA();
 
     image.width = bitmap.width();
@@ -129,6 +75,22 @@ RenderedImage bitmapToImage(lunasvg::Bitmap& bitmap) {
 }
 
 }  // namespace
+
+RenderedImage renderSvgLayers(std::string_view svg,
+                              const std::vector<std::string>& visibleLayerIds,
+                              int width, int height) {
+    if (width <= 0 || height <= 0 || width > kMaxDimension ||
+        height > kMaxDimension) {
+        return {};
+    }
+    auto document = load_(svg);
+    if (!document) {
+        return {};
+    }
+    applyLayerVisibility(*document, visibleLayerIds);
+    lunasvg::Bitmap bitmap = document->renderToBitmap(width, height);
+    return bitmapToImage(bitmap);
+}
 
 struct SvgDocument::Impl {
     std::unique_ptr<lunasvg::Document> document;

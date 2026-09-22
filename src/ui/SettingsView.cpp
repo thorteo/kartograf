@@ -144,12 +144,12 @@ SettingsViewResult drawSettings(settings::Settings& s, SettingsViewState& state,
     ImGui::SeparatorText(tr(Str::SectionGeneral));
     ImGui::TextUnformatted(tr(Str::Language));
     ImGui::SameLine(250.0f);
-    if (ImGui::RadioButton("Русский", s.language == "ru")) {
+    if (ImGui::RadioButton(tr(Str::LanguageRussian), s.language == "ru")) {
         result.changed |= s.language != "ru";
         s.language = "ru";
     }
     ImGui::SameLine();
-    if (ImGui::RadioButton("English", s.language == "en")) {
+    if (ImGui::RadioButton(tr(Str::LanguageEnglish), s.language == "en")) {
         result.changed |= s.language != "en";
         s.language = "en";
     }

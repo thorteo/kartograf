@@ -36,7 +36,6 @@ public:
     /// Lets clicks fall through to whatever is underneath. Cleared while the
     /// user is interacting with the map, restored afterwards.
     void setClickThrough(bool enabled);
-    bool clickThrough() const { return clickThrough_; }
 
     /// Keeps the overlay out of screen recordings and streams.
     ///
@@ -62,9 +61,6 @@ public:
     /// Presents the composed frame. `vsync` off is useful when the overlay is
     /// idle and we are pacing ourselves.
     void present(bool vsync = true);
-
-    /// Clears and presents in one call, with nothing drawn in between.
-    void renderFrame(float r, float g, float b, float a);
 
     /// While true, window messages are forwarded to the UI layer. Turned off
     /// with click-through, when the overlay receives no input at all.
@@ -100,7 +96,6 @@ private:
                                        LPARAM lParam);
 
     HWND hwnd_ = nullptr;
-    bool clickThrough_ = true;
     bool interactive_ = false;
     class ImGuiLayer* uiLayer_ = nullptr;
     bool shouldClose_ = false;

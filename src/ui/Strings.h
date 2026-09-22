@@ -149,6 +149,8 @@ enum class Str {
     ShowOnMap,
     DimOtherFloors,
     Language,
+    LanguageRussian,  // each named in itself, the same in both tables
+    LanguageEnglish,
     ExcludeFromCapture,
     ShowHud,
     ShowOnStart,

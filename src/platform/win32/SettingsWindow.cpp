@@ -2,6 +2,8 @@
 
 #include <dxgi.h>
 
+#include <algorithm>
+
 namespace tarkov::win32 {
 namespace {
 
@@ -9,6 +11,20 @@ constexpr wchar_t kWindowClass[] = L"TarkovHelpSettings";
 constexpr UINT kTrayMessage = WM_APP + 1;
 constexpr UINT kMenuSettings = 1;
 constexpr UINT kMenuQuit = 2;
+
+/// Frames drawn after each event that can change what the window shows.
+constexpr int kFramesPerEvent = 3;
+
+/// Messages after which the window may look different. Anything else --
+/// timers, notifications, the tray -- leaves the picture alone.
+bool changesPicture(UINT message) {
+    return (message >= WM_MOUSEFIRST && message <= WM_MOUSELAST) ||
+           (message >= WM_KEYFIRST && message <= WM_KEYLAST) ||
+           message == WM_MOUSELEAVE || message == WM_NCMOUSELEAVE ||
+           message == WM_ACTIVATE || message == WM_SETFOCUS ||
+           message == WM_KILLFOCUS || message == WM_SIZE || message == WM_PAINT ||
+           message == WM_SHOWWINDOW;
+}
 
 bool isModifier(WPARAM vk) {
     switch (vk) {
@@ -48,6 +64,9 @@ LRESULT CALLBACK SettingsWindow::windowProc(HWND hwnd, UINT message, WPARAM wPar
 }
 
 LRESULT SettingsWindow::handle(UINT message, WPARAM wParam, LPARAM lParam) {
+    if (changesPicture(message)) {
+        framesWanted_ = kFramesPerEvent;
+    }
     // Key capture comes before ImGui: the next non-modifier key is the new
     // binding, with whatever modifiers are held at that moment.
     if (capturing_ && (message == WM_KEYDOWN || message == WM_SYSKEYDOWN)) {
@@ -230,6 +249,15 @@ void SettingsWindow::show() {
     ShowWindow(hwnd_, SW_SHOWNORMAL);
     SetForegroundWindow(hwnd_);
     visible_ = true;
+    framesWanted_ = kFramesPerEvent;
+}
+
+bool SettingsWindow::wantsFrame() const {
+    return visible_ && framesWanted_ > 0 && IsIconic(hwnd_) == FALSE;
+}
+
+void SettingsWindow::requestFrame() {
+    framesWanted_ = (std::max)(framesWanted_, 1);
 }
 
 void SettingsWindow::hide() {
@@ -241,6 +269,9 @@ void SettingsWindow::hide() {
 void SettingsWindow::render(const std::function<void()>& draw) {
     if (!visible_ || !renderTarget_) {
         return;
+    }
+    if (framesWanted_ > 0) {
+        --framesWanted_;
     }
     const float clear[4] = {0.07f, 0.08f, 0.08f, 1.0f};
     ID3D11RenderTargetView* targets[] = {renderTarget_.get()};

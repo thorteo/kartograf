@@ -40,6 +40,15 @@ public:
     void hide();
     bool visible() const { return visible_; }
 
+    /// Whether a frame should be drawn now: the window is shown, not
+    /// minimised, and something happened to it -- input, focus, a repaint --
+    /// or requestFrame() asked. Rendering follows the overlay's rule: a window
+    /// left open behind the game once drew every vsync for the whole session.
+    bool wantsFrame() const;
+
+    /// Asks for a frame, e.g. because the status it shows has changed.
+    void requestFrame();
+
     /// Renders one frame: `draw` issues the ImGui calls.
     void render(const std::function<void()>& draw);
 
@@ -100,6 +109,9 @@ private:
     bool openRequested_ = false;
     bool quitRequested_ = false;
     bool closedByUser_ = false;
+    /// Frames still to draw. Input asks for a few rather than one, so ImGui
+    /// can settle hover and active states that change a frame after the event.
+    int framesWanted_ = 0;
 };
 
 }  // namespace tarkov::win32

@@ -581,6 +581,7 @@ int main(int argc, char** argv) {
     // Quest counts for the settings window's status section, recomputed only
     // when progress or quest data change.
     std::uint64_t statusRevision = ~0ULL;
+    ULONGLONG lastSettingsSecond = 0;
     const data::TaskSet* statusTasks = nullptr;
     int statusActive = 0;
 
@@ -614,6 +615,17 @@ int main(int argc, char** argv) {
                 }
             }
 
+            // The status section shows the age of the position fix, so it is
+            // refreshed once a second; otherwise the window draws only when
+            // something happens to it.
+            const ULONGLONG settingsSecond = GetTickCount64() / 1000;
+            if (settingsSecond != lastSettingsSecond) {
+                lastSettingsSecond = settingsSecond;
+                settingsWindow.requestFrame();
+            }
+        }
+
+        if (settingsWindow.wantsFrame()) {
             const auto questData = quests.tasks();
             const std::uint64_t revision = progress.revision();
             if (statusRevision != revision || statusTasks != questData.get()) {
@@ -735,7 +747,7 @@ int main(int argc, char** argv) {
             // Nothing to composite. Idle cheaply rather than spinning -- but
             // wake promptly for input, and keep the settings window smooth.
             MsgWaitForMultipleObjects(0, nullptr, FALSE,
-                                      settingsWindow.visible() ? 16 : 60, QS_ALLINPUT);
+                                      settingsWindow.wantsFrame() ? 16 : 60, QS_ALLINPUT);
             continue;
         }
 
@@ -808,7 +820,7 @@ int main(int argc, char** argv) {
             // while it is free over the map, and faster still while map
             // pieces are landing.
             MsgWaitForMultipleObjects(0, nullptr, FALSE,
-                                      settingsWindow.visible() || mapLoading ? 16
+                                      settingsWindow.wantsFrame() || mapLoading ? 16
                                       : pointer                          ? 33
                                                                          : 100,
                                       QS_ALLINPUT);

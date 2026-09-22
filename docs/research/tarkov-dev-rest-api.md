@@ -22,9 +22,34 @@ download once and keep.
 
 ## Game modes
 
-Paths are `/{gameMode}/...` where the mode is `regular`, `pve` or `pvp-season`. The
-raid mode is already parsed out of the game's own logs (`RaidMode: Online`), so the
-right dataset can be chosen without asking the user.
+Paths are `/{gameMode}/...` where the mode is `regular`, `pve` or `pvp-season`
+(`https://json.tarkov.dev/endpoints` lists them). The site's "Season" switch is
+`pvp-season` on this same API: its source (`the-hideout/tarkov-dev`,
+`src/modules/api-request.mjs`) fetches `https://json.tarkov.dev/{mode}/...`.
+
+**Choosing the mode from the logs.** `RaidMode: Online` in the raid-create line does
+*not* tell a seasonal profile from a regular PvP one: a season player's raids read
+`RaidMode: Online, GameMode: deathmatch` like any other. What does differ is the push
+notifier host in `push-notifications_000.log`:
+`wss://wsn-pvp-season-01.escapefromtarkov.com/...` in every session on this machine
+from 2026-09-16 to 09-22, all of them seasonal. The host for a non-seasonal profile has
+not been seen yet, so that half is unverified.
+
+**What `pvp-season` holds** (checked 2026-09-22, prod and `json-dev.tarkov.dev` alike):
+489 tasks, all of them also in `regular` (515); the 26 `regular` has besides are the
+`*-pvp-zone` quests. Of the 489 in common, 13 differ, and only in `startRewards` /
+`finishRewards` -- objectives and zones are the same. So for markers the two are
+interchangeable.
+
+**Season 1 "KORD BREACH" quests are missing from every set.** A season player had five
+active quests the game had started (push type 10, from Prapor ×2, Ref, Therapist,
+Skier; ids `6a4f528221e50974ab006f6f`, `6a4f53f6be2cd3a87c0b708d`,
+`6a4f83001b7350af050b2e1f`, `6a5e9a5e11ef8ccb6404a18b`, `6a7637fed31fb1191903fc07`)
+that appear in no mode's tasks, quest items, achievements or locales. The season is
+mentioned only in two locale strings ("Complete Fence's / Lightkeeper's task line in
+Season 1 KORD BREACH …") that belong to no task. `/pvp-season/info`, listed as "info on
+current season", answers 404. The GraphQL API was still down ("GraphQL server
+unavailable"). Until the data lands, such quests cannot be placed on the map.
 
 ## Translatable fields carry keys, not text
 

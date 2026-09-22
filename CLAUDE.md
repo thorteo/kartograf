@@ -142,8 +142,13 @@ ctest --preset linux-dev                                       # run tests
 cmake --preset linux-asan && ctest --preset linux-asan         # with sanitizers
 cmake --build --preset windows-dev                             # the overlay, cross-compiled
 ./build/windows-dev/tarkov_help.exe                            # WSL runs it on Windows
+scripts/install.sh                                             # install + desktop shortcut
 python3 scripts/verify_projection_tiles.py                     # network check, by hand
 ```
+
+The user starts the overlay from a desktop shortcut to an installed copy in
+`%LOCALAPPDATA%\Programs\tarkov-help\`. After a change they should see, run
+`scripts/install.sh` to update that copy; it works while the overlay is open.
 
 Scripted runs should pass `--no-settings`, or the settings window stops at startup.
 User state lives in `%LOCALAPPDATA%\tarkov-help\`: `settings.json`, `progress.json`,

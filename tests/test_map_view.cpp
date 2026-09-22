@@ -248,8 +248,8 @@ TEST_CASE("overlay layers follow their toggles") {
 
     ui::MapOverlays overlays;
     const geo::Vec3 nearPlayer{236.21, 4.43, 165.98};
-    overlays.extracts.push_back({nearPlayer, ui::MarkerIcon::ExtractPmc, "exit", {}, {}});
-    overlays.spawns.push_back({nearPlayer, ui::MarkerIcon::SpawnBoss, "boss", {}, {}});
+    overlays.extracts.push_back({nearPlayer, ui::MarkerIcon::ExtractPmc, "exit"});
+    overlays.spawns.push_back({nearPlayer, ui::MarkerIcon::SpawnBoss, "boss"});
 
     std::set<ui::MarkerIcon> asked;
     overlays.icons = [&asked](ui::MarkerIcon icon) -> ImTextureID {

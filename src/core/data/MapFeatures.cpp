@@ -64,9 +64,8 @@ std::string translated(const TaskLocale& locale, const std::string& key) {
 
 }  // namespace
 
-std::map<std::string, MapFeatures, std::less<>> parseMapFeatures(
-    std::string_view source, const TaskLocale& locale) {
-    std::map<std::string, MapFeatures, std::less<>> out;
+MapFeatureSet parseMapFeatures(std::string_view source, const TaskLocale& locale) {
+    MapFeatureSet out;
     const json root = json::parse(source, nullptr, /*allow_exceptions=*/false);
     const json* data = child(root, "data");
     const json* maps = data != nullptr ? child(*data, "maps") : nullptr;

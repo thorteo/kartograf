@@ -46,6 +46,9 @@ struct MapFeatures {
     std::vector<MapTransit> transits;
 };
 
+/// Every map's features, keyed by BSG map id.
+using MapFeatureSet = std::map<std::string, MapFeatures, std::less<>>;
+
 /// Parses a `/{gameMode}/maps` response.
 ///
 /// Only extracts, spawns and transits are read. The document also carries loot
@@ -54,8 +57,7 @@ struct MapFeatures {
 /// `/{gameMode}/maps_{lang}`, the same scheme as tasks.
 ///
 /// Keyed by BSG map id. Malformed input yields an empty map.
-std::map<std::string, MapFeatures, std::less<>> parseMapFeatures(
-    std::string_view json, const TaskLocale& locale);
+MapFeatureSet parseMapFeatures(std::string_view json, const TaskLocale& locale);
 
 /// Spawns worth showing: where *players* start, and where bosses can appear.
 ///

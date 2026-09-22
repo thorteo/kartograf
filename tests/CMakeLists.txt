@@ -14,6 +14,7 @@ add_executable(tarkov_tests
     test_quest_needs.cpp
     test_quest_events.cpp
     test_line_splitter.cpp
+    test_map_content.cpp
     test_quest_progress.cpp
     test_map_features.cpp
     test_strings.cpp

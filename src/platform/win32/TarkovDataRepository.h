@@ -63,7 +63,7 @@ public:
     /// A coherent view. Never null; empty until the first load succeeds.
     std::shared_ptr<const data::TaskSet> tasks() const;
 
-    using MapFeatureSet = std::map<std::string, data::MapFeatures, std::less<>>;
+    using MapFeatureSet = data::MapFeatureSet;
     /// Extracts, spawns and transits, keyed by BSG map id. Never null.
     std::shared_ptr<const MapFeatureSet> mapFeatures() const;
 

@@ -46,6 +46,7 @@
 #include "platform/win32/TileStore.h"
 #include "platform/win32/Utf8.h"
 #include "ui/Hud.h"
+#include "ui/MapContent.h"
 #include "ui/MapView.h"
 #include "ui/QuestGlyphs.h"
 #include "ui/QuestList.h"
@@ -262,78 +263,6 @@ bool raidUnderWay(const tarkov::game::RaidSnapshot& raid, std::int64_t nowMillis
     return nowMillis - raid.phaseChangedAtMillis < kLongestRaidMillis;
 }
 
-/// Builds the markers for one map out of the quest data.
-///
-/// A task can reference a map through several ids -- night Factory and Factory
-/// share a picture -- so every id that draws as this map is collected, or
-/// quests would vanish depending on which variant the raid used.
-std::vector<tarkov::ui::QuestPlace> buildQuestPlaces(
-    const tarkov::data::TaskSet& tasks, const tarkov::data::MapIdTable& mapIds,
-    const std::string& drawnAsName,
-    const tarkov::data::EffectiveProgress* activeOnly) {
-    using namespace tarkov;
-
-    std::vector<ui::QuestPlace> places;
-    if (drawnAsName.empty()) {
-        return places;
-    }
-    const auto ids = mapIds.idsFor(drawnAsName);
-    if (ids.empty()) {
-        return places;
-    }
-    const auto belongs = [&](const std::string& mapId) {
-        return std::find(ids.begin(), ids.end(), mapId) != ids.end();
-    };
-
-    for (const auto& task : tasks.tasks) {
-        // Only the player's current quests, when progress is known. Every
-        // quest in the game on one map is 150+ markers -- noise, not help.
-        if (activeOnly != nullptr &&
-            activeOnly->stateOf(task.id) != tarkov::data::QuestState::Active) {
-            continue;
-        }
-        const std::string name = task.displayName();
-        // What the quest wants handed over, shown at every one of its places.
-        const auto handIn = ui::handInLines(task, tasks);
-        for (const auto& objective : task.objectives) {
-            auto needs = ui::objectiveBringLines(objective, tasks);
-            needs.insert(needs.end(), handIn.begin(), handIn.end());
-            for (const auto& zone : objective.zones) {
-                if (!belongs(zone.mapId)) {
-                    continue;
-                }
-                ui::QuestPlace place;
-                place.world = zone.position;
-                place.taskName = name;
-                place.detail = objective.description;
-                place.optional = objective.optional;
-                place.kind = data::objectiveKind(objective.type);
-                place.needs = needs;
-                place.top = zone.top;
-                place.bottom = zone.bottom;
-                places.push_back(std::move(place));
-            }
-            for (const auto& location : objective.questItemLocations) {
-                if (!belongs(location.mapId)) {
-                    continue;
-                }
-                for (const auto& position : location.positions) {
-                    ui::QuestPlace place;
-                    place.world = position;
-                    place.taskName = name;
-                    place.detail = objective.description;
-                    place.optional = objective.optional;
-                    place.kind = data::objectiveKind(objective.type);
-                    place.needs = needs;
-                    place.isQuestItem = true;
-                    places.push_back(std::move(place));
-                }
-            }
-        }
-    }
-    return places;
-}
-
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -545,7 +474,6 @@ int main(int argc, char** argv) {
     int abstractMapLayer = -2;
     // Rebuilt only when the map or the quest data changes; walking through a
     // raid must not re-scan 515 tasks every frame.
-    std::vector<ui::QuestPlace> questPlaces;
     std::string questPlacesFor;
     const data::TaskSet* questPlacesFrom = nullptr;
     std::uint64_t questPlacesRevision = ~0ULL;
@@ -553,6 +481,22 @@ int main(int argc, char** argv) {
     int activeQuestCount = 0;
     std::vector<ui::QuestListEntry> questEntries;
     ui::MapOverlays overlaysForMap;
+    overlaysForMap.icons = [&icons](ui::MarkerIcon icon) -> ImTextureID {
+        const char* name = "";
+        switch (icon) {
+            case ui::MarkerIcon::QuestObjective: name = "quest_objective"; break;
+            case ui::MarkerIcon::ExtractPmc: name = "extract_pmc"; break;
+            case ui::MarkerIcon::ExtractScav: name = "extract_scav"; break;
+            case ui::MarkerIcon::ExtractShared: name = "extract_shared"; break;
+            case ui::MarkerIcon::Transit: name = "extract_transit"; break;
+            case ui::MarkerIcon::SpawnPmc: name = "spawn_pmc"; break;
+            case ui::MarkerIcon::SpawnBoss: name = "spawn_boss"; break;
+        }
+        return reinterpret_cast<ImTextureID>(icons.get(name));
+    };
+    overlaysForMap.glyphs = [&icons](data::ObjectiveKind kind) -> ImTextureID {
+        return reinterpret_cast<ImTextureID>(icons.get(ui::questGlyphName(kind)));
+    };
     const void* overlaysFeaturesFrom = nullptr;
     std::string lastRaidMode;
 
@@ -906,50 +850,8 @@ int main(int argc, char** argv) {
                 if (overlaysFeaturesFrom != features.get() ||
                     questPlacesFor != variant->key) {
                     overlaysFeaturesFrom = features.get();
-                    overlaysForMap.extracts.clear();
-                    overlaysForMap.spawns.clear();
-                    overlaysForMap.transits.clear();
-                    for (const auto id : mapIds.idsFor(snapshot->mapNormalized)) {
-                        const auto it = features->find(id);
-                        if (it == features->end()) {
-                            continue;
-                        }
-                        for (const auto& extract : it->second.extracts) {
-                            ui::MapPoint point;
-                            point.world = extract.position;
-                            point.label = extract.name;
-                            point.top = extract.top;
-                            point.bottom = extract.bottom;
-                            point.icon =
-                                extract.faction == data::ExtractFaction::Pmc
-                                    ? ui::MarkerIcon::ExtractPmc
-                                : extract.faction == data::ExtractFaction::Scav
-                                    ? ui::MarkerIcon::ExtractScav
-                                    : ui::MarkerIcon::ExtractShared;
-                            overlaysForMap.extracts.push_back(std::move(point));
-                        }
-                        for (const auto* spawn : data::notableSpawns(it->second)) {
-                            ui::MapPoint point;
-                            point.world = spawn->position;
-                            point.label = spawn->boss ? ui::tr(ui::Str::BossSpawn) : ui::tr(ui::Str::PmcSpawn);
-                            point.icon = spawn->boss ? ui::MarkerIcon::SpawnBoss
-                                                     : ui::MarkerIcon::SpawnPmc;
-                            overlaysForMap.spawns.push_back(std::move(point));
-                        }
-                        for (const auto& transit : it->second.transits) {
-                            ui::MapPoint point;
-                            point.world = transit.position;
-                            const auto target = mapIds.drawnAs(transit.targetMapId);
-                            point.label =
-                                transit.description.empty()
-                                    ? ui::trf(ui::Str::TransitTo,
-                                              target ? ui::mapDisplayName(*target).c_str()
-                                                     : "?")
-                                    : transit.description;
-                            point.icon = ui::MarkerIcon::Transit;
-                            overlaysForMap.transits.push_back(std::move(point));
-                        }
-                    }
+                    ui::buildMapPoints(*features, mapIds, snapshot->mapNormalized,
+                                       overlaysForMap);
                     forceRedraw = true;
                 }
                 const std::uint64_t revision = progress.revision();
@@ -966,40 +868,12 @@ int main(int argc, char** argv) {
                     // With no known progress, filtering would show nothing and
                     // look broken. Show everything and say why instead.
                     questPlacesFiltered = activeQuestCount > 0;
-                    questPlaces = ui::mergeNearbyQuestPlaces(buildQuestPlaces(
+                    overlaysForMap.quests = ui::mergeNearbyQuestPlaces(ui::buildQuestPlaces(
                         *questData, mapIds, snapshot->mapNormalized,
                         questPlacesFiltered ? &effective : nullptr));
-
-                    // The list covers every quest with a place on this map,
-                    // whatever its state, so it can be corrected from here.
-                    questEntries.clear();
-                    const auto ids = mapIds.idsFor(snapshot->mapNormalized);
-                    const auto recorded = progress.snapshot();
-                    for (const auto& task : questData->tasks) {
-                        int here = 0;
-                        for (const auto& objective : task.objectives) {
-                            for (const auto& zone : objective.zones) {
-                                here += std::find(ids.begin(), ids.end(), zone.mapId) !=
-                                        ids.end();
-                            }
-                            for (const auto& location : objective.questItemLocations) {
-                                here += std::find(ids.begin(), ids.end(),
-                                                  location.mapId) != ids.end();
-                            }
-                        }
-                        if (here == 0) {
-                            continue;
-                        }
-                        ui::QuestListEntry entry;
-                        entry.id = task.id;
-                        entry.name = task.displayName();
-                        entry.objectivesHere = here;
-                        entry.state = effective.stateOf(task.id);
-                        entry.inferred = effective.inferredCompleted.count(task.id) != 0;
-                        const auto* record = recorded->find(task.id);
-                        entry.manual = record != nullptr && record->manual;
-                        questEntries.push_back(std::move(entry));
-                    }
+                    questEntries = ui::buildQuestList(*questData, mapIds,
+                                                      snapshot->mapNormalized, effective,
+                                                      *progress.snapshot());
                     forceRedraw = true;
                 }
 
@@ -1011,27 +885,7 @@ int main(int argc, char** argv) {
                         return {reinterpret_cast<ImTextureID>(tile.texture),
                                 tile.loading};
                     },
-                    [&] {
-                        overlaysForMap.quests = questPlaces;
-                        overlaysForMap.icons = [&icons](ui::MarkerIcon icon) -> ImTextureID {
-                            const char* name = "";
-                            switch (icon) {
-                                case ui::MarkerIcon::QuestObjective: name = "quest_objective"; break;
-                                case ui::MarkerIcon::ExtractPmc: name = "extract_pmc"; break;
-                                case ui::MarkerIcon::ExtractScav: name = "extract_scav"; break;
-                                case ui::MarkerIcon::ExtractShared: name = "extract_shared"; break;
-                                case ui::MarkerIcon::Transit: name = "extract_transit"; break;
-                                case ui::MarkerIcon::SpawnPmc: name = "spawn_pmc"; break;
-                                case ui::MarkerIcon::SpawnBoss: name = "spawn_boss"; break;
-                            }
-                            return reinterpret_cast<ImTextureID>(icons.get(name));
-                        };
-                        overlaysForMap.glyphs = [&icons](data::ObjectiveKind kind) -> ImTextureID {
-                            return reinterpret_cast<ImTextureID>(
-                                icons.get(ui::questGlyphName(kind)));
-                        };
-                        return std::cref(overlaysForMap);
-                    }(),
+                    overlaysForMap,
                     [&abstractMaps, variant](const geo::Vec2& imageMin,
                                              const geo::Vec2& imageMax, int w,
                                              int h) -> ui::AbstractMapImage {

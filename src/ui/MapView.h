@@ -114,8 +114,6 @@ struct MapPoint {
     geo::Vec3 world;
     MarkerIcon icon = MarkerIcon::ExtractShared;
     std::string label;
-    std::optional<double> top;
-    std::optional<double> bottom;
 };
 
 /// Everything drawn over the map besides the player.

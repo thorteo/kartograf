@@ -46,6 +46,11 @@ int chooseZoom(const geo::MapVariant& map, double scale);
 
 /// Every tile touching the viewport at the given zoom, with screen rectangles.
 ///
+/// Only tiles that exist: the pyramid is 2^zoom tiles square at every zoom,
+/// on every map and floor (probed against the CDN on 2026-09-22 -- the corner
+/// tile answers 200, the one past it 404). Where a fitted map leaves margins,
+/// the screen reaches past the pyramid; those positions are not tiles.
+///
 /// Tiles are emitted in row-major order so drawing them in sequence produces a
 /// predictable overdraw pattern.
 std::vector<VisibleTile> visibleTiles(const geo::MapVariant& map,

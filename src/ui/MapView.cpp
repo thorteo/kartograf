@@ -493,10 +493,8 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                                ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), tileTint);
                 ++result.tilesDrawn;
             }
-            // Keep asking for frames while a render is in flight, or the new
-            // image would not appear until something else moved.
-            if (image.rendering || image.texture == 0) {
-                ++result.tilesRequested;
+            if (image.rendering) {
+                ++result.piecesLoading;
             }
             drewAbstract = true;
         }
@@ -547,13 +545,13 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                 origin.x + static_cast<float>(tile.bottomRight.x),
                 origin.y + static_cast<float>(tile.bottomRight.y));
 
-            const ImTextureID texture =
-                tiles ? tiles(layer, tile.zoom, tile.x, tile.y) : 0;
-            if (texture != 0) {
-                draw->AddImage(texture, topLeft, bottomRight, ImVec2(0.0f, 0.0f),
+            const TileImage image =
+                tiles ? tiles(layer, tile.zoom, tile.x, tile.y) : TileImage{};
+            if (image.texture != 0) {
+                draw->AddImage(image.texture, topLeft, bottomRight, ImVec2(0.0f, 0.0f),
                                ImVec2(1.0f, 1.0f), tileTint);
                 ++result.tilesDrawn;
-            } else if (layer == -1) {
+            } else if (image.loading && layer == -1) {
                 // A placeholder rather than a hole: an empty rectangle reads as
                 // "loading", while nothing at all reads as "broken". Only for
                 // ground -- a missing upper-floor tile usually means that floor
@@ -561,7 +559,9 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                 draw->AddRectFilled(
                     topLeft, bottomRight,
                     rgba(0.09f, 0.10f, 0.10f, 0.55f * state.opacity));
-                ++result.tilesRequested;
+            }
+            if (image.loading) {
+                ++result.piecesLoading;
             }
         }
     }

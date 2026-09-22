@@ -3,6 +3,7 @@
 #include <windows.h>
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <filesystem>
 #include <functional>
@@ -37,7 +38,11 @@ public:
         /// this, not by what it asked for, or the map would jump.
         map::SvgRect region;
         bool haveDocument = false;
+        /// A render, or the document it needs, is on its way.
         bool rendering = false;
+        /// The drawing for this map could not be downloaded or parsed. Retried
+        /// at most once a minute, and only while the map is being asked for.
+        bool failed = false;
     };
 
     ~SvgMapStore();
@@ -91,6 +96,12 @@ private:
     std::string svgUrl_;
     std::vector<std::string> layerIds_;
     std::uint64_t generation_ = 0;
+
+    /// The generation whose document could not be had, and when that was
+    /// found out. Without it a missing drawing is retried in a tight loop:
+    /// the wait below wakes whenever the wanted map is not the loaded one.
+    std::uint64_t failedGeneration_ = ~std::uint64_t{0};
+    std::chrono::steady_clock::time_point failedAt_;
 
     /// The worker keeps its own copy of what it is drawing, so the render
     /// thread can change the request without tearing a render in progress.

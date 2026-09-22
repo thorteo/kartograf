@@ -74,9 +74,16 @@ public:
     void setMap(const std::string& normalizedName, const std::string& groundTemplate,
                 const std::vector<std::string>& layerTemplates);
 
-    /// The texture for a tile, or nullptr if it is not ready yet. Requests it
-    /// on first miss. Render thread only.
-    ID3D11ShaderResourceView* acquire(const Key& key);
+    struct Lookup {
+        ID3D11ShaderResourceView* texture = nullptr;
+        /// Requested and still coming. False for a tile that failed, or that
+        /// the floor does not publish: nothing should wait for those.
+        bool loading = false;
+    };
+
+    /// The texture for a tile, if it is ready. Requests it on first miss.
+    /// Render thread only.
+    Lookup acquire(const Key& key);
 
     /// Uploads decoded tiles to the GPU. Render thread, once per frame.
     /// Returns how many textures were created, so the caller can tell whether

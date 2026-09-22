@@ -163,14 +163,14 @@ fs::path TileStore::cachePathFor(const std::string& map, const Key& key) const {
            std::to_string(key.x) / (std::to_string(key.y) + ".png");
 }
 
-ID3D11ShaderResourceView* TileStore::acquire(const Key& key) {
+TileStore::Lookup TileStore::acquire(const Key& key) {
     const std::lock_guard<std::mutex> lock(mutex_);
     if (tileTemplate_.empty()) {
-        return nullptr;
+        return {};
     }
 
     if (templateFor(key.layer) == nullptr) {
-        return nullptr;  // This floor publishes no tiles.
+        return {};  // This floor publishes no tiles.
     }
 
     auto it = entries_.find(key);
@@ -178,11 +178,17 @@ ID3D11ShaderResourceView* TileStore::acquire(const Key& key) {
         entries_[key] = Entry{State::Queued, {}, frame_};
         pending_.push_back({key, mapGeneration_});
         work_.notify_one();
-        return nullptr;
+        return {nullptr, true};
     }
 
     it->second.lastUsedFrame = frame_;
-    return it->second.state == State::Ready ? it->second.texture.get() : nullptr;
+    switch (it->second.state) {
+        case State::Ready: return {it->second.texture.get(), false};
+        case State::Queued:
+        case State::Loading: return {nullptr, true};
+        case State::Failed: break;
+    }
+    return {};
 }
 
 bool TileStore::fetchAndDecode(const std::string& map, const Key& key, Decoded& out) {

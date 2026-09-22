@@ -568,9 +568,10 @@ int main(int argc, char** argv) {
     unsigned long long lastDisplaySecond = 0;
     // Set whenever something outside the snapshot changes what is on screen.
     bool forceRedraw = true;
-    // Tiles arrive asynchronously, so a frame with missing tiles has to be
-    // followed by more frames until they land.
-    bool pendingTiles = false;
+    // Part of the map is still on its way. Not a reason to draw -- each piece
+    // arrives through a store's pump, which asks for the frame itself -- only
+    // to poll the pumps sooner, so tiles appear as they land.
+    bool mapLoading = false;
 
     const ULONGLONG startedAt = GetTickCount64();
     if (standalone) {
@@ -794,16 +795,17 @@ int main(int argc, char** argv) {
 
         const bool needsFrame = interactive || stateChanged || secondTicked ||
                                 forceRedraw || uploaded > 0 || abstractUploaded ||
-                                iconsUploaded || pendingTiles || pointerMoved;
+                                iconsUploaded || pointerMoved;
 
         if (!needsFrame) {
             // Wake early if a message arrives, so input stays responsive. The
             // game's pointer sends us no messages, so poll it a little faster
-            // while it is free over the map.
+            // while it is free over the map, and faster still while map
+            // pieces are landing.
             MsgWaitForMultipleObjects(0, nullptr, FALSE,
-                                      settingsWindow.visible() ? 16
-                                      : pointer            ? 33
-                                                           : 100,
+                                      settingsWindow.visible() || mapLoading ? 16
+                                      : pointer                          ? 33
+                                                                         : 100,
                                       QS_ALLINPUT);
             continue;
         }
@@ -820,6 +822,7 @@ int main(int argc, char** argv) {
         overlay.beginFrame(0.0f, 0.0f, 0.0f, 0.0f);
         imgui.beginFrame(overlay.width(), overlay.height());
 
+        mapLoading = false;
         // The map goes underneath, so the HUD and status stay legible over it.
         if (mapVisible && !maps.empty()) {
             const geo::MapVariant* variant = nullptr;
@@ -970,9 +973,10 @@ int main(int argc, char** argv) {
                 const auto result = ui::drawMapView(
                     mapState, *variant, *snapshot,
                     static_cast<std::int64_t>(nowTicks), interactive,
-                    [&tiles](int layer, int zoom, int x, int y) -> ImTextureID {
-                        return reinterpret_cast<ImTextureID>(
-                            tiles.acquire({layer, zoom, x, y}));
+                    [&tiles](int layer, int zoom, int x, int y) -> ui::TileImage {
+                        const auto tile = tiles.acquire({layer, zoom, x, y});
+                        return {reinterpret_cast<ImTextureID>(tile.texture),
+                                tile.loading};
                     },
                     [&] {
                         overlaysForMap.quests = questPlaces;
@@ -1009,7 +1013,10 @@ int main(int argc, char** argv) {
                             wanted ? *wanted : map::SvgRect{}, w, h);
 
                         out.available = true;
-                        out.rendering = view.rendering || !view.haveDocument;
+                        // Waiting for the document counts as rendering, unless
+                        // it is known not to be coming.
+                        out.rendering =
+                            view.rendering || (!view.haveDocument && !view.failed);
                         if (view.texture != nullptr) {
                             if (const auto rect = map::svgRectToImage(*variant, size,
                                                                      view.region)) {
@@ -1021,14 +1028,11 @@ int main(int argc, char** argv) {
                         }
                         return out;
                     });
-                // Keep drawing while tiles are still arriving, then stop.
-                pendingTiles = result.tilesRequested > 0;
+                mapLoading = result.piecesLoading > 0;
                 if (result.wantsRedraw) {
                     forceRedraw = true;
                 }
             }
-        } else {
-            pendingTiles = false;
         }
 
         if (mapVisible && interactive && !questEntries.empty()) {

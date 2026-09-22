@@ -41,6 +41,11 @@ void writeFile(const fs::path& path, const std::string& text) {
     fs::rename(temporary, path, ec);
 }
 
+/// How long a map whose drawing could not be had is left alone before trying
+/// again. Long enough not to hammer the CDN from an offline machine, short
+/// enough that a network that comes back is noticed within the raid.
+constexpr auto kRetryAfter = std::chrono::seconds(60);
+
 bool sameLayers(const std::vector<std::string>& a,
                 const std::vector<std::string>& b) {
     return a == b;
@@ -127,7 +132,7 @@ SvgMapStore::View SvgMapStore::acquire(const map::SvgRect& wanted, int width,
     {
         const std::lock_guard<std::mutex> lock(mutex_);
         view.haveDocument = documentSize_.width > 0.0;
-        view.rendering = rendering_;
+        view.failed = failedGeneration_ == generation_;
         view.texture = texture_.get();
         view.region = textureRegion_;
 
@@ -149,6 +154,9 @@ SvgMapStore::View SvgMapStore::acquire(const map::SvgRect& wanted, int width,
                 needWake = true;
             }
         }
+        // Not while the drawing is known to be unobtainable: the request just
+        // queued is only a retry probe, and nothing should wait on it.
+        view.rendering = !view.failed && (rendering_ || havePending_);
     }
     if (needWake) {
         wake_.notify_one();
@@ -160,11 +168,13 @@ bool SvgMapStore::ensureDocument() {
     std::string key;
     std::string url;
     std::vector<std::string> layers;
+    std::uint64_t generation = 0;
     {
         const std::lock_guard<std::mutex> lock(mutex_);
         key = mapKey_;
         url = svgUrl_;
         layers = layerIds_;
+        generation = generation_;
         if (key.empty() || url.empty()) {
             return false;
         }
@@ -172,7 +182,17 @@ bool SvgMapStore::ensureDocument() {
             document_.valid()) {
             return true;
         }
+        if (failedGeneration_ == generation &&
+            std::chrono::steady_clock::now() - failedAt_ < kRetryAfter) {
+            return false;
+        }
     }
+    const auto giveUp = [&] {
+        const std::lock_guard<std::mutex> lock(mutex_);
+        failedGeneration_ = generation;
+        failedAt_ = std::chrono::steady_clock::now();
+        return false;
+    };
 
     const fs::path cached = cachePathFor(key);
     std::string svg = readFile(cached);
@@ -189,7 +209,7 @@ bool SvgMapStore::ensureDocument() {
         }
     }
     if (svg.empty()) {
-        return false;
+        return giveUp();
     }
 
     map::SvgDocument document;
@@ -198,7 +218,7 @@ bool SvgMapStore::ensureDocument() {
         std::error_code ec;
         fs::remove(cached, ec);
         say(ui::trf(ui::Str::StatusDrawingDidNotParse, ui::mapDisplayName(key).c_str()));
-        return false;
+        return giveUp();
     }
     const map::SvgSize size = document.size();
 
@@ -207,6 +227,7 @@ bool SvgMapStore::ensureDocument() {
     documentSize_ = size;
     loadedKey_ = key;
     loadedLayers_ = layers;
+    failedGeneration_ = ~std::uint64_t{0};
     return true;
 }
 
@@ -217,8 +238,12 @@ void SvgMapStore::run() {
         {
             std::unique_lock<std::mutex> lock(mutex_);
             wake_.wait(lock, [this] {
+                // A map with no drawing, or one that just failed, is not work:
+                // waking for it would spin. A request from the render thread
+                // still wakes the worker, which retries once kRetryAfter is up.
                 return stopping_.load(std::memory_order_relaxed) || havePending_ ||
-                       (!mapKey_.empty() && mapKey_ != loadedKey_);
+                       (!mapKey_.empty() && !svgUrl_.empty() &&
+                        mapKey_ != loadedKey_ && failedGeneration_ != generation_);
             });
             if (stopping_.load(std::memory_order_relaxed)) {
                 return;

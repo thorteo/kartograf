@@ -61,10 +61,19 @@ std::vector<VisibleTile> visibleTiles(const geo::MapVariant& map,
         viewport, geo::Vec2{static_cast<double>(viewport.screenWidth),
                             static_cast<double>(viewport.screenHeight)});
 
-    const int firstX = static_cast<int>(std::floor(topLeftBase.x / span));
-    const int lastX = static_cast<int>(std::floor(bottomRightBase.x / span));
-    const int firstY = static_cast<int>(std::floor(topLeftBase.y / span));
-    const int lastY = static_cast<int>(std::floor(bottomRightBase.y / span));
+    // The pyramid is 2^zoom tiles square. Anything past it does not exist:
+    // the CDN answers 404, and asking would leave a tile that never arrives.
+    // Clamped before looping, so a viewport far off the map costs nothing.
+    // Clamped to one past either end first, so an empty range stays empty.
+    const double tilesPerSide = std::pow(2.0, zoom);
+    const auto index = [&](double base) {
+        return static_cast<int>(std::clamp(std::floor(base / span), -1.0, tilesPerSide));
+    };
+    const int lastIndex = static_cast<int>(tilesPerSide) - 1;
+    const int firstX = std::max(0, index(topLeftBase.x));
+    const int lastX = std::min(lastIndex, index(bottomRightBase.x));
+    const int firstY = std::max(0, index(topLeftBase.y));
+    const int lastY = std::min(lastIndex, index(bottomRightBase.y));
 
     // A hard ceiling: a bad scale should degrade to drawing less, never to
     // queueing tens of thousands of tile requests.
@@ -72,9 +81,6 @@ std::vector<VisibleTile> visibleTiles(const geo::MapVariant& map,
 
     for (int y = firstY; y <= lastY; ++y) {
         for (int x = firstX; x <= lastX; ++x) {
-            if (x < 0 || y < 0) {
-                continue;  // Outside the pyramid.
-            }
             if (static_cast<int>(tiles.size()) >= kMaxTiles) {
                 return tiles;
             }

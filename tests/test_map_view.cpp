@@ -44,10 +44,10 @@ struct RecordingTiles {
     std::set<int> layers;
 
     ui::TileTextureProvider provider() {
-        return [this](int layer, int zoom, int x, int y) -> ImTextureID {
+        return [this](int layer, int zoom, int x, int y) -> ui::TileImage {
             requested.insert({layer, zoom, x, y});
             layers.insert(layer);
-            return static_cast<ImTextureID>(1);
+            return {static_cast<ImTextureID>(1), false};
         };
     }
 };
@@ -423,4 +423,26 @@ TEST_CASE("one quest's objectives at one spot become one marker") {
                   spawnB,
               })
               .size() == 6);
+}
+
+TEST_CASE("only tiles still on their way count as loading") {
+    test::HeadlessImGui imgui(1600.0f, 900.0f);
+    const auto& map = customsVariant();
+    const auto snapshot = snapshotAt(236.21, 0.0, 165.98);
+
+    // A tile that failed, or never existed, is not waited for: counting it
+    // kept the overlay presenting every frame for as long as the map was open.
+    for (const bool loading : {false, true}) {
+        CAPTURE(loading);
+        ui::MapViewState state;
+        state.preferAbstract = false;
+        ui::MapViewResult result;
+        imgui.frame([&] {
+            result = ui::drawMapView(
+                state, map, snapshot, 1000, false,
+                [loading](int, int, int, int) { return ui::TileImage{0, loading}; });
+        });
+        CHECK((result.piecesLoading > 0) == loading);
+        CHECK(result.tilesDrawn == 0);
+    }
 }

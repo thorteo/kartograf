@@ -69,7 +69,10 @@ TEST_CASE("zoom level tracks scale and stays within what the map publishes") {
 
 TEST_CASE("visible tiles cover the screen without gaps") {
     const auto& map = customs();
-    const Viewport view = viewport(8.0);
+    // Inside the pyramid, which spans 0..256 base units: past it there are no
+    // tiles to cover anything with.
+    Viewport view = viewport(8.0);
+    view.centerBase = geo::Vec2{128.0, 128.0};
     const int zoom = map::chooseZoom(map, view.scale);
 
     const auto tiles = map::visibleTiles(map, view, zoom);
@@ -105,11 +108,42 @@ TEST_CASE("tiles outside the pyramid are not requested") {
     const auto& map = customs();
     Viewport view = viewport(4.0);
     view.centerBase = geo::Vec2{-10000.0, -10000.0};
+    CHECK(map::visibleTiles(map, view, map.minZoom).empty());
 
-    for (const auto& tile : map::visibleTiles(map, view, map.minZoom)) {
-        CHECK(tile.x >= 0);
-        CHECK(tile.y >= 0);
+    // Past the far edge too. The CDN answers 404 there, and a tile that can
+    // never arrive once kept the map redrawing every frame.
+    view.centerBase = geo::Vec2{10000.0, 10000.0};
+    CHECK(map::visibleTiles(map, view, map.minZoom).empty());
+}
+
+TEST_CASE("a fitted map asks only for tiles that exist") {
+    // Fitted whole, a map leaves margins the screen reaches past the pyramid
+    // on: before the fix, 6 of Customs' 54 tiles at 2560x1440, and 11 of
+    // Icebreaker's 15.
+    static const auto maps =
+        geo::parseMapsJson(test::readFile(test::dataPath("maps.json")));
+    int checked = 0;
+    for (const auto& definition : maps) {
+        const auto* map = definition.interactiveVariant();
+        if (map == nullptr || map->tilePath.empty() || !map->hasBounds) {
+            continue;
+        }
+        CAPTURE(map->key);
+        const Viewport view =
+            map::clampToBounds(*map, map::fitToBounds(*map, 2560, 1440, 1.0));
+        const int zoom = map::chooseZoom(*map, view.scale);
+        const int side = 1 << zoom;
+        const auto tiles = map::visibleTiles(*map, view, zoom);
+        CHECK_FALSE(tiles.empty());
+        for (const auto& tile : tiles) {
+            CHECK(tile.x >= 0);
+            CHECK(tile.y >= 0);
+            CHECK(tile.x < side);
+            CHECK(tile.y < side);
+        }
+        ++checked;
     }
+    CHECK(checked >= 10);
 }
 
 TEST_CASE("a degenerate viewport asks for nothing") {
@@ -122,9 +156,13 @@ TEST_CASE("a degenerate viewport asks for nothing") {
     view = viewport(0.0);
     CHECK(map::visibleTiles(map, view, 4).empty());
 
-    // An absurd scale must degrade to fewer tiles, not to a flood of requests.
-    view = viewport(1e6);
-    CHECK(map::visibleTiles(map, view, 6).size() <= 512);
+    // A zoom far too fine for the scale must degrade to fewer tiles, not to a
+    // flood of requests: here the whole 64x64 pyramid is on screen.
+    view = viewport(0.01);
+    view.centerBase = geo::Vec2{128.0, 128.0};
+    const auto flood = map::visibleTiles(map, view, 6);
+    CHECK_FALSE(flood.empty());
+    CHECK(flood.size() <= 512);
 }
 
 TEST_CASE("fitting to bounds puts the whole map on screen") {

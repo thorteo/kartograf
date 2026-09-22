@@ -17,14 +17,23 @@
 
 namespace tarkov::ui {
 
-/// Supplies the texture for a tile, or 0 when it is not ready yet.
+/// A tile's texture, and whether one is still on its way.
+struct TileImage {
+    ImTextureID texture = 0;
+    /// Asked for and not here yet. A tile that failed to download, or that
+    /// the floor does not publish, is neither drawn nor waited for: counting
+    /// it as pending once kept the map redrawing every frame for good.
+    bool loading = false;
+};
+
+/// Supplies a tile.
 ///
 /// `layer` is -1 for ground level and 0 and up for MapVariant::layers.
 ///
 /// A callback rather than a texture cache type, so this file stays free of
 /// Direct3D and the view can be built and reasoned about on Linux.
 using TileTextureProvider =
-    std::function<ImTextureID(int layer, int zoom, int x, int y)>;
+    std::function<TileImage(int layer, int zoom, int x, int y)>;
 
 /// One rasterised piece of the abstract map.
 struct AbstractMapImage {
@@ -35,6 +44,8 @@ struct AbstractMapImage {
     geo::Vec2 imageMin;
     geo::Vec2 imageMax;
     bool available = false;  ///< A drawing exists for this map at all.
+    /// A render, or the document it needs, is on its way. False once the
+    /// drawing is known to be unobtainable, so nothing waits on it.
     bool rendering = false;
 };
 
@@ -164,7 +175,10 @@ struct MapViewState {
 
 struct MapViewResult {
     bool wantsRedraw = false;  ///< The user moved something; draw another frame.
-    int tilesRequested = 0;
+    /// Pieces of the picture still on their way: tiles, or the abstract
+    /// render. Not a reason to draw -- each arrives through its store's pump,
+    /// which asks for the frame -- only to poll the pumps sooner.
+    int piecesLoading = 0;
     int tilesDrawn = 0;
 };
 

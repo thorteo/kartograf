@@ -141,20 +141,19 @@ TEST_CASE("objective zones carry real world coordinates") {
     CHECK(zoneCount > 5);
 }
 
-TEST_CASE("a zone's elevation band places it on one floor, not all of them") {
-    TaskZone banded;
-    banded.top = 28.5;
-    banded.bottom = 22.5;
-    CHECK(banded.coversElevation(25.0));
-    CHECK(banded.coversElevation(22.5));
-    CHECK(banded.coversElevation(28.5));
-    CHECK_FALSE(banded.coversElevation(10.0));
-    CHECK_FALSE(banded.coversElevation(40.0));
-
-    // A zone with no band applies everywhere rather than nowhere.
-    TaskZone unbanded;
-    CHECK(unbanded.coversElevation(-500.0));
-    CHECK(unbanded.coversElevation(500.0));
+TEST_CASE("a zone keeps its trigger volume's vertical bounds") {
+    int banded = 0;
+    for (const auto& task : fixtureTasks().tasks) {
+        for (const auto& objective : task.objectives) {
+            for (const auto& zone : objective.zones) {
+                if (zone.top && zone.bottom) {
+                    CHECK(*zone.top >= *zone.bottom);
+                    ++banded;
+                }
+            }
+        }
+    }
+    CHECK(banded == 34);  // every banded zone in the fixture
 }
 
 TEST_CASE("quest item spawn points are all kept") {

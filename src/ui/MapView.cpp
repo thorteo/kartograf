@@ -321,17 +321,8 @@ std::vector<QuestPlace> mergeNearbyQuestPlaces(std::vector<QuestPlace> places) {
     return merged;
 }
 
-bool QuestPlace::onSameLevelAs(double elevation) const {
-    if (!top && !bottom) {
-        return true;
-    }
-    if (bottom && elevation < *bottom) {
-        return false;
-    }
-    if (top && elevation > *top) {
-        return false;
-    }
-    return true;
+int questPlaceFloor(const geo::MapVariant& map, const QuestPlace& place) {
+    return map::layerIndexOrGround(map, place.world);
 }
 
 std::string formatFixAge(double seconds) {
@@ -569,7 +560,11 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
     // Points of interest, drawn bottom to top by importance: spawns, extracts,
     // transits, quests, then the player, so the player is never hidden.
     {
-        const double playerElevation = snapshot.fix.valid ? snapshot.fix.world.y : 0.0;
+        // Faded when not on the floor shown -- the player's own, unless one
+        // was picked by hand. With no position and the floor left to follow
+        // it, there is nothing to compare with, so nothing is faded.
+        const bool fadeByFloor =
+            state.dimOtherFloors && (snapshot.fix.valid || !state.layerAuto);
         const ImVec2 mouse = ImGui::GetIO().MousePos;
 
         struct Hover {
@@ -647,8 +642,8 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                 if (!toScreen(place.world, at)) {
                     continue;
                 }
-                const bool level = place.onSameLevelAs(playerElevation) ||
-                                   !state.dimOtherFloors || !snapshot.fix.valid;
+                const bool level =
+                    !fadeByFloor || questPlaceFloor(map, place) == state.activeLayer;
                 // Optional objectives are drawn smaller rather than in a
                 // different colour, so the icon keeps its meaning.
                 const float size = place.optional ? kOptionalQuestSize : kQuestSize;

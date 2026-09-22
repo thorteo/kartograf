@@ -446,3 +446,25 @@ TEST_CASE("only tiles still on their way count as loading") {
         CHECK(result.tilesDrawn == 0);
     }
 }
+
+TEST_CASE("a quest place's floor comes from the map's floors, not its trigger height") {
+    const auto& map = customsVariant();
+    ui::QuestPlace dorms;
+    dorms.world = {236.21, 4.43, 165.98};  // Dorms, second floor
+    CHECK(ui::questPlaceFloor(map, dorms) == 0);
+
+    // Outdoors, from a real raid's positions: the player's height ranged 0.27
+    // to 2.43 m, and quest zones' trigger bands are a couple of metres tall,
+    // so comparing the two faded markers on and off with every screenshot.
+    // Outdoors is ground level whatever the height.
+    const geo::Vec3 raid[] = {{-130.32, 2.07, 12.47},   {-132.89, 0.37, 31.71},
+                              {-138.49, 2.22, 6.36},    {-210.52, 1.34, -28.83},
+                              {-239.36, 0.76, -47.15},  {-286.95, 2.41, -118.13}};
+    for (const auto& position : raid) {
+        CAPTURE(position.y);
+        ui::QuestPlace outdoors;
+        outdoors.world = position;
+        CHECK(ui::questPlaceFloor(map, outdoors) == -1);
+        CHECK(map::layerIndexOrGround(map, position) == -1);
+    }
+}

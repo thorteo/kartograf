@@ -67,13 +67,17 @@ struct QuestPlace {
     /// True for a quest item spawn, which is drawn differently: the game picks
     /// one of several per raid, so these are possibilities, not destinations.
     bool isQuestItem = false;
-    /// The zone's elevation band, when it declares one.
-    std::optional<double> top;
-    std::optional<double> bottom;
-
-    /// True when the band contains this elevation, or there is no band.
-    bool onSameLevelAs(double elevation) const;
 };
+
+/// The floor a quest place is on: -1 for ground level (outdoors included), or
+/// an index into MapVariant::layers -- by the same building regions and
+/// heights the map uses to pick the floor it shows.
+///
+/// Not by the zone's own top and bottom: those are the height of its trigger
+/// volume, a median of 2.2 m across the 608 zones that have them, and walking
+/// outdoors moved the player in and out of them with every screenshot, so
+/// markers blinked between faded and full.
+int questPlaceFloor(const geo::MapVariant& map, const QuestPlace& place);
 
 /// Folds one quest's objectives that share a spot into a single marker.
 ///
@@ -142,8 +146,8 @@ struct MapViewState {
     /// Off by default: even filtered to player and boss spawns these are
     /// dozens of markers, useful at the start of a raid and noise after.
     bool showSpawns = false;
-    /// Fade markers that are not on the player's floor rather than hiding them:
-    /// knowing an objective is directly above you is useful.
+    /// Fade quest markers that are not on the floor shown rather than hiding
+    /// them: knowing an objective is directly above you is useful.
     bool dimOtherFloors = true;
     /// How solid the map is drawn, 0.15 to 1.0.
     ///

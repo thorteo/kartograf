@@ -163,19 +163,6 @@ void readQuestItemLocations(const json& objective,
 
 }  // namespace
 
-bool TaskZone::coversElevation(double elevation) const {
-    if (!top && !bottom) {
-        return true;
-    }
-    if (bottom && elevation < *bottom) {
-        return false;
-    }
-    if (top && elevation > *top) {
-        return false;
-    }
-    return true;
-}
-
 std::string prettifyNormalizedName(std::string_view normalized) {
     std::string out;
     out.reserve(normalized.size());

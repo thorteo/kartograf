@@ -81,8 +81,14 @@ elevation band:
   "outline": [ … ], "top": 28.52, "bottom": 22.52, "terrainElevation": 25.52 }
 ```
 
-`top`/`bottom` are what let a marker land on the floor it belongs to instead of on
-every floor of a building at once.
+`top`/`bottom` were first read here as what places a marker on its floor. **They are
+not floors**: they bound the zone's trigger volume. Across the 608 zones that carry
+them (task data of 2026-09-22), the band is a median 2.2 m tall, 75% at most 3 m,
+90% at most 7 m. Comparing the player's height with it faded markers on and off while
+walking outdoors on Customs: in a real raid the player's height moved between 0.27
+and 2.43 m over 37 screenshots, and most active zones' bands switched with it. Which
+floor a zone is on comes from the map's own layers (`maps.json` extents: a height
+range *and* a building region), the same test that picks the floor the map shows.
 
 `findQuestItem` objectives carry `possibleLocations` with several spawn points each;
 the game picks one per raid, so all of them have to be shown.

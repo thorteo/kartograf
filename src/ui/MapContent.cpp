@@ -97,10 +97,7 @@ std::vector<QuestPlace> buildQuestPlaces(const data::TaskSet& tasks,
             };
             for (const auto& zone : objective.zones) {
                 if (among(ids, zone.mapId)) {
-                    QuestPlace place = placeFor(zone.position);
-                    place.top = zone.top;
-                    place.bottom = zone.bottom;
-                    places.push_back(std::move(place));
+                    places.push_back(placeFor(zone.position));
                 }
             }
             for (const auto& location : objective.questItemLocations) {

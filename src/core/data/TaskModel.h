@@ -16,14 +16,10 @@ struct TaskZone {
     std::string mapId;    ///< BSG map id, as the API gives it.
     geo::Vec3 position;
 
-    /// Elevation band. Lets a marker be placed on the floor it belongs to
-    /// rather than on every floor of a building at once.
+    /// The zone's trigger volume, vertically. Not its floor: a couple of
+    /// metres tall; see research/tarkov-dev-rest-api.md.
     std::optional<double> top;
     std::optional<double> bottom;
-
-    /// True when `elevation` falls inside this zone's band, or when the zone
-    /// declares no band at all.
-    bool coversElevation(double elevation) const;
 };
 
 /// A place a quest item can spawn. The game picks one per raid, so all of them

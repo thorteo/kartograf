@@ -90,6 +90,13 @@
       }
     },
     {
+      "name": "linux-tsan",
+      "configurePreset": "linux-tsan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
       "name": "linux-asan",
       "configurePreset": "linux-asan",
       "output": {

@@ -513,6 +513,11 @@ int main(int argc, char** argv) {
     // arrives through a store's pump, which asks for the frame itself -- only
     // to poll the pumps sooner, so tiles appear as they land.
     bool mapLoading = false;
+    // When the next frame of an animation is due, if one is running. About 30
+    // a second: the pulse does not need the monitor's rate, and at it a burst
+    // of screenshots cost 7% of a core, measured live.
+    constexpr ULONGLONG kAnimationFrameMillis = 33;
+    std::optional<ULONGLONG> animationFrameAt;
 
     const ULONGLONG startedAt = GetTickCount64();
     if (standalone) {
@@ -774,20 +779,24 @@ int main(int argc, char** argv) {
             pointer.has_value() != lastPointer.has_value() ||
             (pointer && (pointer->x != lastPointer->x || pointer->y != lastPointer->y));
 
+        const bool animationDue = animationFrameAt && nowTicks >= *animationFrameAt;
         const bool needsFrame = interactive || stateChanged || secondTicked ||
                                 forceRedraw || uploaded > 0 || abstractUploaded ||
-                                iconsUploaded || pointerMoved;
+                                iconsUploaded || pointerMoved || animationDue;
 
         if (!needsFrame) {
             // Wake early if a message arrives, so input stays responsive. The
             // game's pointer sends us no messages, so poll it a little faster
             // while it is free over the map, and faster still while map
             // pieces are landing.
-            MsgWaitForMultipleObjects(0, nullptr, FALSE,
-                                      settingsWindow.wantsFrame() || mapLoading ? 16
-                                      : pointer                          ? 33
-                                                                         : 100,
-                                      QS_ALLINPUT);
+            DWORD timeout = settingsWindow.wantsFrame() || mapLoading ? 16
+                            : pointer                          ? 33
+                                                               : 100;
+            if (animationFrameAt) {
+                timeout = static_cast<DWORD>((std::min)(
+                    static_cast<ULONGLONG>(timeout), *animationFrameAt - nowTicks));
+            }
+            MsgWaitForMultipleObjects(0, nullptr, FALSE, timeout, QS_ALLINPUT);
             continue;
         }
         lastPointer = pointer;
@@ -804,6 +813,7 @@ int main(int argc, char** argv) {
         imgui.beginFrame(overlay.width(), overlay.height());
 
         mapLoading = false;
+        animationFrameAt.reset();
         // The map goes underneath, so the HUD and status stay legible over it.
         if (mapVisible && !maps.empty()) {
             const geo::MapVariant* variant = nullptr;
@@ -922,6 +932,9 @@ int main(int argc, char** argv) {
                 mapLoading = result.piecesLoading > 0;
                 if (result.wantsRedraw) {
                     forceRedraw = true;
+                }
+                if (result.animating) {
+                    animationFrameAt = nowTicks + kAnimationFrameMillis;
                 }
             }
         }

@@ -699,7 +699,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                 drawPlayerMarker(draw, at, heading, snapshot.fix.ageSeconds(nowMillis),
                                  pulse);
                 if (pulse >= 0.0f) {
-                    result.wantsRedraw = true;  // until the pulse has run out
+                    result.animating = true;  // until the pulse has run out
                 }
             }
         }

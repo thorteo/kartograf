@@ -177,6 +177,10 @@ struct MapViewState {
 
 struct MapViewResult {
     bool wantsRedraw = false;  ///< The user moved something; draw another frame.
+    /// Something is animating -- the player marker's pulse. Another frame is
+    /// due shortly, not at once: the pulse does not need the monitor's rate,
+    /// and at it a burst of screenshots cost 7% of a core (measured live).
+    bool animating = false;
     /// Pieces of the picture still on their way: tiles, or the abstract
     /// render. Not a reason to draw -- each arrives through its store's pump,
     /// which asks for the frame -- only to poll the pumps sooner.

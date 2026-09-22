@@ -293,17 +293,22 @@ TEST_CASE("a new fix pulses the marker for a few seconds, then drawing stops") {
 
     frameAt(1000, fix);
     CHECK(state.pulseFromMillis == 1000);
-    // Mid-pulse the view asks to be drawn again, so the ring can grow.
-    CHECK(frameAt(2500, fix).wantsRedraw);
+    // Mid-pulse the view says it is animating, so the ring can grow -- at the
+    // loop's animation rate, not as an immediate redraw at the monitor's.
+    const auto midPulse = frameAt(2500, fix);
+    CHECK(midPulse.animating);
+    CHECK_FALSE(midPulse.wantsRedraw);
     // Afterwards it does not: an idle map must let the render loop sleep.
-    CHECK_FALSE(frameAt(5000, fix).wantsRedraw);
+    const auto after = frameAt(5000, fix);
+    CHECK_FALSE(after.animating);
+    CHECK_FALSE(after.wantsRedraw);
 
     // The same fix again is not news.
     CHECK(state.pulseFromMillis == 1000);
     // A new one is.
     frameAt(9000, snapshotAt(236.21, 4.43, 165.98, /*receivedAt=*/9000));
     CHECK(state.pulseFromMillis == 9000);
-    CHECK(frameAt(9500, snapshotAt(236.21, 4.43, 165.98, 9000)).wantsRedraw);
+    CHECK(frameAt(9500, snapshotAt(236.21, 4.43, 165.98, 9000)).animating);
 }
 
 TEST_CASE("hovering a quest marker explains it without making the overlay interactive") {

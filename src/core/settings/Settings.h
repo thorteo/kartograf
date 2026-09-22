@@ -12,7 +12,8 @@ namespace tarkov::settings {
 ///
 /// Before this existed every option was a command-line flag and nothing
 /// survived a restart. Command-line flags still exist for development and
-/// override what is loaded here, but they are never written back.
+/// override what is loaded here, but they are never written back: see
+/// applyEdits.
 struct Settings {
     input::Hotkey mapKey = input::defaultToggleHotkey();
     input::Hotkey interactKey{input::kAlt, 'N'};
@@ -49,6 +50,14 @@ std::string serialize(const Settings& settings);
 /// each problem is reported rather than failing the whole load: a hand-edit
 /// with one typo must not reset every other preference.
 Settings parse(std::string_view json, std::vector<Issue>* issues = nullptr);
+
+/// Carries the fields edited between `before` and `after` over to `stored`.
+///
+/// What runs is the file's settings with command-line overrides on top; what
+/// is saved must be the file's settings with the player's edits on top. Saving
+/// what runs wrote a one-off `--lang en` or `--map-opacity` into the file for
+/// good. Returns true when anything was carried over.
+bool applyEdits(Settings& stored, const Settings& before, const Settings& after);
 
 /// Clamps and repairs values: opacity into range, unknown language to Russian,
 /// and hotkeys that are reserved or collide with each other back to defaults.

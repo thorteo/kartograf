@@ -3,6 +3,8 @@
 #include <cmath>
 #include <limits>
 
+#include <nlohmann/json.hpp>
+
 #include "core/settings/Settings.h"
 
 using namespace tarkov;
@@ -103,4 +105,50 @@ TEST_CASE("valid settings pass through sanitize untouched") {
     const Settings before = s;
     CHECK(settings::sanitize(s).empty());
     CHECK(s == before);
+}
+
+TEST_CASE("only the player's edits are saved, not command-line overrides") {
+    settings::Settings stored;           // what the file says
+    settings::Settings running = stored;  // with --lang en --map-opacity 0.3
+    running.language = "en";
+    running.mapOpacity = 0.3f;
+
+    // The player ticks one box in the settings window.
+    const settings::Settings before = running;
+    running.showSpawns = !running.showSpawns;
+
+    CHECK(settings::applyEdits(stored, before, running));
+    CHECK(stored.showSpawns == running.showSpawns);
+    CHECK(stored.language == "ru");
+    CHECK(stored.mapOpacity == doctest::Approx(0.80f));
+}
+
+TEST_CASE("every settings field is carried when edited") {
+    // Every field the file holds, changed through the file format itself, so
+    // a field added to serialize() but not to applyEdits() fails here.
+    const settings::Settings before;
+    auto json = nlohmann::json::parse(settings::serialize(before));
+    char letter = 'A';
+    for (auto& [key, value] : json.items()) {
+        if (key == "version") {
+            continue;
+        }
+        if (value.is_boolean()) {
+            value = !value.get<bool>();
+        } else if (value.is_number()) {
+            value = 0.5;
+        } else if (key == "language") {
+            value = "en";
+        } else {
+            value = std::string("Ctrl+") + letter++;  // a hotkey
+        }
+    }
+    std::vector<settings::Issue> issues;
+    const settings::Settings after = settings::parse(json.dump(), &issues);
+    REQUIRE(issues.empty());
+
+    settings::Settings stored;
+    CHECK(settings::applyEdits(stored, before, after));
+    CHECK(stored == after);
+    CHECK_FALSE(stored == before);
 }

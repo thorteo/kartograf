@@ -92,6 +92,33 @@ Settings parse(std::string_view text, std::vector<Issue>* issues) {
     return s;
 }
 
+bool applyEdits(Settings& stored, const Settings& before, const Settings& after) {
+    bool any = false;
+    const auto carry = [&](auto member) {
+        if (!(before.*member == after.*member)) {
+            stored.*member = after.*member;
+            any = true;
+        }
+    };
+    // Every field of Settings. A test changes every field serialize() writes
+    // and checks each one arrives, so a field left off here fails it.
+    carry(&Settings::mapKey);
+    carry(&Settings::interactKey);
+    carry(&Settings::hudKey);
+    carry(&Settings::language);
+    carry(&Settings::mapOpacity);
+    carry(&Settings::preferAbstractMap);
+    carry(&Settings::showQuests);
+    carry(&Settings::showExtracts);
+    carry(&Settings::showTransits);
+    carry(&Settings::showSpawns);
+    carry(&Settings::dimOtherFloors);
+    carry(&Settings::showHud);
+    carry(&Settings::excludeFromCapture);
+    carry(&Settings::showSettingsOnStart);
+    return any;
+}
+
 std::vector<Issue> sanitize(Settings& s) {
     std::vector<Issue> changed;
     const Settings defaults;

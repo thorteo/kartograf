@@ -341,8 +341,10 @@ int main(int argc, char** argv) {
 
     // Settings first, before anything can report a status line, since the
     // language is one of them. Command-line flags are development aids and
-    // override the file for this run.
-    settings::Settings config = loadSettings();
+    // override the file for this run only: `stored` is what the file holds,
+    // `config` is what runs.
+    settings::Settings stored = loadSettings();
+    settings::Settings config = stored;
     if (const auto value = argumentValue(argc, argv, "--lang"); !value.empty()) {
         config.language = value;
     }
@@ -657,7 +659,10 @@ int main(int argc, char** argv) {
 
             if (outcome.changed) {
                 settings::sanitize(config);
-                saveSettings(config);
+                if (settings::applyEdits(stored, before, config)) {
+                    settings::sanitize(stored);
+                    saveSettings(stored);
+                }
                 // Apply everything that changed, immediately.
                 if (config.language != before.language) {
                     ui::setLanguage(ui::parseLanguage(config.language));

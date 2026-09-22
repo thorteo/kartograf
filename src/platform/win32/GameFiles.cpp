@@ -175,7 +175,7 @@ bool LogTail::open(const fs::path& path, bool fromStart) {
     }
 
     path_ = path;
-    partial_.clear();
+    lines_.reset();
     if (!fromStart) {
         LARGE_INTEGER zero{};
         SetFilePointerEx(handle_, zero, nullptr, FILE_END);
@@ -188,7 +188,7 @@ void LogTail::close() {
         CloseHandle(handle_);
         handle_ = INVALID_HANDLE_VALUE;
     }
-    partial_.clear();
+    lines_.reset();
 }
 
 std::vector<std::string> LogTail::readNewLines() {
@@ -203,20 +203,9 @@ std::vector<std::string> LogTail::readNewLines() {
         if (!ReadFile(handle_, buffer, sizeof(buffer), &read, nullptr) || read == 0) {
             break;
         }
-        partial_.append(buffer, read);
-
-        std::size_t start = 0;
-        for (;;) {
-            const std::size_t newline = partial_.find('\n', start);
-            if (newline == std::string::npos) {
-                break;
-            }
-            // The trailing '\r' is left in place; the parser strips it, and
-            // the fixtures keep CRLF for exactly this reason.
-            lines.emplace_back(partial_, start, newline - start);
-            start = newline + 1;
+        for (auto& line : lines_.feed(std::string_view(buffer, read))) {
+            lines.push_back(std::move(line));
         }
-        partial_.erase(0, start);
 
         if (read < sizeof(buffer)) {
             break;

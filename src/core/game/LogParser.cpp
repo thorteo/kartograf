@@ -115,7 +115,12 @@ std::optional<LogLine> parseLogLine(std::string_view raw) {
     }
 
     LogLine line;
-    // "2026-09-20 01:36:09.808"
+    // "2026-09-20 01:36:09.808|" -- length first: the separators below are
+    // read by index, one past what each number's own check covers.
+    constexpr std::size_t kTimestampAndPipe = 24;
+    if (raw.size() < kTimestampAndPipe) {
+        return std::nullopt;
+    }
     if (!parseFixedInt(raw, 0, 4, line.timestamp.year) || raw[4] != '-' ||
         !parseFixedInt(raw, 5, 2, line.timestamp.month) || raw[7] != '-' ||
         !parseFixedInt(raw, 8, 2, line.timestamp.day) || raw[10] != ' ' ||
@@ -127,7 +132,7 @@ std::optional<LogLine> parseLogLine(std::string_view raw) {
     }
 
     std::size_t cursor = 23;
-    if (cursor >= raw.size() || raw[cursor] != '|') {
+    if (raw[cursor] != '|') {
         return std::nullopt;
     }
 

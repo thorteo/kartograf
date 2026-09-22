@@ -56,6 +56,7 @@ add_library(tarkov_core STATIC
     src/core/game/LogParser.cpp
     src/core/game/RaidState.cpp
     src/core/game/QuestEvents.cpp
+    src/core/game/LineSplitter.cpp
     src/core/input/Hotkey.cpp
     src/core/settings/Settings.cpp
     src/core/data/TaskModel.cpp
@@ -86,6 +87,14 @@ if(MSVC)
     target_compile_options(tarkov_core PRIVATE /W4 /permissive-)
 else()
     target_compile_options(tarkov_core PRIVATE -Wall -Wextra -Wpedantic)
+    # Bounds-checked operator[] in libstdc++ for Debug builds. ASan cannot see
+    # a read one past a string_view that is still inside its buffer; this can.
+    # Public, so the UI and the tests are checked too.
+    target_compile_definitions(tarkov_core PUBLIC $<$<CONFIG:Debug>:_GLIBCXX_ASSERTIONS>)
+    # The embedded documents are one long literal each, past the length the
+    # standard obliges compilers to accept; every compiler we use accepts it.
+    set_source_files_properties(${TARKOV_EMBEDDED_MAPS} ${TARKOV_EMBEDDED_MAP_IDS}
+        PROPERTIES COMPILE_OPTIONS -Wno-overlength-strings)
 endif()
 
 # ---------------------------------------------------------------------------

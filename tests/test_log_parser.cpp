@@ -194,3 +194,15 @@ TEST_CASE("names that are not session folders are rejected") {
     CHECK_FALSE(game::parseLogFolderName("log_2026.09.21_24-00-00_1"));
     CHECK_FALSE(game::parseLogFolderName("log_2026.09.21_19-54-34"));  // no version
 }
+
+TEST_CASE("a line cut short inside its timestamp is not a record") {
+    // Views into a longer buffer, so reading past the end would read real
+    // bytes rather than a terminator: every prefix must be rejected without
+    // looking beyond it.
+    const std::string full = "2026-09-20 01:36:09.808|1.1.5.1.47510|Info|application|x";
+    for (std::size_t length = 0; length < 24; ++length) {
+        CAPTURE(length);
+        CHECK_FALSE(game::parseLogLine(std::string_view(full.data(), length)).has_value());
+    }
+    CHECK(game::parseLogLine(full).has_value());
+}

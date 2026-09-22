@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "core/game/LineSplitter.h"
+
 namespace tarkov::win32 {
 
 /// Where Escape from Tarkov keeps the two things we read.
@@ -57,7 +59,7 @@ public:
 private:
     HANDLE handle_ = INVALID_HANDLE_VALUE;
     std::filesystem::path path_;
-    std::string partial_;
+    game::LineSplitter lines_;
 };
 
 }  // namespace tarkov::win32

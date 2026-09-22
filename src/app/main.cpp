@@ -640,12 +640,6 @@ int main(int argc, char** argv) {
             settingsWindow.render(
                 [&] { outcome = ui::drawSettings(config, settingsView, status); });
 
-            if (capturingKey && !settingsView.capturing) {
-                capturingKey = false;
-                settingsWindow.stopKeyCapture();
-                applyHotkeys();  // back on, with whatever was chosen
-            }
-
             if (outcome.changed) {
                 settings::sanitize(config);
                 saveSettings(config);
@@ -673,6 +667,17 @@ int main(int argc, char** argv) {
             if (outcome.quit) {
                 break;
             }
+        }
+
+        // Capture ends when the view has its key, or when the window went away
+        // mid-capture -- closed, or "Done" -- which must not leave every hotkey
+        // unregistered, and the view waiting for a key it can no longer hear.
+        if (capturingKey && (!settingsView.capturing || !settingsWindow.visible())) {
+            capturingKey = false;
+            settingsView.capturing.reset();
+            settingsView.captured.reset();
+            settingsWindow.stopKeyCapture();
+            applyHotkeys();  // back on, with whatever was chosen
         }
 
         MSG message;

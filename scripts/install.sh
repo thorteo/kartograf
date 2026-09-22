@@ -21,9 +21,15 @@ mkdir -p "$dest"
 # Windows will not overwrite a running exe, but it will rename one. Move the
 # old copy aside so an update works while the overlay is open; the running
 # instance keeps going and the next start picks up the new file.
+#
+# Each aside copy gets its own name: the one moved aside last time may still
+# be running -- installed twice without a restart -- and cannot be replaced.
+# Copies no longer running are deleted on the way.
 if [ -f "$dest/tarkov_help.exe" ]; then
-    rm -f "$dest/tarkov_help.old.exe" 2>/dev/null || true
-    mv "$dest/tarkov_help.exe" "$dest/tarkov_help.old.exe"
+    for stale in "$dest"/tarkov_help.old*.exe; do
+        [ -e "$stale" ] && rm -f "$stale" 2>/dev/null || true
+    done
+    mv "$dest/tarkov_help.exe" "$dest/tarkov_help.old-$(date +%Y%m%d-%H%M%S).exe"
 fi
 cp "$exe" "$dest/tarkov_help.exe"
 echo "installed $(wslpath -w "$dest/tarkov_help.exe")"

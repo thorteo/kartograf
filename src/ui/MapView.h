@@ -48,6 +48,8 @@ struct QuestPlace {
     geo::Vec3 world;
     std::string taskName;
     std::string detail;      ///< Objective description; may be empty.
+    /// What to bring here and what the quest wants handed over, one line each.
+    std::vector<std::string> needs;
     bool optional = false;
     /// What to do there; chooses the glyph inside the marker.
     data::ObjectiveKind kind = data::ObjectiveKind::Other;
@@ -73,7 +75,7 @@ struct QuestPlace {
 ///
 /// The merged marker shows the most specific thing to do there -- mark, then
 /// plant, use, shoot, pick up, and plain locating last -- and its tooltip lists
-/// every objective. Quest item spawns are left alone: each is a separate
+/// every objective and everything they need. Quest item spawns are left alone: each is a separate
 /// possibility, not a step.
 std::vector<QuestPlace> mergeNearbyQuestPlaces(std::vector<QuestPlace> places);
 

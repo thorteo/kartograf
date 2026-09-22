@@ -22,6 +22,15 @@ enum class Str {
     Optional,
     OneOfSeveralSpawns,
     OtherFloor,
+    NeedBring,           // %s
+    NeedBringAnyOf,      // %s
+    NeedKey,             // %s
+    NeedKeyAnyOf,        // %s
+    NeedHandIn,          // %s
+    NeedHandInAnyOf,     // %d %s
+    NeedCount,           // %s %d
+    NeedFoundInRaid,
+    NeedAndMore,         // %d
     OpacityFormat,       // %.2f
     LayerQuests,
     LayerExtracts,

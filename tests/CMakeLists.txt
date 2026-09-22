@@ -11,6 +11,7 @@ add_executable(tarkov_tests
     test_task_model.cpp
     test_svg_renderer.cpp
     test_quest_glyphs.cpp
+    test_quest_needs.cpp
     test_quest_events.cpp
     test_quest_progress.cpp
     test_map_features.cpp

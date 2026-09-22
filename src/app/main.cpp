@@ -49,6 +49,7 @@
 #include "ui/MapView.h"
 #include "ui/QuestGlyphs.h"
 #include "ui/QuestList.h"
+#include "ui/QuestNeeds.h"
 #include "ui/SettingsView.h"
 #include "ui/Strings.h"
 
@@ -299,7 +300,11 @@ std::vector<tarkov::ui::QuestPlace> buildQuestPlaces(
             continue;
         }
         const std::string name = task.displayName();
+        // What the quest wants handed over, shown at every one of its places.
+        const auto handIn = ui::handInLines(task, tasks);
         for (const auto& objective : task.objectives) {
+            auto needs = ui::objectiveBringLines(objective, tasks);
+            needs.insert(needs.end(), handIn.begin(), handIn.end());
             for (const auto& zone : objective.zones) {
                 if (!belongs(zone.mapId)) {
                     continue;
@@ -310,6 +315,7 @@ std::vector<tarkov::ui::QuestPlace> buildQuestPlaces(
                 place.detail = objective.description;
                 place.optional = objective.optional;
                 place.kind = data::objectiveKind(objective.type);
+                place.needs = needs;
                 place.top = zone.top;
                 place.bottom = zone.bottom;
                 places.push_back(std::move(place));
@@ -325,6 +331,7 @@ std::vector<tarkov::ui::QuestPlace> buildQuestPlaces(
                     place.detail = objective.description;
                     place.optional = objective.optional;
                     place.kind = data::objectiveKind(objective.type);
+                    place.needs = needs;
                     place.isQuestItem = true;
                     places.push_back(std::move(place));
                 }

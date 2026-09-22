@@ -306,6 +306,11 @@ std::vector<QuestPlace> mergeNearbyQuestPlaces(std::vector<QuestPlace> places) {
         }
         // Required if any part is required.
         into->optional = into->optional && place.optional;
+        for (auto& line : place.needs) {
+            if (std::find(into->needs.begin(), into->needs.end(), line) == into->needs.end()) {
+                into->needs.push_back(std::move(line));
+            }
+        }
         if (!place.detail.empty() && into->detail.find(place.detail) == std::string::npos) {
             if (!into->detail.empty()) {
                 into->detail += "\n";
@@ -571,6 +576,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
             std::string title;
             std::string detail;
             std::string note;
+            const std::vector<std::string>* needs = nullptr;
             ImVec2 at;
             float distanceSq = 1e30f;
         } hover;
@@ -597,7 +603,8 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
             return true;
         };
         const auto consider = [&](const ImVec2& at, const std::string& title,
-                                  const std::string& detail, const std::string& note) {
+                                  const std::string& detail, const std::string& note,
+                                  const std::vector<std::string>* needs = nullptr) {
             // Any real pointer will do: the overlay's own while interactive,
             // or the game's, passed through, while it is free in a menu or
             // the inventory.
@@ -608,7 +615,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
             const float dy = mouse.y - at.y;
             const float d = dx * dx + dy * dy;
             if (d < kHoverRadius * kHoverRadius && d < hover.distanceSq) {
-                hover = Hover{title, detail, note, at, d};
+                hover = Hover{title, detail, note, needs, at, d};
             }
         };
 
@@ -667,7 +674,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                     note += note.empty() ? "" : ", ";
                     note += tr(Str::OtherFloor);
                 }
-                consider(at, place.taskName, place.detail, note);
+                consider(at, place.taskName, place.detail, note, &place.needs);
             }
         }
 
@@ -727,6 +734,17 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
                     ImGui::PushTextWrapPos(420.0f);
                     ImGui::TextColored(ImVec4(0.72f, 0.74f, 0.68f, 1.0f), "%s",
                                        hover.detail.c_str());
+                    ImGui::PopTextWrapPos();
+                }
+                if (hover.needs != nullptr && !hover.needs->empty()) {
+                    // Set apart from the description: this is the checklist
+                    // to run through before the raid.
+                    ImGui::Spacing();
+                    ImGui::PushTextWrapPos(420.0f);
+                    for (const auto& line : *hover.needs) {
+                        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.42f, 1.0f), "%s",
+                                           line.c_str());
+                    }
                     ImGui::PopTextWrapPos();
                 }
                 if (!hover.note.empty()) {

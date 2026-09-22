@@ -76,6 +76,43 @@ void readRequiredKeys(const json& objective, std::vector<std::string>& out) {
     out.erase(std::unique(out.begin(), out.end()), out.end());
 }
 
+/// An item reference: the API writes either a bare id or an object with one.
+std::string itemIdOf(const json& value) {
+    if (value.is_string()) {
+        return value.get<std::string>();
+    }
+    return stringAt(value, "id");
+}
+
+/// Collects the items an objective is about, whichever field its type uses.
+void readItems(const json& objective, std::vector<std::string>& out) {
+    for (const char* key : {"items", "useAny"}) {
+        if (const json* list = find(objective, key); list != nullptr && list->is_array()) {
+            for (const auto& item : *list) {
+                if (auto id = itemIdOf(item); !id.empty()) {
+                    out.push_back(std::move(id));
+                }
+            }
+        }
+    }
+    for (const char* key : {"markerItem", "questItem"}) {
+        if (const json* item = find(objective, key); item != nullptr) {
+            if (auto id = itemIdOf(*item); !id.empty()) {
+                out.push_back(std::move(id));
+            }
+        }
+    }
+    // Deduplicated, but in the API's order: the first alternatives listed are
+    // the common ones, and a long list is shown cut short.
+    std::vector<std::string> unique;
+    for (auto& id : out) {
+        if (std::find(unique.begin(), unique.end(), id) == unique.end()) {
+            unique.push_back(std::move(id));
+        }
+    }
+    out = std::move(unique);
+}
+
 void readZones(const json& objective, std::vector<TaskZone>& out) {
     const json* zones = find(objective, "zones");
     if (zones == nullptr || !zones->is_array()) {
@@ -223,7 +260,8 @@ std::string_view TaskLocale::lookup(std::string_view key) const {
     return it->second;
 }
 
-TaskSet parseTasks(std::string_view text, const TaskLocale& locale) {
+TaskSet parseTasks(std::string_view text, const TaskLocale& locale,
+                   const TaskLocale& itemLocale) {
     TaskSet set;
     const json root = json::parse(text, nullptr, /*allow_exceptions=*/false);
     const json* data = find(root, "data");
@@ -296,6 +334,8 @@ TaskSet parseTasks(std::string_view text, const TaskLocale& locale) {
                 readZones(source, objective.zones);
                 readQuestItemLocations(source, objective.questItemLocations);
                 readRequiredKeys(source, objective.requiredKeyIds);
+                readItems(source, objective.itemIds);
+                objective.foundInRaid = boolAt(source, "foundInRaid");
 
                 task.objectives.push_back(std::move(objective));
             }
@@ -305,7 +345,38 @@ TaskSet parseTasks(std::string_view text, const TaskLocale& locale) {
 
     std::sort(set.tasks.begin(), set.tasks.end(),
               [](const Task& a, const Task& b) { return a.id < b.id; });
+
+    // Name every item an objective mentions. Ordinary items are named by the
+    // items locale; quest items only by the tasks locale.
+    std::vector<std::string> ids;
+    for (const auto& task : set.tasks) {
+        for (const auto& objective : task.objectives) {
+            ids.insert(ids.end(), objective.itemIds.begin(), objective.itemIds.end());
+            ids.insert(ids.end(), objective.requiredKeyIds.begin(),
+                       objective.requiredKeyIds.end());
+        }
+    }
+    std::sort(ids.begin(), ids.end());
+    ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+    for (const auto& id : ids) {
+        const std::string key = id + " Name";
+        std::string_view name = itemLocale.lookup(key);
+        if (name.empty()) {
+            name = locale.lookup(key);
+        }
+        if (!name.empty()) {
+            set.itemNames.emplace_back(id, std::string(name));
+        }
+    }
     return set;
+}
+
+std::string_view TaskSet::itemName(std::string_view itemId) const {
+    const auto it = std::lower_bound(
+        itemNames.begin(), itemNames.end(), itemId,
+        [](const auto& entry, std::string_view id) { return entry.first < id; });
+    return it != itemNames.end() && it->first == itemId ? std::string_view(it->second)
+                                                        : std::string_view{};
 }
 
 ObjectiveKind objectiveKind(std::string_view type) {

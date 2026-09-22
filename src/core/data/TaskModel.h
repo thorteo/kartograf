@@ -70,6 +70,14 @@ struct TaskObjective {
     /// they are flattened, so the UI must say "any of" rather than "all".
     std::vector<std::string> requiredKeyIds;
 
+    /// Items the objective is about: what to plant, hand over, find or use,
+    /// or the marker to set. Alternatives -- any one of them will do, `count`
+    /// times over. Gathered from the API's `items`, `useAny`, `markerItem` and
+    /// `questItem`, whichever the type carries.
+    std::vector<std::string> itemIds;
+    /// The items must have been found in raid.
+    bool foundInRaid = false;
+
     /// True when this objective puts anything on a map.
     bool hasPlaces() const { return !zones.empty() || !questItemLocations.empty(); }
 };
@@ -105,6 +113,14 @@ struct Task {
 struct TaskSet {
     std::vector<Task> tasks;
 
+    /// Display names of the items the objectives mention, by item id. Only
+    /// those, not the whole item catalogue: a few hundred names rather than
+    /// six thousand.
+    std::vector<std::pair<std::string, std::string>> itemNames;  ///< sorted by id
+
+    /// The item's name, or an empty view when no locale named it.
+    std::string_view itemName(std::string_view itemId) const;
+
     /// Tasks with at least one place on the given map, by BSG map id.
     std::vector<const Task*> onMap(std::string_view mapId) const;
 };
@@ -129,13 +145,17 @@ private:
 
 /// Parses a `/{gameMode}/tasks` response, resolving text through `locale`.
 ///
+/// Item names come from `itemLocale`, the `/{gameMode}/items_{lang}` document,
+/// and for quest items from `locale` itself, which carries them.
+///
 /// The response carries translation *keys* in the name and description fields,
 /// not text: a task's name arrives as "<id> name". Without a locale the parse
 /// still succeeds and names fall back to normalizedName.
 ///
 /// Returns an empty set on malformed input rather than throwing. Bad data
 /// should cost the overlay its quest layer, never take it down mid-raid.
-TaskSet parseTasks(std::string_view json, const TaskLocale& locale);
+TaskSet parseTasks(std::string_view json, const TaskLocale& locale,
+                   const TaskLocale& itemLocale = TaskLocale{});
 
 /// Turns "health-care-privacy-part-2" into "Health Care Privacy Part 2".
 std::string prettifyNormalizedName(std::string_view normalized);

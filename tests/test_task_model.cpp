@@ -17,11 +17,29 @@ const TaskLocale& russian() {
     return locale;
 }
 
+const TaskLocale& russianItems() {
+    static const TaskLocale locale = TaskLocale::parse(
+        tarkov::test::readFile(tarkov::test::fixturePath("tasks/items_ru.json")));
+    return locale;
+}
+
 const TaskSet& fixtureTasks() {
     static const TaskSet set = parseTasks(
         tarkov::test::readFile(tarkov::test::fixturePath("tasks/tasks.json")),
-        russian());
+        russian(), russianItems());
     return set;
+}
+
+const TaskObjective& objectiveById(std::string_view id) {
+    for (const auto& task : fixtureTasks().tasks) {
+        for (const auto& objective : task.objectives) {
+            if (objective.id == id) {
+                return objective;
+            }
+        }
+    }
+    FAIL("no objective " << id);
+    throw 0;
 }
 
 /// Customs, as the API identifies it.
@@ -278,4 +296,53 @@ TEST_CASE("objective types map to the kind of place they mark") {
     // Types with no places, and ones not invented yet, fall back.
     CHECK(objectiveKind("giveItem") == ObjectiveKind::Other);
     CHECK(objectiveKind("") == ObjectiveKind::Other);
+}
+
+TEST_CASE("objectives carry the items they need, named in Russian") {
+    const auto& set = fixtureTasks();
+
+    // Wet Job part 2: set a marker.
+    const auto& mark = objectiveById("5a281efe86f7745bc42005cc");
+    REQUIRE(mark.itemIds.size() == 1);
+    CHECK(set.itemName(mark.itemIds[0]) == "Маркер MS2000");
+
+    // Chumming: plant three gold chains.
+    const auto& plant = objectiveById("5b4796c086f7745877352c2c");
+    REQUIRE(plant.itemIds.size() == 1);
+    CHECK(plant.count == 3);
+    CHECK_FALSE(plant.foundInRaid);
+    CHECK(set.itemName(plant.itemIds[0]) == "Золотая цепочка");
+
+    // Airmail: either red flare will do.
+    const auto& use = objectiveById("6672edebec0c3e2ad7d4e489");
+    CHECK(use.itemIds.size() == 2);
+    CHECK(set.itemName(use.itemIds[1]) == "26x75 сигнальный патрон (Красный)");
+
+    // First in Line: hand over three of 52 kinds of meds, found in raid. The
+    // API's order is kept, so a list cut short shows its first entries.
+    const auto& give = objectiveById("65817bf31404f3565aef9fec");
+    CHECK(give.itemIds.size() == 52);
+    CHECK(give.foundInRaid);
+    CHECK(set.itemName(give.itemIds[0]) == "Таблетки-антибиотики Аугментин");
+}
+
+TEST_CASE("quest items are named from the tasks locale, keys from the items locale") {
+    const auto& set = fixtureTasks();
+
+    // Saving the Mole: the hard drive is a quest item, absent from items_ru.
+    const auto& find = objectiveById("65817fbbb454159976c91917");
+    REQUIRE(find.itemIds.size() == 1);
+    CHECK(set.itemName(find.itemIds[0]) == "Жесткий диск ученого TerraGroup");
+
+    // Health Care Privacy part 2: the room key.
+    const auto& keyed = objectiveById("5a68760f86f7743cc55d8709");
+    REQUIRE(keyed.requiredKeyIds.size() == 1);
+    CHECK(set.itemName(keyed.requiredKeyIds[0]) ==
+          "Ключ от номера 306 западного крыла Санатория");
+
+    // No locale at all: no names, and nothing breaks.
+    const TaskSet bare = parseTasks(
+        tarkov::test::readFile(tarkov::test::fixturePath("tasks/tasks.json")), TaskLocale{});
+    CHECK(bare.itemNames.empty());
+    CHECK(bare.itemName("5991b51486f77447b112d44f").empty());
 }

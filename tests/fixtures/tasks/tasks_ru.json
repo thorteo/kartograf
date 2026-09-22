@@ -59,6 +59,14 @@
   "6a54a310b22ea41cf1c54a20": "Устранить любую цель на локации Эпицентр",
   "NosQuests_5_Flaer": "Old Sawmill",
   "Sandbox_VExit": "А-Выход полицейский кордон",
-  "killCam": "Inudstrial Plant"
+  "killCam": "Inudstrial Plant",
+  "5a6860d886f77411cd3a9e47 Name": "Защищенный кейс для документов 0060",
+  "5a6860d886f77411cd3a9e47 ShortName": "0060",
+  "64f69b4267e11a7c6206e010 Name": "Дневник шеф-повара",
+  "64f69b4267e11a7c6206e010 ShortName": "Дневник",
+  "6575a6ca8778e96ded05a802 Name": "Жесткий диск ученого TerraGroup",
+  "6575a6ca8778e96ded05a802 ShortName": "HDD",
+  "66a0e523e749756c920d02d0 Name": "Химический контейнер",
+  "66a0e523e749756c920d02d0 ShortName": "Химконт"
  }
 }

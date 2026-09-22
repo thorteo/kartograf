@@ -188,7 +188,9 @@ bool TarkovDataRepository::loadFromCache(const std::string& mode) {
 
     const data::TaskLocale locale =
         data::TaskLocale::parse(readTextFile(dir / ("tasks_" + language + ".json")));
-    data::TaskSet set = data::parseTasks(body, locale);
+    const data::TaskLocale itemLocale =
+        data::TaskLocale::parse(readTextFile(dir / ("items_" + language + ".json")));
+    data::TaskSet set = data::parseTasks(body, locale, itemLocale);
     if (set.tasks.empty()) {
         // A cache that parses to nothing is worse than none: it would sit there
         // looking valid. Drop it so the next start re-downloads.
@@ -215,7 +217,9 @@ bool TarkovDataRepository::loadFromCache(const std::string& mode) {
         // Explicit, not encoded in the timestamp: a sentinel age is how a
         // cache once never refreshed. Checked by run().
         const std::lock_guard<std::mutex> lock(mutex_);
-        localeMissing_ = locale.size() == 0;
+        // Item names came later than quest names; a cache from before them
+        // counts as untranslated, so the next pass fetches what is missing.
+        localeMissing_ = locale.size() == 0 || itemLocale.size() == 0;
     }
     publish(std::move(set), std::move(features), writtenAt);
     say(ui::trf(ui::Str::StatusQuestsFromCache, static_cast<int>(count)));
@@ -255,8 +259,19 @@ bool TarkovDataRepository::downloadAndCache(const std::string& mode) {
         say(ui::trf(ui::Str::StatusNoTranslations, language.c_str()));
     }
 
+    // Item names, for what an objective needs brought or handed over. 2.4 MB
+    // and optional: without it the tooltips just leave the items out.
+    std::string itemLocaleBody;
+    const auto itemLocaleResponse =
+        client.get(base + "/items_" + language, 16u * 1024 * 1024);
+    if (itemLocaleResponse.ok) {
+        itemLocaleBody.assign(itemLocaleResponse.body.begin(),
+                              itemLocaleResponse.body.end());
+    }
+
     const data::TaskLocale locale = data::TaskLocale::parse(localeBody);
-    data::TaskSet set = data::parseTasks(body, locale);
+    data::TaskSet set =
+        data::parseTasks(body, locale, data::TaskLocale::parse(itemLocaleBody));
     if (set.tasks.empty()) {
         say(ui::tr(ui::Str::StatusQuestsDidNotParse));
         return false;
@@ -293,7 +308,16 @@ bool TarkovDataRepository::downloadAndCache(const std::string& mode) {
     if (!localeBody.empty()) {
         writeTextFile(dir / ("tasks_" + language + ".json"), localeBody);
     }
+    if (!itemLocaleBody.empty()) {
+        writeTextFile(dir / ("items_" + language + ".json"), itemLocaleBody);
+    }
     writeTextFile(dir / "tasks.updated", std::to_string(writtenAt));
+    {
+        // What this download actually brought. Left as the cache load set it,
+        // a missing locale would trigger a full re-download every half hour.
+        const std::lock_guard<std::mutex> lock(mutex_);
+        localeMissing_ = localeBody.empty() || itemLocaleBody.empty();
+    }
 
     const std::size_t count = set.tasks.size();
     const std::size_t mapCount = features.size();

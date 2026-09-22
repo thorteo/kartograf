@@ -166,6 +166,7 @@ add_library(tarkov_ui STATIC
     src/ui/Hud.cpp
     src/ui/MapView.cpp
     src/ui/QuestGlyphs.cpp
+    src/ui/QuestNeeds.cpp
     src/ui/QuestList.cpp
     src/ui/Strings.cpp
     src/ui/SettingsView.cpp

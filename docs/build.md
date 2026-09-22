@@ -94,7 +94,9 @@ Vendored in `third_party/`, no package manager:
 |---|---|
 | Dear ImGui | source tree, with the `win32` and `dx11` backends |
 | nlohmann/json | single header |
-| SQLite | amalgamation (`sqlite3.c` + `sqlite3.h`) |
+| lunasvg | source, with its plutovg rasteriser (C) |
+| stb_image | single header, PNG and JPEG decoding |
+| game-icons | the six quest glyph SVGs, compiled in (CC BY 3.0) |
 | doctest | single header, tests only |
 
 WinHTTP, Direct3D 11 and DirectComposition come from the Windows SDK.

@@ -16,8 +16,10 @@ decision still holds, instead of guessing why the code looks the way it does.
 
 | # | Title | Status |
 |---|---|---|
-| [0001](0001-stack-selection.md) | Language, UI and rendering stack | Accepted |
+| [0001](0001-stack-selection.md) | Language, UI and rendering stack | Accepted, storage superseded by 0006 |
 | [0002](0002-no-game-process-interaction.md) | Never interact with the game process | Accepted |
 | [0003](0003-overlay-window.md) | Overlay via DirectComposition, not a DirectX hook | Accepted |
 | [0004](0004-threading-model.md) | Single guarded state, snapshot to renderer | Accepted, amended by 0005 |
 | [0005](0005-per-component-snapshot-stores.md) | Per-component snapshot stores | Accepted |
+| [0006](0006-json-files-not-sqlite.md) | Caches and user state as JSON files, not SQLite | Accepted |
+| [0007](0007-restart-on-device-loss.md) | Recover from a lost GPU device by restarting | Accepted |

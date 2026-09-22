@@ -36,7 +36,9 @@ capable — see `docs/features/roadmap.md`.
 - **UI**: Dear ImGui (immediate mode, reactive repaint — idle cost near zero)
 - **HTTP**: WinHTTP (no external dependency)
 - **JSON**: nlohmann/json (vendored, single header)
-- **Storage**: SQLite amalgamation (vendored)
+- **Storage**: plain files, JSON as the API served it; atomic writes via
+  `win32::writeFileAtomic` (`docs/adr/0006-json-files-not-sqlite.md` — SQLite was
+  planned in 0001 and never used)
 - **File watching**: `ReadDirectoryChangesW`
 - **Build**: CMake + Ninja. No vcpkg, no Conan — dependencies are vendored in `third_party/`.
 
@@ -48,10 +50,14 @@ writing a superseding ADR.
 
 `src/core/` must compile on Linux with no Windows headers. It holds all parsing,
 geometry, data modelling and state-machine logic, and it is where tests live.
+`src/ui/` is portable too and tested headlessly.
 
-`src/platform/` holds everything Windows-specific behind interfaces declared in
-`src/platform/platform.h`. `src/platform/stub/` provides Linux implementations so the
-core can be built and tested on the development machine.
+`src/platform/win32/` holds only what cannot be written without Windows. There is no
+interface layer with Linux stand-ins: when Windows code grows logic that does not need
+Windows, move that logic into `core/` or `ui/` and test it there (as `LineSplitter`
+and `ui/MapContent` were). What remains in `win32/` — the stores' worker threads,
+session-log discovery, the render loop — is untested on Linux, so changes there need a
+Windows build and a run against the game.
 
 This split exists because development happens in WSL/Linux while the target is Windows.
 Keeping the core portable means most of the codebase is testable without a Windows
@@ -77,10 +83,13 @@ full-screen one, where they frame the whole monitor.
 
 A frame is drawn only when the RaidState snapshot pointer changes, a displayed second
 ticks over, or the user is interacting; otherwise the loop sleeps in
-`MsgWaitForMultipleObjects`. Measured on this machine: presenting every vsync cost
-9.8% of a core, the reactive loop costs 0.2%, working set 45 MB. If you add something
-that animates, gate it the same way rather than returning the loop to presenting every
-frame — those frames come out of the game's budget.
+`MsgWaitForMultipleObjects`. Measured on this machine with the HUD, before the map
+existed: presenting every vsync cost 9.8% of a core, the reactive loop 0.2%, working
+set 45 MB (not re-measured since). If you add something that animates, gate it the same
+way rather than returning the loop to presenting every frame — those frames come out of
+the game's budget. The settings window follows the same rule. Something still loading
+makes the loop poll sooner, never draw: it arrives through its store's `pump()`, which
+asks for the frame. And something that will never arrive must not count as loading.
 
 ## Threading model
 
@@ -90,6 +99,9 @@ icon and data stores) owns its state behind exactly one mutex, hands readers an
 immutable snapshot or a copy, never calls into another component while holding its
 lock, and discards superseded background work by generation rather than cancelling it.
 The render thread never mutates shared state except through a component's API.
+Set a worker's stop flag while holding the mutex it waits on — set outside it, the
+notification can be lost and `join()` hangs — and hand its HTTP clients an
+`HttpCancel`, so quitting does not wait out a stalled download.
 See `docs/adr/0004-threading-model.md` and `0005` before adding a thread or a shared
 field.
 
@@ -97,14 +109,17 @@ field.
 
 ```
 src/core/geo/     coordinate projection, quaternion -> heading, floor selection
-src/core/game/    log parser, screenshot parser, quest events, RaidState
+src/core/map/     viewport and tile maths, SVG rasterising and placement
+src/core/game/    log and screenshot parsers, line splitting, quest events, RaidState
 src/core/input/   hotkey parsing and validation (the portable half of binding)
-src/core/data/    tarkov.dev task model, map ids, quest progress + inference
-src/platform/     win32/: overlay window, file watchers, game-window tracking
-src/ui/           ImGui views. Portable -- ImGui core builds on Linux, and
-                  tests/imgui_harness.h runs ImGui with no backend, so the map
-                  view's behaviour (floor switching, following, clamping) is
-                  unit tested without Windows or a GPU.
+src/core/settings/ settings.json: parse, repair, save only the player's edits
+src/core/data/    tarkov.dev task model, map features and ids, quest progress + inference
+src/platform/win32/ overlay and settings windows, file watching, WinHTTP, the
+                  download/texture stores, shared file/texture/UTF-8 helpers
+src/ui/           ImGui views and what they draw from (MapContent). Portable --
+                  ImGui core builds on Linux, and tests/imgui_harness.h runs ImGui
+                  with no backend, so the map view's behaviour (floor switching,
+                  following, clamping) is unit tested without Windows or a GPU.
 src/app/          entry point and wiring
 third_party/      vendored: imgui, nlohmann/json, doctest, stb_image, lunasvg
 data/             pinned copy of tarkov.dev maps.json

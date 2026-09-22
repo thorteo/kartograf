@@ -1,6 +1,6 @@
 # 0001. Language, UI and rendering stack
 
-**Status:** Accepted
+**Status:** Accepted; storage superseded by [0006](0006-json-files-not-sqlite.md)
 **Date:** 2026-09-21
 
 ## Context

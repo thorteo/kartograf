@@ -21,6 +21,8 @@ Why the code is the way it is. [Index and process](adr/README.md).
 | [0003](adr/0003-overlay-window.md) | Overlay via DirectComposition, not a DirectX hook |
 | [0004](adr/0004-threading-model.md) | Single guarded state, snapshot to renderer |
 | [0005](adr/0005-per-component-snapshot-stores.md) | Per-component snapshot stores |
+| [0006](adr/0006-json-files-not-sqlite.md) | Caches and user state as JSON files, not SQLite |
+| [0007](adr/0007-restart-on-device-loss.md) | Recover from a lost GPU device by restarting |
 
 ## Research — `research/`
 

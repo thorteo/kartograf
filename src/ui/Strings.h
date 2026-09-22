@@ -110,6 +110,7 @@ enum class Str {
     StatusInteractive,
     StatusClickThrough,
     StatusSwitchToBorderless,
+    StatusRestartedAfterDeviceLoss,
     StatusGameNotFound,
     StatusNoLogFolder,
     StatusNoScreenshotFolder,

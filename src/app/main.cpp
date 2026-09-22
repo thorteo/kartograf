@@ -224,6 +224,30 @@ tarkov::data::QuestProgress loadProgress() {
     return tarkov::data::QuestProgress::parse(tarkov::win32::readTextFile(progressFile()));
 }
 
+/// Starts a fresh copy of this program with the same arguments, marked as a
+/// recovery so it says why it restarted and does not open the settings window.
+void relaunchSelf(bool alreadyMarked, bool settingsAlreadySuppressed) {
+    wchar_t exe[MAX_PATH] = {};
+    if (GetModuleFileNameW(nullptr, exe, MAX_PATH) == 0) {
+        return;
+    }
+    std::wstring command = GetCommandLineW();
+    if (!settingsAlreadySuppressed) {
+        command += L" --no-settings";
+    }
+    if (!alreadyMarked) {
+        command += L" --after-device-loss";
+    }
+    STARTUPINFOW startup{};
+    startup.cb = sizeof(startup);
+    PROCESS_INFORMATION process{};
+    if (CreateProcessW(exe, command.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr,
+                       &startup, &process)) {
+        CloseHandle(process.hThread);
+        CloseHandle(process.hProcess);
+    }
+}
+
 /// Whether a raid is on, for holding back downloads.
 ///
 /// From map loading to the result screen. Bounded, because the end is read
@@ -544,6 +568,9 @@ int main(int argc, char** argv) {
     if (standalone) {
         g_status.add(ui::tr(ui::Str::StatusStandalone));
     }
+    if (hasFlag(argc, argv, "--after-device-loss")) {
+        g_status.add(ui::tr(ui::Str::StatusRestartedAfterDeviceLoss));
+    }
 
     // Quest counts for the settings window's status section, recomputed only
     // when progress or quest data change.
@@ -552,7 +579,16 @@ int main(int argc, char** argv) {
     const data::TaskSet* statusTasks = nullptr;
     int statusActive = 0;
 
+    bool relaunch = false;
     while (overlay.pumpMessages()) {
+        // A lost device never comes back, and rebuilding everything on it --
+        // both windows' swap chains, ImGui's backend, every texture in four
+        // stores -- is a lot of rarely run code. Everything that matters is on
+        // disk, so a fresh process is the dependable recovery.
+        if (overlay.deviceLost()) {
+            relaunch = true;
+            break;
+        }
         // --- Settings window and tray --------------------------------------
         if (settingsWindow.takeQuitRequest()) {
             break;
@@ -1058,5 +1094,12 @@ int main(int argc, char** argv) {
     abstractMaps.stop();
     tiles.stop();
     unregisterHotkeys();
+
+    // Not twice in quick succession: a device that is lost again at once is a
+    // broken driver, and restarting would only loop.
+    const bool afterDeviceLoss = hasFlag(argc, argv, "--after-device-loss");
+    if (relaunch && !(afterDeviceLoss && GetTickCount64() - startedAt < 60000)) {
+        relaunchSelf(afterDeviceLoss, hasFlag(argc, argv, "--no-settings"));
+    }
     return 0;
 }

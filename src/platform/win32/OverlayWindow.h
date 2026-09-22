@@ -74,6 +74,12 @@ public:
     void setUiLayer(class ImGuiLayer* layer) { uiLayer_ = layer; }
     bool interactive() const { return interactive_; }
 
+    /// True once the GPU device is gone: a driver update or crash, a TDR, the
+    /// adapter removed. Nothing drawn on it will ever appear again.
+    bool deviceLost() const {
+        return device_ && FAILED(device_->GetDeviceRemovedReason());
+    }
+
     ID3D11Device* device() const { return device_.get(); }
     ID3D11DeviceContext* context() const { return context_.get(); }
     int width() const { return width_; }

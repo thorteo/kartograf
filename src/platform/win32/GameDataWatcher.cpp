@@ -95,19 +95,28 @@ public:
     bool valid() const { return handle_ != INVALID_HANDLE_VALUE; }
     HANDLE event() const { return overlapped_.hEvent; }
 
-    /// Collects the names reported by the completed notification and re-arms.
-    std::vector<std::wstring> collect() {
+    struct Changes {
         std::vector<std::wstring> names;
+        /// The system dropped the details: more changed than the buffer held.
+        /// The caller has to look at the directory itself.
+        bool overflowed = false;
+    };
+
+    /// Collects the names reported by the completed notification and re-arms.
+    Changes collect() {
+        Changes changes;
+        auto& names = changes.names;
         DWORD transferred = 0;
         if (!GetOverlappedResult(handle_, &overlapped_, &transferred, FALSE)) {
+            changes.overflowed = GetLastError() == ERROR_NOTIFY_ENUM_DIR;
             arm();
-            return names;
+            return changes;
         }
         ResetEvent(overlapped_.hEvent);
 
-        // A zero-length result means the buffer overflowed and the notification
-        // was coalesced. The caller has to rescan; report nothing rather than
-        // pretend we know what changed.
+        // A zero-length result also means the buffer overflowed and the
+        // notification was coalesced.
+        changes.overflowed = transferred == 0;
         if (transferred != 0) {
             const std::byte* cursor = buffer_.data();
             for (;;) {
@@ -126,7 +135,7 @@ public:
             }
         }
         arm();
-        return names;
+        return changes;
     }
 
 private:
@@ -348,10 +357,33 @@ void GameDataWatcher::pumpNotifications() {
 }
 
 void GameDataWatcher::handleScreenshotNames(game::RaidState& state,
-                                            const std::vector<std::wstring>& names) {
+                                            std::vector<std::wstring> names,
+                                            bool overflowed) {
+    if (overflowed) {
+        // The names were lost. The position that matters is the newest one, so
+        // take the most recently written screenshot from the folder instead.
+        std::error_code ec;
+        fs::path newest;
+        fs::file_time_type newestTime{};
+        for (const auto& entry : fs::directory_iterator(paths_.screenshots, ec)) {
+            const auto written = entry.last_write_time(ec);
+            if (!ec && (newest.empty() || written > newestTime)) {
+                newest = entry.path();
+                newestTime = written;
+            }
+        }
+        if (!newest.empty()) {
+            names.push_back(newest.filename().wstring());
+        }
+    }
     for (const auto& wide : names) {
-        const std::string name = narrow(wide);
-        if (auto shot = game::parseScreenshotName(name)) {
+        // One screenshot is reported several times: added, then modified as
+        // the game writes it out. It is one position fix, not several.
+        if (wide == lastScreenshot_) {
+            continue;
+        }
+        if (auto shot = game::parseScreenshotName(narrow(wide))) {
+            lastScreenshot_ = wide;
             state.applyPosition(*shot, nowMillis());
         }
     }
@@ -409,7 +441,8 @@ void GameDataWatcher::run(game::RaidState* state) {
             pumpLogs(*state);
             pumpNotifications();
         } else if (shotsIndex != 0xFFFFFFFF && result == WAIT_OBJECT_0 + shotsIndex) {
-            handleScreenshotNames(*state, shotsWatch.collect());
+            auto changes = shotsWatch.collect();
+            handleScreenshotNames(*state, std::move(changes.names), changes.overflowed);
         }
     }
 

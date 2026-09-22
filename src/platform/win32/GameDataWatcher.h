@@ -62,8 +62,8 @@ private:
     void importQuestHistory();
     void pumpNotifications();
     void pumpLogs(game::RaidState& state);
-    void handleScreenshotNames(game::RaidState& state,
-                               const std::vector<std::wstring>& names);
+    void handleScreenshotNames(game::RaidState& state, std::vector<std::wstring> names,
+                               bool overflowed);
     void say(const std::string& message) const;
 
     GamePaths paths_;
@@ -85,6 +85,8 @@ private:
     data::QuestProgressStore* progress_ = nullptr;
     ProgressChanged onProgress_;
     LogTail notificationsLog_;
+    /// The screenshot last turned into a position fix.
+    std::wstring lastScreenshot_;
     game::QuestEventParser notificationsParser_;
 };
 

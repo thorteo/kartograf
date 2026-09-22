@@ -3,6 +3,7 @@
 #include <windows.h>
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <deque>
@@ -45,13 +46,6 @@ public:
         }
     };
 
-    struct Stats {
-        int ready = 0;
-        int loading = 0;
-        int failed = 0;
-        int queued = 0;
-    };
-
     ~TileStore();
 
     TileStore() = default;
@@ -90,19 +84,27 @@ public:
     /// the frame changed.
     int pump(int maxUploads = 4);
 
-    Stats stats() const;
-
-    /// Where tiles are cached on disk.
-    static std::filesystem::path defaultCacheRoot();
-
 private:
-    enum class State { Queued, Loading, Ready, Failed };
+    enum class State {
+        Queued,
+        Loading,
+        Ready,
+        /// Could not be had this time -- no network, a server error, a bad
+        /// download. Asked for again after kRetryAfter; once, a blip in the
+        /// connection left holes in the map until the player changed maps.
+        Failed,
+        /// The CDN has no such tile. Never asked for again.
+        Missing,
+    };
 
     struct Entry {
         State state = State::Queued;
         ComPtr<ID3D11ShaderResourceView> texture;
         std::uint64_t lastUsedFrame = 0;
+        std::chrono::steady_clock::time_point retryAt;
     };
+
+    enum class Outcome { Ok, Missing, Failed };
 
     struct Decoded {
         Key key;
@@ -113,7 +115,9 @@ private:
     };
 
     void workerLoop();
-    bool fetchAndDecode(const std::string& map, const Key& key, Decoded& out);
+    Outcome fetchAndDecode(HttpClient& client, const std::string& map, const Key& key,
+                           Decoded& out);
+    void markFailed(Entry& entry);
     std::filesystem::path cachePathFor(const std::string& map, const Key& key) const;
     std::string urlFor(const Key& key) const;
     const std::string* templateFor(int layer) const;
@@ -125,6 +129,7 @@ private:
     mutable std::mutex mutex_;
     std::condition_variable work_;
     std::atomic<bool> stopping_{false};
+    HttpCancel cancel_;
 
     std::string mapName_;
     std::string tileTemplate_;
@@ -141,6 +146,7 @@ private:
     /// 256x256 RGBA is 256 KB per tile, so this cap is the memory budget.
     /// 192 tiles is about 48 MB, comfortably more than one screen at any zoom.
     static constexpr std::size_t kMaxTextures = 192;
+    static constexpr std::chrono::seconds kRetryAfter{30};
 };
 
 }  // namespace tarkov::win32

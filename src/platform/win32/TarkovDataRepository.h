@@ -13,6 +13,7 @@
 
 #include "core/data/MapFeatures.h"
 #include "core/data/TaskModel.h"
+#include "platform/win32/HttpClient.h"
 
 namespace tarkov::win32 {
 
@@ -33,7 +34,6 @@ public:
         bool fetching = false;
         /// Seconds since the cached copy was written, or -1 when there is none.
         long long ageSeconds = -1;
-        std::string detail;
     };
 
     ~TarkovDataRepository();
@@ -55,11 +55,10 @@ public:
     /// the cache and downloads the other locale if it has not been fetched.
     void setLanguage(std::string language);
 
-    /// Asks for a refresh. Ignored while one is already running.
-    ///
-    /// The caller decides when this is appropriate: never mid-raid, where a
-    /// multi-megabyte download would be competing with the game for bandwidth.
-    void refresh();
+    /// Whether a raid is on. Refreshes of data that is only old wait for it to
+    /// end: a multi-megabyte download mid-raid competes with the game for
+    /// bandwidth. Data that is missing outright is fetched regardless.
+    void setInRaid(bool inRaid);
 
     /// A coherent view. Never null; empty until the first load succeeds.
     std::shared_ptr<const data::TaskSet> tasks() const;
@@ -69,8 +68,6 @@ public:
     std::shared_ptr<const MapFeatureSet> mapFeatures() const;
 
     Status status() const;
-
-    static std::filesystem::path defaultCacheRoot();
 
 private:
     void run();
@@ -87,18 +84,21 @@ private:
     mutable std::mutex mutex_;
     std::condition_variable wake_;
     std::atomic<bool> stopping_{false};
+    HttpCancel cancel_;
     std::thread worker_;
 
     std::string gameMode_ = "regular";
     std::string wantedMode_ = "regular";
-    bool refreshRequested_ = false;
+    bool inRaid_ = false;
+    /// Unix time after which a download that came back without an optional
+    /// document may be repeated to fill it in. Zero: not yet tried.
+    long long optionalRetryAtUnix_ = 0;
     /// Set when the language changed: the cache must be re-read so names come
     /// through the new locale.
     bool reloadRequested_ = false;
     /// The cached copy has no translations for the current language.
     bool localeMissing_ = false;
     bool fetching_ = false;
-    std::string detail_;
     long long writtenAtUnix_ = 0;
 
     std::shared_ptr<const data::TaskSet> published_{

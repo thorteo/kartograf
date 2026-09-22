@@ -2,7 +2,9 @@
 
 #include <winhttp.h>
 
-#include <memory>
+#include <algorithm>
+
+#include "platform/win32/Utf8.h"
 
 namespace tarkov::win32 {
 namespace {
@@ -15,17 +17,7 @@ struct ParsedUrl {
     bool valid = false;
 };
 
-std::wstring widen(const std::string& narrow) {
-    if (narrow.empty()) {
-        return {};
-    }
-    const int size = MultiByteToWideChar(CP_UTF8, 0, narrow.data(),
-                                         static_cast<int>(narrow.size()), nullptr, 0);
-    std::wstring out(static_cast<std::size_t>(size), L'\0');
-    MultiByteToWideChar(CP_UTF8, 0, narrow.data(), static_cast<int>(narrow.size()),
-                        out.data(), size);
-    return out;
-}
+constexpr wchar_t kUserAgent[] = L"tarkov-help/0.1";
 
 ParsedUrl parseUrl(const std::string& url) {
     ParsedUrl parsed;
@@ -67,17 +59,57 @@ struct HandleGuard {
 
 }  // namespace
 
+void HttpCancel::cancel() {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    cancelled_ = true;
+    for (void* request : active_) {
+        WinHttpCloseHandle(static_cast<HINTERNET>(request));
+    }
+    active_.clear();
+}
+
+bool HttpCancel::cancelled() const {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    return cancelled_;
+}
+
+bool HttpCancel::enter(void* request) {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    if (cancelled_) {
+        return false;
+    }
+    active_.push_back(request);
+    return true;
+}
+
+bool HttpCancel::leave(void* request) {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    const auto it = std::find(active_.begin(), active_.end(), request);
+    if (it == active_.end()) {
+        return false;  // cancel() closed it
+    }
+    active_.erase(it);
+    return true;
+}
+
 HttpClient::~HttpClient() { close(); }
 
-bool HttpClient::open(const std::wstring& userAgent) {
+bool HttpClient::open(HttpCancel* cancel) {
     close();
-    session_ = WinHttpOpen(userAgent.c_str(), WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
+    cancel_ = cancel;
+    session_ = WinHttpOpen(kUserAgent, WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
                            WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
     if (session_ == nullptr) {
         return false;
     }
     // Keep a stalled request from pinning a worker thread indefinitely.
     WinHttpSetTimeouts(static_cast<HINTERNET>(session_), 5000, 5000, 15000, 15000);
+    // Ask for gzip and let WinHTTP undo it. The JSON documents shrink about
+    // ninefold: tasks and maps are 10.7 MB as sent plainly, 1.15 MB gzipped
+    // (measured 2026-09-22). Images are sent as they are either way.
+    DWORD decompression = WINHTTP_DECOMPRESSION_FLAG_ALL;
+    WinHttpSetOption(static_cast<HINTERNET>(session_), WINHTTP_OPTION_DECOMPRESSION,
+                     &decompression, sizeof(decompression));
     return true;
 }
 
@@ -106,13 +138,27 @@ HttpClient::Response HttpClient::get(const std::string& url, std::size_t maxByte
         return response;
     }
 
-    HandleGuard request{WinHttpOpenRequest(
+    HINTERNET handle = WinHttpOpenRequest(
         connection.handle, L"GET", parsed.path.c_str(), nullptr, WINHTTP_NO_REFERER,
-        WINHTTP_DEFAULT_ACCEPT_TYPES,
-        parsed.secure ? WINHTTP_FLAG_SECURE : 0)};
-    if (request.handle == nullptr) {
+        WINHTTP_DEFAULT_ACCEPT_TYPES, parsed.secure ? WINHTTP_FLAG_SECURE : 0);
+    if (handle == nullptr) {
         return response;
     }
+    if (cancel_ != nullptr && !cancel_->enter(handle)) {
+        WinHttpCloseHandle(handle);
+        return response;
+    }
+    // Closed on the way out, unless cancel() got there first. Local, so it
+    // shares this function's access to HttpCancel.
+    struct RequestGuard {
+        HttpCancel* cancel;
+        HINTERNET handle;
+        ~RequestGuard() {
+            if (cancel == nullptr || cancel->leave(handle)) {
+                WinHttpCloseHandle(handle);
+            }
+        }
+    } const request{cancel_, handle};
 
     if (!WinHttpSendRequest(request.handle, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
                             WINHTTP_NO_REQUEST_DATA, 0, 0, 0) ||
@@ -129,8 +175,16 @@ HttpClient::Response HttpClient::get(const std::string& url, std::size_t maxByte
     response.status = status;
 
     for (;;) {
+        if (cancel_ != nullptr && cancel_->cancelled()) {
+            return response;
+        }
         DWORD available = 0;
-        if (!WinHttpQueryDataAvailable(request.handle, &available) || available == 0) {
+        if (!WinHttpQueryDataAvailable(request.handle, &available)) {
+            // A dropped connection or a cancel, not the end of the body: a
+            // truncated document must not come back as ok and be cached.
+            return response;
+        }
+        if (available == 0) {
             break;
         }
         if (response.body.size() + available > maxBytes) {

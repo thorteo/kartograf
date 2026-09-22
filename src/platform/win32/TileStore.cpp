@@ -1,15 +1,15 @@
 #include "platform/win32/TileStore.h"
 
-#include <shlobj.h>
-
 #include <algorithm>
-#include <fstream>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_PNG
 #define STBI_ONLY_JPEG
 #define STBI_NO_STDIO
 #include <stb/stb_image.h>
+
+#include "platform/win32/Files.h"
+#include "platform/win32/Textures.h"
 
 namespace tarkov::win32 {
 namespace {
@@ -26,60 +26,16 @@ std::string replaceAll(std::string text, const std::string& from,
     return text;
 }
 
-std::vector<std::uint8_t> readFileBytes(const fs::path& path) {
-    std::ifstream in(path, std::ios::binary);
-    if (!in) {
-        return {};
-    }
-    return std::vector<std::uint8_t>(std::istreambuf_iterator<char>(in),
-                                     std::istreambuf_iterator<char>());
-}
-
-bool writeFileBytes(const fs::path& path, const std::vector<std::uint8_t>& bytes) {
-    std::error_code ec;
-    fs::create_directories(path.parent_path(), ec);
-    // Write to a temporary and rename, so a crash mid-write cannot leave a
-    // truncated PNG in the cache to be served forever afterwards.
-    const fs::path temporary = path.string() + ".part";
-    {
-        std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
-        if (!out) {
-            return false;
-        }
-        out.write(reinterpret_cast<const char*>(bytes.data()),
-                  static_cast<std::streamsize>(bytes.size()));
-        if (!out) {
-            return false;
-        }
-    }
-    fs::rename(temporary, path, ec);
-    if (ec) {
-        fs::remove(temporary, ec);
-        return false;
-    }
-    return true;
-}
-
 }  // namespace
 
 TileStore::~TileStore() { stop(); }
-
-fs::path TileStore::defaultCacheRoot() {
-    PWSTR raw = nullptr;
-    if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &raw))) {
-        fs::path path(raw);
-        CoTaskMemFree(raw);
-        return path / "tarkov-help" / "tiles";
-    }
-    return fs::temp_directory_path() / "tarkov-help" / "tiles";
-}
 
 bool TileStore::start(ID3D11Device* device, int workerCount) {
     if (device == nullptr) {
         return false;
     }
     device_ = device;
-    cacheRoot_ = defaultCacheRoot();
+    cacheRoot_ = appDataPath(L"tiles");
 
     std::error_code ec;
     fs::create_directories(cacheRoot_, ec);
@@ -96,8 +52,15 @@ void TileStore::stop() {
     if (workers_.empty()) {
         return;
     }
-    stopping_.store(true, std::memory_order_relaxed);
+    {
+        // Under the lock: set between a worker's check and its wait, the flag
+        // would be missed and the notification lost with it, and join() would
+        // wait forever.
+        const std::lock_guard<std::mutex> lock(mutex_);
+        stopping_.store(true, std::memory_order_relaxed);
+    }
     work_.notify_all();
+    cancel_.cancel();  // Downloads in flight end now, not at their timeouts.
     for (auto& worker : workers_) {
         if (worker.joinable()) {
             worker.join();
@@ -175,52 +138,64 @@ TileStore::Lookup TileStore::acquire(const Key& key) {
 
     auto it = entries_.find(key);
     if (it == entries_.end()) {
-        entries_[key] = Entry{State::Queued, {}, frame_};
+        it = entries_.emplace(key, Entry{}).first;
+        it->second.lastUsedFrame = frame_;
         pending_.push_back({key, mapGeneration_});
         work_.notify_one();
         return {nullptr, true};
     }
 
-    it->second.lastUsedFrame = frame_;
-    switch (it->second.state) {
-        case State::Ready: return {it->second.texture.get(), false};
+    Entry& entry = it->second;
+    entry.lastUsedFrame = frame_;
+    switch (entry.state) {
+        case State::Ready: return {entry.texture.get(), false};
         case State::Queued:
         case State::Loading: return {nullptr, true};
-        case State::Failed: break;
+        case State::Failed:
+            // Asked for again once the wait is over. Not reported as loading
+            // in between: nothing should poll for a tile that is not coming
+            // yet, and the next frame drawn after the wait picks it up.
+            if (std::chrono::steady_clock::now() >= entry.retryAt) {
+                entry.state = State::Queued;
+                pending_.push_back({key, mapGeneration_});
+                work_.notify_one();
+                return {nullptr, true};
+            }
+            break;
+        case State::Missing: break;
     }
     return {};
 }
 
-bool TileStore::fetchAndDecode(const std::string& map, const Key& key, Decoded& out) {
-    // Each worker keeps its own client: WinHTTP handles are cheap, and sharing
-    // one connection across workers would serialise them.
-    thread_local HttpClient client;
-    thread_local bool opened = false;
-    if (!opened) {
-        opened = client.open(L"tarkov-help/0.1 (+https://github.com/)");
-    }
+void TileStore::markFailed(Entry& entry) {
+    entry.state = State::Failed;
+    entry.retryAt = std::chrono::steady_clock::now() + kRetryAfter;
+}
 
+TileStore::Outcome TileStore::fetchAndDecode(HttpClient& client, const std::string& map,
+                                             const Key& key, Decoded& out) {
     const fs::path cached = cachePathFor(map, key);
-    std::vector<std::uint8_t> bytes = readFileBytes(cached);
+    std::vector<std::uint8_t> bytes = readBinaryFile(cached);
 
     if (bytes.empty()) {
-        if (!opened) {
-            return false;
-        }
         std::string url;
         {
             const std::lock_guard<std::mutex> lock(mutex_);
             url = urlFor(key);
         }
         if (url.empty()) {
-            return false;
+            return Outcome::Missing;
         }
         const auto response = client.get(url);
+        if (response.status == 404) {
+            return Outcome::Missing;
+        }
         if (!response.ok) {
-            return false;
+            return Outcome::Failed;
         }
         bytes = response.body;
-        writeFileBytes(cached, bytes);
+        writeFileAtomic(cached, std::string_view(reinterpret_cast<const char*>(bytes.data()),
+                                                 bytes.size()));
     }
 
     int width = 0;
@@ -230,10 +205,11 @@ bool TileStore::fetchAndDecode(const std::string& map, const Key& key, Decoded& 
                                             static_cast<int>(bytes.size()), &width,
                                             &height, &channels, 4);
     if (pixels == nullptr) {
-        // A corrupt cache entry should not poison the tile forever.
+        // A corrupt cache entry should not poison the tile forever: dropped,
+        // it is downloaded again on the retry.
         std::error_code ec;
         fs::remove(cached, ec);
-        return false;
+        return Outcome::Failed;
     }
 
     out.key = key;
@@ -242,10 +218,15 @@ bool TileStore::fetchAndDecode(const std::string& map, const Key& key, Decoded& 
     out.height = height;
     out.pixels.assign(pixels, pixels + static_cast<std::size_t>(width) * height * 4);
     stbi_image_free(pixels);
-    return true;
+    return Outcome::Ok;
 }
 
 void TileStore::workerLoop() {
+    // Each worker keeps its own client: WinHTTP handles are cheap, and sharing
+    // one connection across workers would serialise them.
+    HttpClient client;
+    client.open(&cancel_);
+
     for (;;) {
         Key key;
         std::string map;
@@ -276,7 +257,7 @@ void TileStore::workerLoop() {
         }
 
         Decoded decoded;
-        const bool ok = fetchAndDecode(map, key, decoded);
+        const Outcome outcome = fetchAndDecode(client, map, key, decoded);
 
         {
             const std::lock_guard<std::mutex> lock(mutex_);
@@ -287,8 +268,12 @@ void TileStore::workerLoop() {
             if (it == entries_.end()) {
                 continue;
             }
-            if (!ok) {
-                it->second.state = State::Failed;
+            if (outcome == Outcome::Missing) {
+                it->second.state = State::Missing;
+                continue;
+            }
+            if (outcome == Outcome::Failed) {
+                markFailed(it->second);
                 continue;
             }
             decoded_.push_back(std::move(decoded));
@@ -314,40 +299,12 @@ int TileStore::pump(int maxUploads) {
 
     int uploaded = 0;
     for (auto& tile : batch) {
-        D3D11_TEXTURE2D_DESC desc{};
-        desc.Width = static_cast<UINT>(tile.width);
-        desc.Height = static_cast<UINT>(tile.height);
-        desc.MipLevels = 1;
-        desc.ArraySize = 1;
-        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        desc.SampleDesc.Count = 1;
-        desc.Usage = D3D11_USAGE_IMMUTABLE;
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-
-        D3D11_SUBRESOURCE_DATA initial{};
-        initial.pSysMem = tile.pixels.data();
-        initial.SysMemPitch = static_cast<UINT>(tile.width * 4);
-
-        ComPtr<ID3D11Texture2D> texture;
-        if (FAILED(device_->CreateTexture2D(&desc, &initial, texture.put()))) {
+        const auto view =
+            createRgbaTexture(device_, tile.width, tile.height, tile.pixels.data());
+        if (!view) {
             const std::lock_guard<std::mutex> lock(mutex_);
             if (auto it = entries_.find(tile.key); it != entries_.end()) {
-                it->second.state = State::Failed;
-            }
-            continue;
-        }
-
-        D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc{};
-        viewDesc.Format = desc.Format;
-        viewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-        viewDesc.Texture2D.MipLevels = 1;
-
-        ComPtr<ID3D11ShaderResourceView> view;
-        if (FAILED(device_->CreateShaderResourceView(texture.get(), &viewDesc,
-                                                     view.put()))) {
-            const std::lock_guard<std::mutex> lock(mutex_);
-            if (auto it = entries_.find(tile.key); it != entries_.end()) {
-                it->second.state = State::Failed;
+                markFailed(it->second);
             }
             continue;
         }
@@ -402,26 +359,14 @@ void TileStore::evictIfNeeded() {
         if (toDrop == 0) {
             break;
         }
-        if (lastUsed == frame_) {
-            continue;  // On screen right now.
+        // On screen: drawn last frame, or just uploaded. pump() has already
+        // moved frame_ on, so "last frame" is frame_ - 1.
+        if (lastUsed + 1 >= frame_) {
+            continue;
         }
         entries_.erase(key);
         --toDrop;
     }
-}
-
-TileStore::Stats TileStore::stats() const {
-    const std::lock_guard<std::mutex> lock(mutex_);
-    Stats stats;
-    for (const auto& [key, entry] : entries_) {
-        switch (entry.state) {
-            case State::Ready: ++stats.ready; break;
-            case State::Loading: ++stats.loading; break;
-            case State::Failed: ++stats.failed; break;
-            case State::Queued: ++stats.queued; break;
-        }
-    }
-    return stats;
 }
 
 }  // namespace tarkov::win32

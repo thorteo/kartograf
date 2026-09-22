@@ -1,45 +1,16 @@
 #include "ui/Strings.h"
 #include "platform/win32/SvgMapStore.h"
 
-#include <shlobj.h>
-
 #include <cmath>
-#include <fstream>
-#include <sstream>
 
+#include "platform/win32/Files.h"
 #include "platform/win32/HttpClient.h"
+#include "platform/win32/Textures.h"
 
 namespace tarkov::win32 {
 namespace {
 
 namespace fs = std::filesystem;
-
-std::string readFile(const fs::path& path) {
-    std::ifstream in(path, std::ios::binary);
-    if (!in) {
-        return {};
-    }
-    std::ostringstream buffer;
-    buffer << in.rdbuf();
-    return buffer.str();
-}
-
-void writeFile(const fs::path& path, const std::string& text) {
-    std::error_code ec;
-    fs::create_directories(path.parent_path(), ec);
-    const fs::path temporary = path.string() + ".part";
-    {
-        std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
-        if (!out) {
-            return;
-        }
-        out.write(text.data(), static_cast<std::streamsize>(text.size()));
-        if (!out) {
-            return;
-        }
-    }
-    fs::rename(temporary, path, ec);
-}
 
 /// How long a map whose drawing could not be had is left alone before trying
 /// again. Long enough not to hammer the CDN from an offline machine, short
@@ -54,16 +25,6 @@ bool sameLayers(const std::vector<std::string>& a,
 }  // namespace
 
 SvgMapStore::~SvgMapStore() { stop(); }
-
-fs::path SvgMapStore::defaultCacheRoot() {
-    PWSTR raw = nullptr;
-    if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &raw))) {
-        fs::path path(raw);
-        CoTaskMemFree(raw);
-        return path / "tarkov-help" / "svg";
-    }
-    return fs::temp_directory_path() / "tarkov-help" / "svg";
-}
 
 void SvgMapStore::say(const std::string& message) const {
     if (logger_) {
@@ -81,7 +42,7 @@ bool SvgMapStore::start(ID3D11Device* device, Logger logger) {
     }
     device_ = device;
     logger_ = std::move(logger);
-    cacheRoot_ = defaultCacheRoot();
+    cacheRoot_ = appDataPath(L"svg");
 
     std::error_code ec;
     fs::create_directories(cacheRoot_, ec);
@@ -95,8 +56,14 @@ void SvgMapStore::stop() {
     if (!worker_.joinable()) {
         return;
     }
-    stopping_.store(true, std::memory_order_relaxed);
+    {
+        // Under the lock, or a worker between its check and its wait misses
+        // both the flag and the notification, and join() waits forever.
+        const std::lock_guard<std::mutex> lock(mutex_);
+        stopping_.store(true, std::memory_order_relaxed);
+    }
     wake_.notify_all();
+    cancel_.cancel();
     worker_.join();
 }
 
@@ -195,15 +162,15 @@ bool SvgMapStore::ensureDocument() {
     };
 
     const fs::path cached = cachePathFor(key);
-    std::string svg = readFile(cached);
+    std::string svg = readTextFile(cached);
     if (svg.empty()) {
         HttpClient client;
-        if (client.open(L"tarkov-help/0.1")) {
+        if (client.open(&cancel_)) {
             const auto response = client.get(url, 8u * 1024 * 1024);
             if (response.ok) {
                 svg.assign(response.body.begin(), response.body.end());
-                writeFile(cached, svg);
-            } else {
+                writeFileAtomic(cached, svg);
+            } else if (!cancel_.cancelled()) {
                 say(ui::trf(ui::Str::StatusDrawingDownloadFailed, ui::mapDisplayName(key).c_str()));
             }
         }
@@ -309,33 +276,9 @@ bool SvgMapStore::pump() {
         return false;
     }
 
-    D3D11_TEXTURE2D_DESC desc{};
-    desc.Width = static_cast<UINT>(image.width);
-    desc.Height = static_cast<UINT>(image.height);
-    desc.MipLevels = 1;
-    desc.ArraySize = 1;
-    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    desc.SampleDesc.Count = 1;
-    desc.Usage = D3D11_USAGE_IMMUTABLE;
-    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-
-    D3D11_SUBRESOURCE_DATA initial{};
-    initial.pSysMem = image.pixels.data();
-    initial.SysMemPitch = static_cast<UINT>(image.width * 4);
-
-    ComPtr<ID3D11Texture2D> texture;
-    if (FAILED(device_->CreateTexture2D(&desc, &initial, texture.put()))) {
-        return false;
-    }
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc{};
-    viewDesc.Format = desc.Format;
-    viewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    viewDesc.Texture2D.MipLevels = 1;
-
-    ComPtr<ID3D11ShaderResourceView> view;
-    if (FAILED(device_->CreateShaderResourceView(texture.get(), &viewDesc,
-                                                 view.put()))) {
+    const auto view =
+        createRgbaTexture(device_, image.width, image.height, image.pixels.data());
+    if (!view) {
         return false;
     }
 

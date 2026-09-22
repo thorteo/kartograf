@@ -189,6 +189,8 @@ if(WIN32)
         src/platform/win32/TarkovDataRepository.cpp
         src/platform/win32/SvgMapStore.cpp
         src/platform/win32/IconStore.cpp
+        src/platform/win32/Files.cpp
+        src/platform/win32/Textures.cpp
         src/platform/win32/SettingsWindow.cpp
         src/platform/win32/ImGuiLayer.cpp
         third_party/imgui/backends/imgui_impl_win32.cpp

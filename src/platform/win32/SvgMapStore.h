@@ -16,6 +16,7 @@
 
 #include "core/map/SvgRenderer.h"
 #include "platform/win32/ComPtr.h"
+#include "platform/win32/HttpClient.h"
 
 namespace tarkov::win32 {
 
@@ -68,8 +69,6 @@ public:
     /// when a new texture appeared.
     bool pump();
 
-    static std::filesystem::path defaultCacheRoot();
-
 private:
     struct Request {
         map::SvgRect region;
@@ -90,6 +89,7 @@ private:
     mutable std::mutex mutex_;
     std::condition_variable wake_;
     std::atomic<bool> stopping_{false};
+    HttpCancel cancel_;
     std::thread worker_;
 
     std::string mapKey_;

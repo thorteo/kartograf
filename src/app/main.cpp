@@ -16,8 +16,6 @@
 #include <ctime>
 #include <deque>
 #include <filesystem>
-#include <fstream>
-#include <sstream>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -35,6 +33,7 @@
 #include "core/geo/MapConfig.h"
 #include "core/input/Hotkey.h"
 #include "core/settings/Settings.h"
+#include "platform/win32/Files.h"
 #include "platform/win32/GameDataWatcher.h"
 #include "platform/win32/GameWindow.h"
 #include "platform/win32/ImGuiLayer.h"
@@ -45,6 +44,7 @@
 #include "platform/win32/SvgMapStore.h"
 #include "platform/win32/TarkovDataRepository.h"
 #include "platform/win32/TileStore.h"
+#include "platform/win32/Utf8.h"
 #include "ui/Hud.h"
 #include "ui/MapView.h"
 #include "ui/QuestGlyphs.h"
@@ -135,46 +135,20 @@ bool hasFlag(int argc, char** argv, const char* name) {
 }
 
 std::filesystem::path settingsFile() {
-    return tarkov::win32::TarkovDataRepository::defaultCacheRoot().parent_path() /
-           "settings.json";
+    return tarkov::win32::appDataPath(L"settings.json");
 }
 
 tarkov::settings::Settings loadSettings() {
-    std::ifstream in(settingsFile(), std::ios::binary);
-    std::ostringstream buffer;
-    if (in) {
-        buffer << in.rdbuf();
-    }
-    auto loaded = tarkov::settings::parse(buffer.str());
+    auto loaded = tarkov::settings::parse(tarkov::win32::readTextFile(settingsFile()));
     tarkov::settings::sanitize(loaded);
     return loaded;
 }
 
 void saveSettings(const tarkov::settings::Settings& settings) {
-    const std::string text = tarkov::settings::serialize(settings);
-    const auto path = settingsFile();
-    std::error_code ec;
-    std::filesystem::create_directories(path.parent_path(), ec);
-    const auto temporary = path.string() + ".part";
-    {
-        std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
-        out.write(text.data(), static_cast<std::streamsize>(text.size()));
-        if (!out) {
-            return;
-        }
-    }
-    std::filesystem::rename(temporary, path, ec);
+    tarkov::win32::writeFileAtomic(settingsFile(), tarkov::settings::serialize(settings));
 }
 
-std::wstring widen(const std::string& text) {
-    if (text.empty()) {
-        return {};
-    }
-    const int length = MultiByteToWideChar(CP_UTF8, 0, text.c_str(), -1, nullptr, 0);
-    std::wstring out(static_cast<std::size_t>(length > 0 ? length - 1 : 0), L'\0');
-    MultiByteToWideChar(CP_UTF8, 0, text.c_str(), -1, out.data(), length);
-    return out;
-}
+using tarkov::win32::widen;
 
 /// Registers one hotkey. Returns an empty string on success, or the problem
 /// to show beside that key in the settings window.
@@ -233,8 +207,7 @@ void drawStatus(unsigned long long nowMillis) {
 }
 
 std::filesystem::path progressFile() {
-    return tarkov::win32::TarkovDataRepository::defaultCacheRoot().parent_path() /
-           "progress.json";
+    return tarkov::win32::appDataPath(L"progress.json");
 }
 
 std::mutex g_progressFileMutex;
@@ -244,29 +217,25 @@ std::mutex g_progressFileMutex;
 /// hence the lock; the temporary-then-rename keeps a crash from truncating it.
 void saveProgress(const tarkov::data::QuestProgressStore& store) {
     const std::lock_guard<std::mutex> lock(g_progressFileMutex);
-    const std::string text = store.snapshot()->serialize();
-    const auto path = progressFile();
-    std::error_code ec;
-    std::filesystem::create_directories(path.parent_path(), ec);
-    const auto temporary = path.string() + ".part";
-    {
-        std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
-        out.write(text.data(), static_cast<std::streamsize>(text.size()));
-        if (!out) {
-            return;
-        }
-    }
-    std::filesystem::rename(temporary, path, ec);
+    tarkov::win32::writeFileAtomic(progressFile(), store.snapshot()->serialize());
 }
 
 tarkov::data::QuestProgress loadProgress() {
-    std::ifstream in(progressFile(), std::ios::binary);
-    if (!in) {
-        return {};
+    return tarkov::data::QuestProgress::parse(tarkov::win32::readTextFile(progressFile()));
+}
+
+/// Whether a raid is on, for holding back downloads.
+///
+/// From map loading to the result screen. Bounded, because the end is read
+/// from a stack trace that a disconnect or a crash never writes: a phase stuck
+/// "in raid" must not defer refreshes for the rest of the session.
+bool raidUnderWay(const tarkov::game::RaidSnapshot& raid, std::int64_t nowMillis) {
+    using tarkov::game::RaidPhase;
+    if (raid.phase == RaidPhase::Idle || raid.phase == RaidPhase::Ended) {
+        return false;
     }
-    std::ostringstream buffer;
-    buffer << in.rdbuf();
-    return tarkov::data::QuestProgress::parse(buffer.str());
+    constexpr std::int64_t kLongestRaidMillis = 90LL * 60 * 1000;
+    return nowMillis - raid.phaseChangedAtMillis < kLongestRaidMillis;
 }
 
 /// Builds the markers for one map out of the quest data.
@@ -401,11 +370,8 @@ int main(int argc, char** argv) {
     if (!imgui.initialise(overlay.handle(), overlay.device(), overlay.context())) {
         // MessageBoxW: the text may be Russian, which the ANSI variant would
         // mangle through the system code page.
-        const char* message = ui::tr(ui::Str::ErrorInterfaceInit);
-        const int length = MultiByteToWideChar(CP_UTF8, 0, message, -1, nullptr, 0);
-        std::wstring wide(static_cast<std::size_t>(length > 0 ? length : 1), L'\0');
-        MultiByteToWideChar(CP_UTF8, 0, message, -1, wide.data(), length);
-        MessageBoxW(nullptr, wide.c_str(), L"tarkov-help", MB_ICONERROR | MB_OK);
+        MessageBoxW(nullptr, widen(ui::tr(ui::Str::ErrorInterfaceInit)).c_str(),
+                    L"tarkov-help", MB_ICONERROR | MB_OK);
         return 1;
     }
 
@@ -740,6 +706,20 @@ int main(int argc, char** argv) {
             game.bounds = RECT{0, 0, GetSystemMetrics(SM_CXSCREEN),
                                GetSystemMetrics(SM_CYSCREEN)};
         }
+        {
+            // Whether or not the overlay is on screen: the game's own logs say
+            // whether this is PvE, so the right dataset is chosen without
+            // asking, and a raid under way holds routine data refreshes back.
+            const auto raid = raidState.snapshot();
+            if (raid->raidMode != lastRaidMode) {
+                lastRaidMode = raid->raidMode;
+                if (!lastRaidMode.empty()) {
+                    quests.setGameMode(lastRaidMode == "Online" ? "regular" : "pve");
+                }
+            }
+            quests.setInRaid(raidUnderWay(*raid, static_cast<std::int64_t>(GetTickCount64())));
+        }
+
         const bool shouldShow = overlayEnabled && game.found && game.foreground;
         overlay.setVisible(shouldShow);
 
@@ -770,15 +750,6 @@ int main(int argc, char** argv) {
 
         const auto snapshot = raidState.snapshot();
         const auto nowTicks = GetTickCount64();
-
-        // The game's own logs say whether this is PvE, so the right dataset can
-        // be chosen without asking.
-        if (snapshot->raidMode != lastRaidMode) {
-            lastRaidMode = snapshot->raidMode;
-            if (!lastRaidMode.empty()) {
-                quests.setGameMode(lastRaidMode == "Online" ? "regular" : "pve");
-            }
-        }
 
         // Reactive rendering.
         //

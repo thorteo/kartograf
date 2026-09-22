@@ -1,16 +1,10 @@
 #include "ui/Strings.h"
 #include "platform/win32/TarkovDataRepository.h"
 
-#include <windows.h>
-
-#include <shlobj.h>
-
 #include <ctime>
-#include <fstream>
-#include <sstream>
 
 #include "core/data/MapIds.h"
-#include "platform/win32/HttpClient.h"
+#include "platform/win32/Files.h"
 
 namespace tarkov::win32 {
 namespace {
@@ -23,57 +17,19 @@ constexpr const char* kHost = "https://json.tarkov.dev";
 /// on wipes and patches, not hourly.
 constexpr long long kMaxAgeSeconds = 12 * 60 * 60;
 
+/// How long after a download that lacked an optional document -- a locale,
+/// the maps -- the whole set may be fetched again to fill it in. Retrying
+/// every half hour re-downloaded everything for as long as one endpoint was
+/// down.
+constexpr long long kOptionalRetrySeconds = 6 * 60 * 60;
+
 long long nowUnix() {
     return static_cast<long long>(std::time(nullptr));
-}
-
-std::string readTextFile(const fs::path& path) {
-    std::ifstream in(path, std::ios::binary);
-    if (!in) {
-        return {};
-    }
-    std::ostringstream buffer;
-    buffer << in.rdbuf();
-    return buffer.str();
-}
-
-bool writeTextFile(const fs::path& path, const std::string& text) {
-    std::error_code ec;
-    fs::create_directories(path.parent_path(), ec);
-    // Write then rename, so an interrupted download cannot leave a truncated
-    // document to be parsed as the cache forever afterwards.
-    const fs::path temporary = path.string() + ".part";
-    {
-        std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
-        if (!out) {
-            return false;
-        }
-        out.write(text.data(), static_cast<std::streamsize>(text.size()));
-        if (!out) {
-            return false;
-        }
-    }
-    fs::rename(temporary, path, ec);
-    if (ec) {
-        fs::remove(temporary, ec);
-        return false;
-    }
-    return true;
 }
 
 }  // namespace
 
 TarkovDataRepository::~TarkovDataRepository() { stop(); }
-
-fs::path TarkovDataRepository::defaultCacheRoot() {
-    PWSTR raw = nullptr;
-    if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &raw))) {
-        fs::path path(raw);
-        CoTaskMemFree(raw);
-        return path / "tarkov-help" / "data";
-    }
-    return fs::temp_directory_path() / "tarkov-help" / "data";
-}
 
 fs::path TarkovDataRepository::cacheDir(const std::string& mode) const {
     return cacheRoot_ / mode;
@@ -89,7 +45,7 @@ bool TarkovDataRepository::start(std::string gameMode, std::string language,
                            Logger logger) {
     logger_ = std::move(logger);
     language_ = std::move(language);
-    cacheRoot_ = defaultCacheRoot();
+    cacheRoot_ = appDataPath(L"data");
     {
         const std::lock_guard<std::mutex> lock(mutex_);
         gameMode_ = gameMode;
@@ -104,8 +60,14 @@ void TarkovDataRepository::stop() {
     if (!worker_.joinable()) {
         return;
     }
-    stopping_.store(true, std::memory_order_relaxed);
+    {
+        // Under the lock, or the worker between its check and its wait misses
+        // both the flag and the notification and sleeps out its half hour.
+        const std::lock_guard<std::mutex> lock(mutex_);
+        stopping_.store(true, std::memory_order_relaxed);
+    }
     wake_.notify_all();
+    cancel_.cancel();  // Quitting mid-download must not wait for it.
     worker_.join();
 }
 
@@ -134,15 +96,15 @@ void TarkovDataRepository::setLanguage(std::string language) {
     wake_.notify_one();
 }
 
-void TarkovDataRepository::refresh() {
+void TarkovDataRepository::setInRaid(bool inRaid) {
     {
         const std::lock_guard<std::mutex> lock(mutex_);
-        if (fetching_) {
+        if (inRaid_ == inRaid) {
             return;
         }
-        refreshRequested_ = true;
+        inRaid_ = inRaid;
     }
-    wake_.notify_one();
+    wake_.notify_one();  // A refresh held back for the raid can go now.
 }
 
 std::shared_ptr<const data::TaskSet> TarkovDataRepository::tasks() const {
@@ -162,7 +124,6 @@ TarkovDataRepository::Status TarkovDataRepository::status() const {
     status.haveData = !published_->tasks.empty();
     status.fetching = fetching_;
     status.ageSeconds = writtenAtUnix_ == 0 ? -1 : nowUnix() - writtenAtUnix_;
-    status.detail = detail_;
     return status;
 }
 
@@ -233,7 +194,7 @@ bool TarkovDataRepository::downloadAndCache(const std::string& mode) {
         language = language_;
     }
     HttpClient client;
-    if (!client.open(L"tarkov-help/0.1")) {
+    if (!client.open(&cancel_)) {
         return false;
     }
 
@@ -241,8 +202,10 @@ bool TarkovDataRepository::downloadAndCache(const std::string& mode) {
     // The task document is a couple of megabytes; allow room but not unbounded.
     const auto tasksResponse = client.get(base + "/tasks", 32u * 1024 * 1024);
     if (!tasksResponse.ok) {
-        say(ui::trf(ui::Str::StatusQuestsDownloadFailed,
-                    static_cast<int>(tasksResponse.status)));
+        if (!cancel_.cancelled()) {
+            say(ui::trf(ui::Str::StatusQuestsDownloadFailed,
+                        static_cast<int>(tasksResponse.status)));
+        }
         return false;
     }
 
@@ -299,24 +262,25 @@ bool TarkovDataRepository::downloadAndCache(const std::string& mode) {
     const fs::path dir = cacheDir(mode);
     const long long writtenAt = nowUnix();
     if (!mapsBody.empty()) {
-        writeTextFile(dir / "maps.json", mapsBody);
+        writeFileAtomic(dir / "maps.json", mapsBody);
     }
     if (!mapsLocaleBody.empty()) {
-        writeTextFile(dir / ("maps_" + language + ".json"), mapsLocaleBody);
+        writeFileAtomic(dir / ("maps_" + language + ".json"), mapsLocaleBody);
     }
-    writeTextFile(dir / "tasks.json", body);
+    writeFileAtomic(dir / "tasks.json", body);
     if (!localeBody.empty()) {
-        writeTextFile(dir / ("tasks_" + language + ".json"), localeBody);
+        writeFileAtomic(dir / ("tasks_" + language + ".json"), localeBody);
     }
     if (!itemLocaleBody.empty()) {
-        writeTextFile(dir / ("items_" + language + ".json"), itemLocaleBody);
+        writeFileAtomic(dir / ("items_" + language + ".json"), itemLocaleBody);
     }
-    writeTextFile(dir / "tasks.updated", std::to_string(writtenAt));
+    writeFileAtomic(dir / "tasks.updated", std::to_string(writtenAt));
     {
         // What this download actually brought. Left as the cache load set it,
         // a missing locale would trigger a full re-download every half hour.
         const std::lock_guard<std::mutex> lock(mutex_);
         localeMissing_ = localeBody.empty() || itemLocaleBody.empty();
+        optionalRetryAtUnix_ = writtenAt + kOptionalRetrySeconds;
     }
 
     const std::size_t count = set.tasks.size();
@@ -336,8 +300,6 @@ void TarkovDataRepository::run() {
         {
             std::unique_lock<std::mutex> lock(mutex_);
             mode = wantedMode_;
-            wantRefresh = refreshRequested_;
-            refreshRequested_ = false;
             if (reloadRequested_) {
                 reloadRequested_ = false;
                 loadedMode.clear();  // re-read the cache through the new locale
@@ -353,22 +315,35 @@ void TarkovDataRepository::run() {
             }
         }
 
+        // A refresh of data that is merely old, or missing an optional part,
+        // waits for the raid to end: several megabytes competing with the game
+        // for bandwidth mid-fight is the wrong trade. With no data at all, or
+        // none for this mode, it cannot wait.
+        bool deferred = false;
         if (!wantRefresh) {
             const auto current = status();
             bool mapsMissing = false;
             bool localeMissing = false;
+            bool optionalDue = false;
+            bool inRaid = false;
             {
                 const std::lock_guard<std::mutex> lock(mutex_);
                 mapsMissing = publishedMaps_->empty();
                 localeMissing = localeMissing_;
+                optionalDue = nowUnix() >= optionalRetryAtUnix_;
+                inRaid = inRaid_;
             }
             // Refresh when there is nothing, when its age is unknown, when it
             // is old, or when a cache from before map data existed lacks it.
             // An unknown age must count as stale: treating it as fresh is how
             // an older cache once kept extracts from ever being downloaded.
-            if (!current.haveData || current.ageSeconds < 0 ||
-                current.ageSeconds > kMaxAgeSeconds || mapsMissing || localeMissing) {
+            const bool stale = current.ageSeconds < 0 || current.ageSeconds > kMaxAgeSeconds;
+            const bool incomplete = (mapsMissing || localeMissing) && optionalDue;
+            if (!current.haveData) {
                 wantRefresh = true;
+            } else if (stale || incomplete) {
+                wantRefresh = !inRaid;
+                deferred = inRaid;
             }
         }
 
@@ -376,22 +351,21 @@ void TarkovDataRepository::run() {
             {
                 const std::lock_guard<std::mutex> lock(mutex_);
                 fetching_ = true;
-                detail_ = "downloading";
             }
-            const bool ok = downloadAndCache(mode);
+            downloadAndCache(mode);
             {
                 const std::lock_guard<std::mutex> lock(mutex_);
                 fetching_ = false;
-                detail_ = ok ? "" : "download failed";
             }
         }
 
         std::unique_lock<std::mutex> lock(mutex_);
-        // Wake on a mode change, an explicit refresh, or shutdown; otherwise
-        // sleep long. There is nothing to poll for.
-        wake_.wait_for(lock, std::chrono::minutes(30), [this] {
-            return stopping_.load(std::memory_order_relaxed) || refreshRequested_ ||
-                   reloadRequested_ || wantedMode_ != gameMode_;
+        // Wake on a mode change, a language change, the end of a raid that
+        // held a refresh back, or shutdown; otherwise sleep long. There is
+        // nothing to poll for.
+        wake_.wait_for(lock, std::chrono::minutes(30), [this, deferred] {
+            return stopping_.load(std::memory_order_relaxed) || reloadRequested_ ||
+                   wantedMode_ != gameMode_ || (deferred && !inRaid_);
         });
     }
 }

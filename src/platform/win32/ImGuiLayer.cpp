@@ -11,6 +11,8 @@
 #include <backends/imgui_impl_dx11.h>
 #include <backends/imgui_impl_win32.h>
 
+#include "platform/win32/Utf8.h"
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg,
                                                              WPARAM wParam,
                                                              LPARAM lParam);
@@ -41,12 +43,7 @@ bool loadSystemFont(ImGuiIO& io, float size) {
             continue;
         }
         // ImGui opens files by UTF-8 name and converts on Windows.
-        const int length = WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), -1, nullptr,
-                                               0, nullptr, nullptr);
-        std::string path(static_cast<std::size_t>(length > 0 ? length - 1 : 0), '\0');
-        WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), -1, path.data(), length, nullptr,
-                            nullptr);
-        if (io.Fonts->AddFontFromFileTTF(path.c_str(), size) != nullptr) {
+        if (io.Fonts->AddFontFromFileTTF(narrow(wide).c_str(), size) != nullptr) {
             return true;
         }
     }
@@ -106,14 +103,18 @@ bool ImGuiLayer::initialise(HWND hwnd, ID3D11Device* device,
     applyOverlayStyle();
     loadSystemFont(io, 17.0f);
 
-    if (!ImGui_ImplWin32_Init(hwnd)) {
+    const auto abandon = [&] {
+        ImGui::DestroyContext(context_);
+        context_ = nullptr;
         ImGui::SetCurrentContext(previous);
         return false;
+    };
+    if (!ImGui_ImplWin32_Init(hwnd)) {
+        return abandon();
     }
     if (!ImGui_ImplDX11_Init(device, context)) {
         ImGui_ImplWin32_Shutdown();
-        ImGui::SetCurrentContext(previous);
-        return false;
+        return abandon();
     }
 
     initialised_ = true;

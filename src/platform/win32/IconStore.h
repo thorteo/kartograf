@@ -2,7 +2,7 @@
 
 #include <windows.h>
 
-#include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <deque>
 #include <filesystem>
@@ -16,6 +16,7 @@
 
 #include "core/map/SvgRenderer.h"
 #include "platform/win32/ComPtr.h"
+#include "platform/win32/HttpClient.h"
 
 namespace tarkov::win32 {
 
@@ -57,14 +58,20 @@ private:
         std::vector<std::uint8_t> pixels;
     };
 
+    /// Missing: the server has no such icon. Failed: try again later.
+    enum class Outcome { Ok, Missing, Failed };
+
     void run(std::vector<std::string> names);
+    Outcome load(HttpClient& client, const std::string& name);
 
     ID3D11Device* device_ = nullptr;
     std::filesystem::path cacheRoot_;
     std::thread worker_;
-    std::atomic<bool> stopping_{false};
+    HttpCancel cancel_;
 
     mutable std::mutex mutex_;
+    std::condition_variable wake_;
+    bool stopping_ = false;
     std::deque<Decoded> decoded_;
     std::map<std::string, ComPtr<ID3D11ShaderResourceView>> textures_;
 };

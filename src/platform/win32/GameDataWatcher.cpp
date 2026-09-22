@@ -8,6 +8,7 @@
 
 #include "core/game/ScreenshotName.h"
 #include "core/geo/MapConfig.h"
+#include "platform/win32/Utf8.h"
 
 namespace tarkov::win32 {
 namespace {
@@ -39,19 +40,6 @@ std::int64_t millisAt(const game::LogTimestamp& written) {
     const long long ago =
         (std::max)(0LL, now.millisSinceEpoch() - written.millisSinceEpoch());
     return (std::max)(std::int64_t{1}, nowMillis() - ago);
-}
-
-std::string narrow(const std::wstring& wide) {
-    if (wide.empty()) {
-        return {};
-    }
-    const int size = WideCharToMultiByte(CP_UTF8, 0, wide.data(),
-                                         static_cast<int>(wide.size()), nullptr, 0,
-                                         nullptr, nullptr);
-    std::string out(static_cast<std::size_t>(size), '\0');
-    WideCharToMultiByte(CP_UTF8, 0, wide.data(), static_cast<int>(wide.size()),
-                        out.data(), size, nullptr, nullptr);
-    return out;
 }
 
 /// Finds a log file in a session folder by its suffix. The names are prefixed

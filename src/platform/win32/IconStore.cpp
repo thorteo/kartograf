@@ -1,37 +1,19 @@
 #include "platform/win32/IconStore.h"
 
-#include <shlobj.h>
-
-#include <fstream>
-#include <sstream>
-
 #include <stb/stb_image.h>
 
-#include "platform/win32/HttpClient.h"
+#include "platform/win32/Files.h"
+#include "platform/win32/Textures.h"
 
 namespace tarkov::win32 {
 namespace {
 
 namespace fs = std::filesystem;
 
-fs::path cacheRootPath() {
-    PWSTR raw = nullptr;
-    if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &raw))) {
-        fs::path path(raw);
-        CoTaskMemFree(raw);
-        return path / "tarkov-help" / "icons";
-    }
-    return fs::temp_directory_path() / "tarkov-help" / "icons";
-}
-
-std::vector<std::uint8_t> readBytes(const fs::path& path) {
-    std::ifstream in(path, std::ios::binary);
-    if (!in) {
-        return {};
-    }
-    return std::vector<std::uint8_t>(std::istreambuf_iterator<char>(in),
-                                     std::istreambuf_iterator<char>());
-}
+/// How long to wait before trying icons that could not be had again. Offline
+/// at startup, they once never arrived until the overlay was restarted; the
+/// vector stand-ins are drawn in the meantime.
+constexpr auto kRetryAfter = std::chrono::minutes(5);
 
 }  // namespace
 
@@ -46,61 +28,88 @@ bool IconStore::start(ID3D11Device* device, std::vector<std::string> names) {
         return false;
     }
     device_ = device;
-    cacheRoot_ = cacheRootPath();
+    cacheRoot_ = appDataPath(L"icons");
     std::error_code ec;
     fs::create_directories(cacheRoot_, ec);
-    stopping_.store(false, std::memory_order_relaxed);
+    stopping_ = false;
     worker_ = std::thread(&IconStore::run, this, std::move(names));
     return true;
 }
 
 void IconStore::stop() {
-    stopping_.store(true, std::memory_order_relaxed);
+    {
+        const std::lock_guard<std::mutex> lock(mutex_);
+        stopping_ = true;
+    }
+    wake_.notify_all();
+    cancel_.cancel();
     if (worker_.joinable()) {
         worker_.join();
     }
 }
 
+IconStore::Outcome IconStore::load(HttpClient& client, const std::string& name) {
+    const fs::path cached = cacheRoot_ / (name + ".png");
+    std::vector<std::uint8_t> bytes = readBinaryFile(cached);
+    if (bytes.empty()) {
+        const auto response = client.get(urlFor(name), 1024 * 1024);
+        if (response.status == 404) {
+            return Outcome::Missing;
+        }
+        if (!response.ok) {
+            return Outcome::Failed;
+        }
+        bytes = response.body;
+        writeFileAtomic(cached, std::string_view(reinterpret_cast<const char*>(bytes.data()),
+                                                 bytes.size()));
+    }
+
+    int width = 0, height = 0, channels = 0;
+    stbi_uc* pixels = stbi_load_from_memory(
+        bytes.data(), static_cast<int>(bytes.size()), &width, &height, &channels, 4);
+    if (pixels == nullptr) {
+        std::error_code ec;
+        fs::remove(cached, ec);  // Fetched afresh on the retry.
+        return Outcome::Failed;
+    }
+    Decoded decoded;
+    decoded.name = name;
+    decoded.width = width;
+    decoded.height = height;
+    decoded.pixels.assign(pixels, pixels + static_cast<std::size_t>(width) * height * 4);
+    stbi_image_free(pixels);
+
+    const std::lock_guard<std::mutex> lock(mutex_);
+    decoded_.push_back(std::move(decoded));
+    return Outcome::Ok;
+}
+
 void IconStore::run(std::vector<std::string> names) {
     HttpClient client;
-    const bool online = client.open(L"tarkov-help/0.1");
+    client.open(&cancel_);
 
-    for (const auto& name : names) {
-        if (stopping_.load(std::memory_order_relaxed)) {
-            return;
-        }
-        const fs::path cached = cacheRoot_ / (name + ".png");
-        std::vector<std::uint8_t> bytes = readBytes(cached);
-        if (bytes.empty() && online) {
-            const auto response = client.get(urlFor(name), 1024 * 1024);
-            if (response.ok) {
-                bytes = response.body;
-                std::ofstream out(cached, std::ios::binary | std::ios::trunc);
-                out.write(reinterpret_cast<const char*>(bytes.data()),
-                          static_cast<std::streamsize>(bytes.size()));
+    for (;;) {
+        std::vector<std::string> failed;
+        for (const auto& name : names) {
+            {
+                const std::lock_guard<std::mutex> lock(mutex_);
+                if (stopping_) {
+                    return;
+                }
+            }
+            if (load(client, name) == Outcome::Failed) {
+                failed.push_back(name);
             }
         }
-        if (bytes.empty()) {
-            continue;  // The vector fallback marker is drawn instead.
+        if (failed.empty()) {
+            return;
         }
+        names = std::move(failed);
 
-        int width = 0, height = 0, channels = 0;
-        stbi_uc* pixels = stbi_load_from_memory(
-            bytes.data(), static_cast<int>(bytes.size()), &width, &height, &channels, 4);
-        if (pixels == nullptr) {
-            std::error_code ec;
-            fs::remove(cached, ec);
-            continue;
+        std::unique_lock<std::mutex> lock(mutex_);
+        if (wake_.wait_for(lock, kRetryAfter, [this] { return stopping_; })) {
+            return;
         }
-        Decoded decoded;
-        decoded.name = name;
-        decoded.width = width;
-        decoded.height = height;
-        decoded.pixels.assign(pixels, pixels + static_cast<std::size_t>(width) * height * 4);
-        stbi_image_free(pixels);
-
-        const std::lock_guard<std::mutex> lock(mutex_);
-        decoded_.push_back(std::move(decoded));
     }
 }
 
@@ -126,26 +135,9 @@ bool IconStore::pump() {
     }
     bool any = false;
     for (auto& icon : batch) {
-        D3D11_TEXTURE2D_DESC desc{};
-        desc.Width = static_cast<UINT>(icon.width);
-        desc.Height = static_cast<UINT>(icon.height);
-        desc.MipLevels = 1;
-        desc.ArraySize = 1;
-        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        desc.SampleDesc.Count = 1;
-        desc.Usage = D3D11_USAGE_IMMUTABLE;
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-
-        D3D11_SUBRESOURCE_DATA initial{};
-        initial.pSysMem = icon.pixels.data();
-        initial.SysMemPitch = static_cast<UINT>(icon.width * 4);
-
-        ComPtr<ID3D11Texture2D> texture;
-        if (FAILED(device_->CreateTexture2D(&desc, &initial, texture.put()))) {
-            continue;
-        }
-        ComPtr<ID3D11ShaderResourceView> view;
-        if (FAILED(device_->CreateShaderResourceView(texture.get(), nullptr, view.put()))) {
+        const auto view =
+            createRgbaTexture(device_, icon.width, icon.height, icon.pixels.data());
+        if (!view) {
             continue;
         }
         const std::lock_guard<std::mutex> lock(mutex_);

@@ -31,12 +31,82 @@ SvgSize svgNaturalSize(std::string_view svg) {
 
 namespace {
 
-void applyLayerVisibility(lunasvg::Document& document,
+/// The value of `name="..."` inside one tag's text, or empty.
+std::string_view attributeIn(std::string_view tag, std::string_view name) {
+    std::size_t at = 0;
+    while ((at = tag.find(name, at)) != std::string_view::npos) {
+        // A whole attribute name: preceded by space, followed by ="
+        const bool starts = at > 0 && (tag[at - 1] == ' ' || tag[at - 1] == '\t' ||
+                                       tag[at - 1] == '\n' || tag[at - 1] == '\r');
+        const std::size_t valueAt = at + name.size() + 2;
+        if (starts && tag.substr(at + name.size(), 2) == "=\"") {
+            const std::size_t end = tag.find('"', valueAt);
+            if (end != std::string_view::npos) {
+                return tag.substr(valueAt, end - valueAt);
+            }
+        }
+        at += name.size();
+    }
+    return {};
+}
+
+struct DeclaredLayer {
+    std::string_view id;
+    std::string_view keptWith;  ///< data-keep-with-group, or empty
+};
+
+/// The floor groups a document declares: every <g> with a data-layer.
+std::vector<DeclaredLayer> declaredLayers(std::string_view svg) {
+    std::vector<DeclaredLayer> layers;
+    std::size_t at = 0;
+    while ((at = svg.find("<g", at)) != std::string_view::npos) {
+        const std::size_t end = svg.find('>', at);
+        if (end == std::string_view::npos) {
+            break;
+        }
+        const std::string_view tag = svg.substr(at, end - at);
+        at = end;
+        if (tag.size() > 2 && tag[2] != ' ' && tag[2] != '\t' && tag[2] != '\n' &&
+            tag[2] != '\r') {
+            continue;  // <glyph>, <gradient>: not a group
+        }
+        if (attributeIn(tag, "data-layer").empty()) {
+            continue;
+        }
+        const std::string_view id = attributeIn(tag, "id");
+        if (!id.empty()) {
+            layers.push_back({id, attributeIn(tag, "data-keep-with-group")});
+        }
+    }
+    return layers;
+}
+
+/// Shows exactly the floors asked for.
+///
+/// tarkov.dev's documents draw every floor as authored and leave hiding them
+/// to the page, so each floor group the document declares with data-layer is
+/// hidden unless asked for, or kept with a group that is (First_Floor goes
+/// with Ground_Level). Once, only the asked-for groups were forced visible and
+/// nothing was hidden, so every floor of every map drew stacked on every
+/// floor -- found 2026-09-22 when three floors of Dorms rendered to the same
+/// pixels. With no floors named, the document draws as authored.
+void applyLayerVisibility(lunasvg::Document& document, std::string_view svg,
                           const std::vector<std::string>& visibleLayerIds) {
     if (visibleLayerIds.empty()) {
         return;
     }
+    const auto visible = [&](std::string_view id) {
+        return !id.empty() && std::find(visibleLayerIds.begin(), visibleLayerIds.end(),
+                                        id) != visibleLayerIds.end();
+    };
     std::string sheet;
+    for (const auto& layer : declaredLayers(svg)) {
+        if (!visible(layer.id) && !visible(layer.keptWith)) {
+            sheet += "#";
+            sheet += layer.id;
+            sheet += "{display:none!important}";
+        }
+    }
     for (const auto& id : visibleLayerIds) {
         if (id.empty()) {
             continue;
@@ -87,7 +157,7 @@ RenderedImage renderSvgLayers(std::string_view svg,
     if (!document) {
         return {};
     }
-    applyLayerVisibility(*document, visibleLayerIds);
+    applyLayerVisibility(*document, svg, visibleLayerIds);
     lunasvg::Bitmap bitmap = document->renderToBitmap(width, height);
     return bitmapToImage(bitmap);
 }
@@ -107,7 +177,7 @@ bool SvgDocument::load(std::string_view svg,
     if (!impl_->document) {
         return false;
     }
-    applyLayerVisibility(*impl_->document, visibleLayerIds);
+    applyLayerVisibility(*impl_->document, svg, visibleLayerIds);
     return true;
 }
 

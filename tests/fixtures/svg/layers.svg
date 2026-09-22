@@ -1,14 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Mirrors how tarkov.dev's abstract maps are built: every floor lives in
-       one document, the ground level is visible and the upper floors are
-       hidden until asked for. -->
-  <g id="Ground_Level">
+  <!-- Built like tarkov.dev's abstract maps (checked against the Customs,
+       Shoreline and Streets documents on 2026-09-22): every floor lives in
+       one document, every floor's group is visible as authored, and each is
+       marked with data-layer. The page showing the map hides the floors not
+       asked for. A group marked data-keep-with-group shows with that group:
+       First_Floor goes with the ground. -->
+  <g id="Ground_Level" data-layer="Ground_Level">
     <rect x="0" y="0" width="50" height="100" fill="#0000ff"/>
   </g>
-  <g id="Second_Floor" style="display:none">
+  <g id="Underground_Level" class="shadow" data-layer="Underground_Level">
+    <rect x="0" y="80" width="50" height="20" fill="#ffff00"/>
+  </g>
+  <g id="First_Floor" class="shadow" data-keep-with-group="Ground_Level" data-layer="First_Floor">
+    <rect x="0" y="0" width="50" height="20" fill="#00ffff"/>
+  </g>
+  <g id="Second_Floor" class="shadow" data-layer="Second_Floor">
     <rect x="50" y="0" width="50" height="50" fill="#ff0000"/>
   </g>
-  <g id="Third_Floor" style="display:none">
+  <g id="Third_Floor" class="shadow" data-layer="Third_Floor">
     <rect x="50" y="50" width="50" height="50" fill="#00ff00"/>
   </g>
 </svg>

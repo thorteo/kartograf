@@ -44,9 +44,31 @@ TEST_CASE("only the ground level draws when nothing else is asked for") {
 
     // Left half is the ground rectangle.
     CHECK(pixelAt(image, 25, 50) == Rgba{0, 0, 255, 255});
-    // The upper floors stay hidden, so the right half is transparent.
+    // The document draws every floor; the ones not asked for are hidden, so
+    // the right half is transparent. Before this, all floors drew stacked on
+    // every floor of every real map.
     CHECK(pixelAt(image, 75, 25).a == 0);
     CHECK(pixelAt(image, 75, 75).a == 0);
+    // The basement is hidden too, leaving the ground beneath it.
+    CHECK(pixelAt(image, 25, 90) == Rgba{0, 0, 255, 255});
+    // A group kept with the ground shows with it.
+    CHECK(pixelAt(image, 25, 10) == Rgba{0, 255, 255, 255});
+}
+
+TEST_CASE("the basement shows when asked for") {
+    const RenderedImage image =
+        renderSvgLayers(layersSvg(), {"Ground_Level", "Underground_Level"}, 100, 100);
+    REQUIRE(image.valid());
+    CHECK(pixelAt(image, 25, 90) == Rgba{255, 255, 0, 255});
+    CHECK(pixelAt(image, 75, 25).a == 0);
+}
+
+TEST_CASE("with no floors named, the document draws as authored") {
+    // The quest glyphs are rendered this way: they have no floors at all.
+    const RenderedImage image = renderSvgLayers(layersSvg(), {}, 100, 100);
+    REQUIRE(image.valid());
+    CHECK(pixelAt(image, 75, 25) == Rgba{255, 0, 0, 255});
+    CHECK(pixelAt(image, 75, 75) == Rgba{0, 255, 0, 255});
 }
 
 TEST_CASE("asking for a floor reveals exactly that floor") {
@@ -131,7 +153,7 @@ TEST_CASE("zooming into a region keeps it sharp rather than scaling it up") {
     // A tiny region blown up to a large bitmap is the case that matters: it is
     // what happens when the player zooms in, and it is why regions are
     // rendered at all instead of scaling one full-map texture.
-    const SvgRect corner{0.0, 0.0, 10.0, 10.0};
+    const SvgRect corner{0.0, 40.0, 10.0, 10.0};  // bare ground, clear of First_Floor
     const RenderedImage image =
         renderSvgRegion(layersSvg(), {"Ground_Level"}, corner, 400, 400);
 

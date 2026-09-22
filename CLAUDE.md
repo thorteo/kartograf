@@ -165,7 +165,9 @@ The user starts the overlay from a desktop shortcut to an installed copy in
 `%LOCALAPPDATA%\Programs\tarkov-help\`. After a change they should see, run
 `scripts/install.sh` to update that copy; it works while the overlay is open.
 
-Scripted runs should pass `--no-settings`, or the settings window stops at startup.
+Scripted runs should pass `--no-settings`, or the settings window stops at startup,
+and `--second-instance` if the player's own overlay may be running: a second start
+otherwise only shows the running one's settings and exits.
 User state lives in `%LOCALAPPDATA%\tarkov-help\`: `settings.json`, `progress.json`,
 and the `data`, `tiles`, `svg` and `icons` caches. Command-line flags (`--lang`,
 `--toggle-key`, `--map-opacity`, `--allow-capture`, …) override settings for one run.

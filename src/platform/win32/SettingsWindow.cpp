@@ -8,6 +8,7 @@ namespace tarkov::win32 {
 namespace {
 
 constexpr wchar_t kWindowClass[] = L"TarkovHelpSettings";
+constexpr wchar_t kShowRequestMessage[] = L"TarkovHelpShowSettings";
 constexpr UINT kTrayMessage = WM_APP + 1;
 constexpr UINT kMenuSettings = 1;
 constexpr UINT kMenuQuit = 2;
@@ -100,6 +101,10 @@ LRESULT SettingsWindow::handle(UINT message, WPARAM wParam, LPARAM lParam) {
                 showTrayMenu();
                 break;
         }
+        return 0;
+    }
+    if (showRequest_ != 0 && message == showRequest_) {
+        openRequested_ = true;  // the program was started again
         return 0;
     }
     if (taskbarCreated_ != 0 && message == taskbarCreated_) {
@@ -204,6 +209,7 @@ bool SettingsWindow::create(HINSTANCE instance, ID3D11Device* device,
     }
 
     taskbarCreated_ = RegisterWindowMessageW(L"TaskbarCreated");
+    showRequest_ = RegisterWindowMessageW(kShowRequestMessage);
     addTrayIcon();
     return true;
 }
@@ -307,6 +313,20 @@ bool SettingsWindow::takeQuitRequest() {
 
 bool SettingsWindow::takeClosedByUser() {
     return std::exchange(closedByUser_, false);
+}
+
+bool SettingsWindow::showInRunningInstance() {
+    const HWND running = FindWindowW(kWindowClass, nullptr);
+    if (running == nullptr) {
+        return false;
+    }
+    // This process was started by the user, so it may bring a window to the
+    // front; the running one may not unless given leave.
+    DWORD processId = 0;
+    GetWindowThreadProcessId(running, &processId);
+    AllowSetForegroundWindow(processId);
+    PostMessageW(running, RegisterWindowMessageW(kShowRequestMessage), 0, 0);
+    return true;
 }
 
 void SettingsWindow::notify(const std::wstring& title, const std::wstring& text) {

@@ -312,6 +312,28 @@ int main(int argc, char** argv) {
         return value.empty() ? 0 : std::atoi(value.c_str());
     }();
 
+    // One overlay at a time. Started twice -- a double click too many -- two
+    // would draw over the game, the second unable to bind any hotkey, with two
+    // tray icons. A second start shows the running one's settings instead and
+    // exits. A restart after device loss waits for the old process to go.
+    // --second-instance is for scripted runs beside the player's own overlay.
+    const bool afterDeviceLoss = hasFlag(argc, argv, "--after-device-loss");
+    HANDLE instanceMutex = nullptr;
+    if (!hasFlag(argc, argv, "--second-instance")) {
+        instanceMutex = CreateMutexW(nullptr, TRUE, L"Local\\tarkov-help-overlay");
+        if (instanceMutex != nullptr && GetLastError() == ERROR_ALREADY_EXISTS) {
+            const DWORD waited =
+                afterDeviceLoss ? WaitForSingleObject(instanceMutex, 15000) : WAIT_TIMEOUT;
+            if (waited != WAIT_OBJECT_0 && waited != WAIT_ABANDONED) {
+                if (!afterDeviceLoss) {
+                    win32::SettingsWindow::showInRunningInstance();
+                }
+                CloseHandle(instanceMutex);
+                return 0;
+            }
+        }
+    }
+
     HINSTANCE instance = GetModuleHandleW(nullptr);
 
     win32::OverlayWindow overlay;
@@ -523,7 +545,7 @@ int main(int argc, char** argv) {
     if (standalone) {
         g_status.add(ui::tr(ui::Str::StatusStandalone));
     }
-    if (hasFlag(argc, argv, "--after-device-loss")) {
+    if (afterDeviceLoss) {
         g_status.add(ui::tr(ui::Str::StatusRestartedAfterDeviceLoss));
     }
 
@@ -971,9 +993,15 @@ int main(int argc, char** argv) {
     tiles.stop();
     unregisterHotkeys();
 
+    // Let the next instance in before starting it.
+    if (instanceMutex != nullptr) {
+        ReleaseMutex(instanceMutex);
+        CloseHandle(instanceMutex);
+        instanceMutex = nullptr;
+    }
+
     // Not twice in quick succession: a device that is lost again at once is a
     // broken driver, and restarting would only loop.
-    const bool afterDeviceLoss = hasFlag(argc, argv, "--after-device-loss");
     if (relaunch && !(afterDeviceLoss && GetTickCount64() - startedAt < 60000)) {
         relaunchSelf(afterDeviceLoss, hasFlag(argc, argv, "--no-settings"));
     }

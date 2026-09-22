@@ -294,13 +294,17 @@ TaskSet parseTasks(std::string_view text, const TaskLocale& locale,
             requirements != nullptr && requirements->is_array()) {
             for (const auto& requirement : *requirements) {
                 const std::string prerequisite = stringAt(requirement, "task");
+                // The statuses are alternatives: ["active", "complete"] is
+                // satisfied by a quest still under way, ["complete", "failed"]
+                // by one that was failed. Only a requirement that accepts
+                // nothing but completion proves the prerequisite was done.
                 const json* status = find(requirement, "status");
                 bool needsCompletion = false;
-                if (status != nullptr && status->is_array()) {
-                    for (const auto& value : *status) {
-                        needsCompletion = needsCompletion ||
-                                          (value.is_string() && value == "complete");
-                    }
+                if (status != nullptr && status->is_array() && !status->empty()) {
+                    needsCompletion = std::all_of(
+                        status->begin(), status->end(), [](const json& value) {
+                            return value.is_string() && value == "complete";
+                        });
                 }
                 if (!prerequisite.empty() && needsCompletion) {
                     task.prerequisiteIds.push_back(prerequisite);

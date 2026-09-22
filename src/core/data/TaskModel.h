@@ -99,9 +99,13 @@ struct Task {
 
     /// Quests that must be *completed* before this one can be taken.
     ///
-    /// The API also lists "active" and "failed" requirements; only completion
-    /// is used, because it is the one that lets progress be inferred: if a
-    /// quest has been started, everything it required is necessarily done.
+    /// The API lists each requirement's acceptable statuses as alternatives:
+    /// "complete", but also "active" and "failed", and combinations -- in the
+    /// data of 2026-09-22, 210 plain "complete", 10 "active or complete", 4
+    /// "complete or failed". Only the plain ones are kept, because they are
+    /// what lets progress be inferred: if a quest has been started, everything
+    /// it required is necessarily done. Chemical part 3 accepts part 2 still
+    /// active, and inferring it done hid part 2's objectives from the map.
     std::vector<std::string> prerequisiteIds;
 
     /// A name fit to show: the localized one, or normalizedName turned back

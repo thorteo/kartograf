@@ -346,3 +346,21 @@ TEST_CASE("quest items are named from the tasks locale, keys from the items loca
     CHECK(bare.itemNames.empty());
     CHECK(bare.itemName("5991b51486f77447b112d44f").empty());
 }
+
+TEST_CASE("only a completion-only requirement is a prerequisite") {
+    // Statuses are alternatives. Chemical part 3 accepts part 2 "active or
+    // complete"; taking that as "completed" marked a quest still under way as
+    // done and hid its objectives.
+    const TaskSet set = parseTasks(R"({"data":{"tasks":{
+        "t": {"normalizedName": "t", "taskRequirements": [
+            {"task": "done",      "status": ["complete"]},
+            {"task": "underway",  "status": ["active", "complete"]},
+            {"task": "either",    "status": ["complete", "failed"]},
+            {"task": "failed",    "status": ["failed"]},
+            {"task": "unstated",  "status": []},
+            {"task": "missing"}
+        ]}
+    }}})", TaskLocale{});
+    REQUIRE(set.tasks.size() == 1);
+    CHECK(set.tasks[0].prerequisiteIds == std::vector<std::string>{"done"});
+}

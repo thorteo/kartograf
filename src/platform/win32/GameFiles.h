@@ -34,10 +34,8 @@ std::optional<std::filesystem::path> newestLogFolder(
 
 /// Follows a growing log file, yielding complete lines as they are appended.
 ///
-/// The game keeps the file open and appends to it, so this seeks to the end on
-/// first open: replaying a whole session at startup would announce raids that
-/// finished hours ago. A partial trailing line is held back until its newline
-/// arrives.
+/// The game keeps the file open and appends to it. A partial trailing line is
+/// held back until its newline arrives.
 class LogTail {
 public:
     ~LogTail();
@@ -46,7 +44,7 @@ public:
     LogTail(const LogTail&) = delete;
     LogTail& operator=(const LogTail&) = delete;
 
-    /// Opens the file and skips to the end. `fromStart` is for tests.
+    /// Opens the file, positioned at its end unless `fromStart`.
     bool open(const std::filesystem::path& path, bool fromStart = false);
     void close();
     bool isOpen() const { return handle_ != INVALID_HANDLE_VALUE; }

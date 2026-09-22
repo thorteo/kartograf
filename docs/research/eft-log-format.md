@@ -34,6 +34,19 @@ Files in a session folder, with the ones we care about marked:
 | `… push-notifications_000.log` | maybe — trader messages, match events |
 | `… errors_000.log`, `network-*`, `spatial-audio_000.log`, … | no |
 
+**The files appear one at a time, not with the folder.** Creation times, read with
+PowerShell's `CreationTime` on the three newest sessions (2026-09-21/22):
+
+| File | After the folder |
+|---|---|
+| `output_000.log` | 16–17 ms |
+| `application_000.log` | 1.4–1.7 s |
+| `push-notifications_000.log` | 48 s – 2.5 min |
+| everything else | seconds to hours; some only when first needed |
+
+A watcher that looks for the files once, when the folder appears, finds at best
+`output_000.log`. Keep looking until each wanted file exists.
+
 ## Line format
 
 Pipe-delimited, five fields:

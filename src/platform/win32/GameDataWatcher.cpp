@@ -222,36 +222,44 @@ void GameDataWatcher::openNewestLogFolder() {
         return;
     }
     auto folder = newestLogFolder(paths_.logsRoot);
-    if (!folder || *folder == currentLogFolder_) {
+    if (folder && *folder != currentLogFolder_) {
+        currentLogFolder_ = *folder;
+        applicationLog_.close();
+        outputLog_.close();
+        notificationsLog_.close();
+        applicationParser_ = game::LogParser{};
+        outputParser_ = game::LogParser{};
+        notificationsParser_ = game::QuestEventParser{};
+        catchingUp_ = true;
+        say(ui::trf(ui::Str::StatusWatchingSession,
+                    currentLogFolder_.filename().string().c_str()));
+    }
+    openMissingLogs();
+}
+
+void GameDataWatcher::openMissingLogs() {
+    if (currentLogFolder_.empty()) {
         return;
     }
-
-    currentLogFolder_ = *folder;
-    applicationLog_.close();
-    outputLog_.close();
-    notificationsLog_.close();
-    applicationParser_ = game::LogParser{};
-    outputParser_ = game::LogParser{};
-    notificationsParser_ = game::QuestEventParser{};
-
-    // From the start: the overlay is often launched after the game, even
-    // mid-raid, and the map and raid timer are only ever announced once.
-    // Replaying the session ends in the state it is in now; both files carry
-    // the same raid events, and the output log also carries the raid's end.
-    if (auto path = findLogFile(currentLogFolder_, "application_000.log")) {
-        applicationLog_.open(*path, /*fromStart=*/true);
-    }
-    if (auto path = findLogFile(currentLogFolder_, "output_000.log")) {
-        outputLog_.open(*path, /*fromStart=*/true);
-    }
-    catchingUp_ = true;
-    if (progress_ != nullptr) {
-        if (auto path = findLogFile(currentLogFolder_, "push-notifications_000.log")) {
-            notificationsLog_.open(*path);
+    // From the start, all of them. The overlay is often launched after the
+    // game, even mid-raid, and the map and raid timer are only ever announced
+    // once: replaying the session ends in the state it is in now. Both raid
+    // files carry the same events, and the output log also carries the raid's
+    // end. Quest events already imported are merged by their own timestamps,
+    // so reading them again changes nothing.
+    const auto openIfMissing = [this](LogTail& tail, const char* suffix) {
+        if (tail.isOpen()) {
+            return;
         }
+        if (auto path = findLogFile(currentLogFolder_, suffix)) {
+            tail.open(*path, /*fromStart=*/true);
+        }
+    };
+    openIfMissing(applicationLog_, "application_000.log");
+    openIfMissing(outputLog_, "output_000.log");
+    if (progress_ != nullptr) {
+        openIfMissing(notificationsLog_, "push-notifications_000.log");
     }
-
-    say(ui::trf(ui::Str::StatusWatchingSession, currentLogFolder_.filename().string().c_str()));
 }
 
 void GameDataWatcher::pumpLogs(game::RaidState& state) {
@@ -390,9 +398,10 @@ void GameDataWatcher::run(game::RaidState* state) {
             handles[count++] = shotsWatch.event();
         }
 
-        // The timeout is a safety net, not the mechanism: it re-checks for a
-        // new log session and covers a coalesced notification. When nothing
-        // happens, this thread sleeps.
+        // The timeout is how the logs are read. The root watch is not
+        // recursive, so it reports a new session folder but not the files
+        // growing inside it, nor the files the game creates there later.
+        // Screenshots, the position fixes, arrive through their own watch.
         const DWORD result = WaitForMultipleObjects(count, handles, FALSE, 1000);
 
         if (result == WAIT_OBJECT_0) {

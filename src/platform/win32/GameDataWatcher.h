@@ -49,6 +49,14 @@ public:
 private:
     void run(game::RaidState* state);
     void openNewestLogFolder();
+    /// Opens whichever of the current session's logs exist and are not open.
+    ///
+    /// The game creates them one at a time, not with the folder. Measured on
+    /// three sessions on 2026-09-22: output_000.log 17 ms after the folder,
+    /// application_000.log 1.4-1.7 s, push-notifications_000.log 48 s to
+    /// 2.5 min. Looking once, the moment the folder appeared, found none of
+    /// them, and a session started after the overlay went unread.
+    void openMissingLogs();
     /// Reads the quest events out of every log session still on disk. Runs
     /// once at startup; later events arrive through the live tail.
     void importQuestHistory();

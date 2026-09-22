@@ -286,9 +286,18 @@ void OverlayWindow::setBounds(int x, int y, int width, int height) {
         height_ = height;
         renderTarget_.reset();
         if (swapChain_) {
-            swapChain_->ResizeBuffers(0, static_cast<UINT>(width),
-                                      static_cast<UINT>(height),
-                                      DXGI_FORMAT_UNKNOWN, 0);
+            // ResizeBuffers fails while anything still references a back
+            // buffer, and the context holds the view the last frame bound.
+            // Only the very first resize, before any frame, used to succeed:
+            // after that the swap chain kept its old size.
+            context_->OMSetRenderTargets(0, nullptr, nullptr);
+            context_->Flush();
+            const HRESULT hr = swapChain_->ResizeBuffers(
+                0, static_cast<UINT>(width), static_cast<UINT>(height),
+                DXGI_FORMAT_UNKNOWN, 0);
+            if (FAILED(hr)) {
+                fail("IDXGISwapChain1::ResizeBuffers", hr);
+            }
             createRenderTarget();
         }
     }

@@ -314,8 +314,8 @@ int main(int argc, char** argv) {
 
     // One overlay at a time. Started twice -- a double click too many -- two
     // would draw over the game, the second unable to bind any hotkey, with two
-    // tray icons. A second start shows the running one's settings instead and
-    // exits. A restart after device loss waits for the old process to go.
+    // tray icons. A second start says so and exits. A restart after device
+    // loss waits for the old process to go instead.
     // --second-instance is for scripted runs beside the player's own overlay.
     const bool afterDeviceLoss = hasFlag(argc, argv, "--after-device-loss");
     HANDLE instanceMutex = nullptr;
@@ -326,7 +326,9 @@ int main(int argc, char** argv) {
                 afterDeviceLoss ? WaitForSingleObject(instanceMutex, 15000) : WAIT_TIMEOUT;
             if (waited != WAIT_OBJECT_0 && waited != WAIT_ABANDONED) {
                 if (!afterDeviceLoss) {
-                    win32::SettingsWindow::showInRunningInstance();
+                    MessageBoxW(nullptr, widen(ui::tr(ui::Str::ErrorAlreadyRunning)).c_str(),
+                                L"tarkov-help",
+                                MB_ICONWARNING | MB_OK | MB_SETFOREGROUND);
                 }
                 CloseHandle(instanceMutex);
                 return 0;

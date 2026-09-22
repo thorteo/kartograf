@@ -126,6 +126,7 @@ enum class Str {
     StatusDrawingDownloadFailed, // %s
     StatusDrawingDidNotParse,  // %s
     ErrorInterfaceInit,
+    ErrorAlreadyRunning,
 
     // Settings window and tray
     SettingsTitle,

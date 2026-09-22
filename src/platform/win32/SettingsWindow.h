@@ -76,11 +76,6 @@ public:
     /// Shows a one-off balloon from the tray icon.
     void notify(const std::wstring& title, const std::wstring& text);
 
-    /// Asks the overlay already running, if there is one, to show its settings
-    /// window. True when one was found. For a second start of the program,
-    /// which then has nothing to do but hand over and exit.
-    static bool showInRunningInstance();
-
     HWND handle() const { return hwnd_; }
 
 private:
@@ -105,7 +100,6 @@ private:
     NOTIFYICONDATAW tray_{};
     bool trayAdded_ = false;
     UINT taskbarCreated_ = 0;
-    UINT showRequest_ = 0;
     std::wstring tooltip_;
     std::wstring trayMenuSettings_ = L"Settings";
     std::wstring trayMenuQuit_ = L"Quit";

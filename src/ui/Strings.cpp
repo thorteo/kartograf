@@ -171,6 +171,11 @@ constexpr Entry kTable[] = {
      "карта: схема для %s не читается"},
     {Str::ErrorInterfaceInit, "Could not initialise the interface layer.",
      "Не удалось запустить интерфейс."},
+    {Str::ErrorAlreadyRunning,
+     "tarkov-help is already running; a second copy cannot be started. "
+     "It is in the notification area, by the clock.",
+     "tarkov-help уже запущен, второй экземпляр запустить нельзя. "
+     "Он в области уведомлений, рядом с часами."},
 
     {Str::SettingsTitle, "tarkov-help settings", "Настройки tarkov-help"},
     {Str::SectionHotkeys, "Hotkeys", "Горячие клавиши"},

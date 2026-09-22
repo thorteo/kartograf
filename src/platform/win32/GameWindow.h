@@ -36,13 +36,15 @@ public:
     /// though the caller should throttle to a few times a second.
     GameWindowState poll();
 
-    /// True when the game appears to be in exclusive fullscreen, where nothing
-    /// we draw will be composited on top.
+    /// True when the shell reports an exclusive-mode Direct3D application in
+    /// the foreground, where nothing we draw will be composited on top.
     ///
-    /// Heuristic: the window covers its whole monitor and has no border styles.
-    /// Borderless fullscreen looks similar, so this is advisory -- use it to
-    /// explain a blank overlay, not to refuse to run.
-    static bool looksLikeExclusiveFullscreen(HWND hwnd);
+    /// SHQueryUserNotificationState's QUNS_RUNNING_D3D_FULL_SCREEN, which the
+    /// SDK documents as "full-screen (exclusive-mode) D3D app"; a borderless
+    /// window is QUNS_BUSY instead. The window-style heuristic this replaced
+    /// could not tell the two apart and warned in borderless, live, on
+    /// 2026-09-21. Shell state only; the game is not touched.
+    static bool exclusiveFullscreenRunning();
 
 private:
     HWND cached_ = nullptr;

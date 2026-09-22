@@ -489,6 +489,7 @@ int main(int argc, char** argv) {
         overlay.setInteractive(true);
     }
     bool warnedAboutFullscreen = false;
+    ULONGLONG lastFullscreenCheck = 0;
 
     ui::HudOptions hudOptions;
     hudOptions.showDebug = debug;
@@ -741,11 +742,14 @@ int main(int argc, char** argv) {
             overlay.setBounds(game.bounds.left, game.bounds.top, width, height);
         }
 
-        if (!warnedAboutFullscreen &&
-            win32::GameWindowTracker::looksLikeExclusiveFullscreen(
-                GetForegroundWindow())) {
-            warnedAboutFullscreen = true;
-            g_status.add(ui::tr(ui::Str::StatusSwitchToBorderless));
+        // Asked while the game is in front, which is when the shell's answer
+        // is about the game; every few seconds, not every frame.
+        if (!warnedAboutFullscreen && GetTickCount64() - lastFullscreenCheck >= 3000) {
+            lastFullscreenCheck = GetTickCount64();
+            if (win32::GameWindowTracker::exclusiveFullscreenRunning()) {
+                warnedAboutFullscreen = true;
+                g_status.add(ui::tr(ui::Str::StatusSwitchToBorderless));
+            }
         }
 
         const auto snapshot = raidState.snapshot();

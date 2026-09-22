@@ -1,14 +1,42 @@
 #include "platform/win32/GameWindow.h"
 
+#include <shellapi.h>
+
+#include <cwctype>
+#include <string>
+
 namespace tarkov::win32 {
 namespace {
 
 // Unity games share this class name; the caption is what distinguishes EFT.
+// "EscapeFromTarkov" exactly, checked with FindWindow on 2026-09-22.
 constexpr wchar_t kGameClass[] = L"UnityWndClass";
 constexpr wchar_t kGameTitle[] = L"EscapeFromTarkov";
 
 bool isAlive(HWND hwnd) {
     return hwnd != nullptr && IsWindow(hwnd) && IsWindowVisible(hwnd);
+}
+
+/// A visible Unity window whose caption mentions Tarkov, in case the caption
+/// varies by build or locale. The class alone is not enough: any other Unity
+/// game running would do, and the overlay would follow that instead.
+BOOL CALLBACK findTarkovLike(HWND hwnd, LPARAM found) {
+    wchar_t className[64] = {};
+    if (GetClassNameW(hwnd, className, 64) == 0 ||
+        std::wstring_view(className) != kGameClass || !IsWindowVisible(hwnd)) {
+        return TRUE;
+    }
+    wchar_t title[256] = {};
+    GetWindowTextW(hwnd, title, 256);
+    std::wstring lower(title);
+    for (auto& c : lower) {
+        c = static_cast<wchar_t>(std::towlower(c));
+    }
+    if (lower.find(L"tarkov") == std::wstring::npos) {
+        return TRUE;
+    }
+    *reinterpret_cast<HWND*>(found) = hwnd;
+    return FALSE;
 }
 
 }  // namespace
@@ -36,9 +64,7 @@ GameWindowState GameWindowTracker::poll() {
     if (!isAlive(cached_)) {
         cached_ = FindWindowW(kGameClass, kGameTitle);
         if (cached_ == nullptr) {
-            // The caption occasionally differs by build or locale; fall back to
-            // the class alone rather than losing the window entirely.
-            cached_ = FindWindowW(kGameClass, nullptr);
+            EnumWindows(&findTarkovLike, reinterpret_cast<LPARAM>(&cached_));
         }
     }
 
@@ -62,31 +88,10 @@ GameWindowState GameWindowTracker::poll() {
     return state;
 }
 
-bool GameWindowTracker::looksLikeExclusiveFullscreen(HWND hwnd) {
-    if (hwnd == nullptr) {
-        return false;
-    }
-    RECT window{};
-    if (!GetWindowRect(hwnd, &window)) {
-        return false;
-    }
-
-    HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-    MONITORINFO info{};
-    info.cbSize = sizeof(info);
-    if (!GetMonitorInfoW(monitor, &info)) {
-        return false;
-    }
-
-    const bool coversMonitor = window.left <= info.rcMonitor.left &&
-                               window.top <= info.rcMonitor.top &&
-                               window.right >= info.rcMonitor.right &&
-                               window.bottom >= info.rcMonitor.bottom;
-
-    const LONG_PTR style = GetWindowLongPtrW(hwnd, GWL_STYLE);
-    const bool borderless = (style & (WS_BORDER | WS_THICKFRAME | WS_CAPTION)) == 0;
-
-    return coversMonitor && borderless;
+bool GameWindowTracker::exclusiveFullscreenRunning() {
+    QUERY_USER_NOTIFICATION_STATE state{};
+    return SUCCEEDED(SHQueryUserNotificationState(&state)) &&
+           state == QUNS_RUNNING_D3D_FULL_SCREEN;
 }
 
 }  // namespace tarkov::win32

@@ -31,7 +31,8 @@ struct Hotkey {
     }
 };
 
-/// Parses "Ctrl+Shift+M", "Alt+F4", "F9", "`".
+/// Parses "Ctrl+Shift+M", "Alt+F4", "F9", "`", "Num5", and "0x5B" for a key
+/// with no name.
 ///
 /// Case-insensitive, tolerant of spaces around '+', and accepts the common
 /// aliases (Control/Ctrl, Escape/Esc, Win/Super/Meta). Returns nullopt when the

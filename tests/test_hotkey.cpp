@@ -60,6 +60,38 @@ TEST_CASE("formatting round-trips through parsing") {
     }
 }
 
+TEST_CASE("every key the settings window can capture survives a restart") {
+    // The window takes whatever key is pressed, so every code needs a spelling
+    // that parses back. Numpad 0 used to be written "0x96" -- decimal digits
+    // behind a hex prefix -- which nothing could read.
+    for (unsigned vk = 1; vk <= 0xFE; ++vk) {
+        for (const unsigned modifiers : {unsigned{kNone}, unsigned{kControl | kShift}}) {
+            const Hotkey key{modifiers, vk};
+            const std::string text = formatHotkey(key);
+            CAPTURE(vk);
+            CAPTURE(text);
+            const auto back = parseHotkey(text);
+            REQUIRE(back.has_value());
+            CHECK(*back == key);
+        }
+    }
+}
+
+TEST_CASE("numpad keys have names") {
+    CHECK(formatHotkey(Hotkey{kNone, 0x60}) == "Num0");
+    CHECK(formatHotkey(Hotkey{kAlt, 0x6A}) == "Alt+NumMultiply");
+    CHECK(parseHotkey("ctrl+num5")->virtualKey == 0x65u);
+    CHECK(formatHotkey(Hotkey{kNone, 0xE2}) == "0xE2");
+    CHECK(parseHotkey("0xe2")->virtualKey == 0xE2u);
+}
+
+TEST_CASE("an absurd function key is refused, not thrown") {
+    for (const char* text : {"F99999999999", "F100", "0x", "0x100", "0x00", "0xZZ"}) {
+        CAPTURE(text);
+        CHECK_FALSE(parseHotkey(text).has_value());
+    }
+}
+
 TEST_CASE("formatting is canonical regardless of input order") {
     const auto a = parseHotkey("Shift+Ctrl+Alt+K");
     const auto b = parseHotkey("Alt+Shift+Ctrl+K");

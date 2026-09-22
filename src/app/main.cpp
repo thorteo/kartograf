@@ -296,9 +296,10 @@ int main(int argc, char** argv) {
     // Development and first-run aids: show the overlay with no game running,
     // and allow it into screen captures so it can be photographed.
     const bool standalone = hasFlag(argc, argv, "--no-game");
-    // Development aids: open a named map with no raid running, and inject a
-    // position by pasting a real screenshot filename. Together these let the
-    // marker be checked against the map without playing.
+    // Development aids: open a named map, pinned -- raids in the logs do not
+    // replace it -- and inject a position by pasting a real screenshot
+    // filename. Together these let the marker be checked against the map
+    // without playing.
     const std::string forcedMap = argumentValue(argc, argv, "--map");
     const std::string fakeShot = argumentValue(argc, argv, "--fake-shot");
     // Whether to open the settings window now. --no-settings keeps scripted
@@ -428,6 +429,9 @@ int main(int argc, char** argv) {
     }
 
     win32::GameDataWatcher watcher;
+    if (!forcedMap.empty()) {
+        watcher.ignoreRaidLogs();  // or the last raid's map replaces the pinned one
+    }
     if (!watcher.start(
             raidState, [](const std::string& line) { g_status.add(line); }, &progress,
             [&progress] { saveProgress(progress); })) {

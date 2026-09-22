@@ -252,8 +252,10 @@ void GameDataWatcher::openMissingLogs() {
             tail.open(*path, /*fromStart=*/true);
         }
     };
-    openIfMissing(applicationLog_, "application_000.log");
-    openIfMissing(outputLog_, "output_000.log");
+    if (followRaids_) {
+        openIfMissing(applicationLog_, "application_000.log");
+        openIfMissing(outputLog_, "output_000.log");
+    }
     if (progress_ != nullptr) {
         openIfMissing(notificationsLog_, "push-notifications_000.log");
     }

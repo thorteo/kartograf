@@ -42,6 +42,11 @@ public:
     bool start(game::RaidState& state, Logger logger = {},
                data::QuestProgressStore* progress = nullptr,
                ProgressChanged onProgress = {});
+
+    /// Stops following raids in the logs; quest events and screenshots are
+    /// still read. For --map, which pins a map: replaying the session would
+    /// replace it with the map of the last raid played. Call before start().
+    void ignoreRaidLogs() { followRaids_ = false; }
     void stop();
 
     const GamePaths& paths() const { return paths_; }
@@ -81,6 +86,7 @@ private:
     /// Set when a session's logs have just been opened from the start: the next
     /// pump replays what happened before we were watching, quietly.
     bool catchingUp_ = false;
+    bool followRaids_ = true;
 
     data::QuestProgressStore* progress_ = nullptr;
     ProgressChanged onProgress_;

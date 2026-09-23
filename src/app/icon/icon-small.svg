@@ -1,0 +1,17 @@
+<!-- icon.svg redrawn on a 16-unit grid for the tray and small shell sizes.
+     Scaled down, the full design turns to mush at 16 px: the tile loses its
+     border and inset, the rings sit on whole pixels, and the cone is a
+     straight-sided wedge. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+ <defs>
+  <linearGradient id="cone" x1="0" y1="1" x2="0" y2="0">
+   <stop offset="0" stop-color="#b8e073" stop-opacity="0.9"/>
+   <stop offset="1" stop-color="#b8e073" stop-opacity="0.15"/>
+  </linearGradient>
+ </defs>
+ <rect width="16" height="16" rx="3" fill="#1f231c"/>
+ <path d="M8 9.5 L3 1 H13 Z" fill="url(#cone)"/>
+ <circle cx="8" cy="10" r="4.5" fill="#f2f4ee"/>
+ <circle cx="8" cy="10" r="3.5" fill="#0e100c"/>
+ <circle cx="8" cy="10" r="2.5" fill="#b8e073"/>
+</svg>

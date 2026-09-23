@@ -120,7 +120,8 @@ src/ui/           ImGui views and what they draw from (MapContent). Portable --
                   ImGui core builds on Linux, and tests/imgui_harness.h runs ImGui
                   with no backend, so the map view's behaviour (floor switching,
                   following, clamping) is unit tested without Windows or a GPU.
-src/app/          entry point and wiring
+src/app/          entry point and wiring; the .rc and the app icon (icon/, SVG
+                  sources and the committed .ico)
 third_party/      vendored: imgui, nlohmann/json, doctest, stb_image, lunasvg
 data/             pinned copy of tarkov.dev maps.json
 tests/fixtures/   real, scrubbed game data — see below
@@ -159,6 +160,7 @@ cmake --build --preset windows-dev                             # the overlay, cr
 ./build/windows-dev/tarkov_help.exe                            # WSL runs it on Windows
 scripts/install.sh                                             # install + desktop shortcut
 python3 scripts/verify_projection_tiles.py                     # network check, by hand
+scripts/make_icon.py                                           # after editing src/app/icon/*.svg
 ```
 
 The user starts the overlay from a desktop shortcut to an installed copy in

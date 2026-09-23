@@ -1,5 +1,7 @@
 #include "platform/win32/SettingsWindow.h"
 
+#include "platform/win32/Resources.h"
+
 #include <dxgi.h>
 
 #include <algorithm>
@@ -11,6 +13,15 @@ constexpr wchar_t kWindowClass[] = L"TarkovHelpSettings";
 constexpr UINT kTrayMessage = WM_APP + 1;
 constexpr UINT kMenuSettings = 1;
 constexpr UINT kMenuQuit = 2;
+
+/// The application icon at one of the system's two icon sizes. Shared: the
+/// system owns the handle, so nothing has to destroy it, and adding the tray
+/// icon again after Explorer restarts reuses it.
+HICON appIcon(HINSTANCE instance, int widthMetric, int heightMetric) {
+    return static_cast<HICON>(LoadImageW(instance, MAKEINTRESOURCEW(TARKOV_IDI_APP),
+                                         IMAGE_ICON, GetSystemMetrics(widthMetric),
+                                         GetSystemMetrics(heightMetric), LR_SHARED));
+}
 
 /// Frames drawn after each event that can change what the window shows.
 constexpr int kFramesPerEvent = 3;
@@ -181,7 +192,8 @@ bool SettingsWindow::create(HINSTANCE instance, ID3D11Device* device,
     wc.hInstance = instance;
     wc.lpszClassName = kWindowClass;
     wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
-    wc.hIcon = LoadIconW(nullptr, IDI_APPLICATION);
+    wc.hIcon = appIcon(instance, SM_CXICON, SM_CYICON);
+    wc.hIconSm = appIcon(instance, SM_CXSMICON, SM_CYSMICON);
     if (RegisterClassExW(&wc) == 0 && GetLastError() != ERROR_CLASS_ALREADY_EXISTS) {
         return false;
     }
@@ -218,7 +230,9 @@ void SettingsWindow::addTrayIcon() {
     tray_.uID = 1;
     tray_.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     tray_.uCallbackMessage = kTrayMessage;
-    tray_.hIcon = LoadIconW(nullptr, IDI_APPLICATION);
+    // The small size, loaded as such: the tray would otherwise shrink the
+    // 32 px image, and icon-small.svg exists because that turns to mush.
+    tray_.hIcon = appIcon(GetModuleHandleW(nullptr), SM_CXSMICON, SM_CYSMICON);
     wcsncpy_s(tray_.szTip, tooltip_.c_str(), _TRUNCATE);
     trayAdded_ = Shell_NotifyIconW(NIM_ADD, &tray_) != FALSE;
     if (trayAdded_) {

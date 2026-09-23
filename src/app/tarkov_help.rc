@@ -1,0 +1,5 @@
+// Windows resources compiled into the overlay exe.
+#include "platform/win32/Resources.h"
+
+// Regenerate from icon/*.svg with scripts/make_icon.py.
+TARKOV_IDI_APP ICON "icon/tarkov_help.ico"

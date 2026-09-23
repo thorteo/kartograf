@@ -190,6 +190,7 @@ target_link_libraries(tarkov_ui PUBLIC tarkov_core tarkov_imgui)
 if(WIN32)
     add_executable(tarkov_help WIN32
         src/app/main.cpp
+        src/app/tarkov_help.rc
         src/platform/win32/OverlayWindow.cpp
         src/platform/win32/GameWindow.cpp
         src/platform/win32/GameFiles.cpp

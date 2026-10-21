@@ -102,7 +102,7 @@ void drawHud(const game::RaidSnapshot& snapshot, std::int64_t nowMillis,
         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
         ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove;
 
-    if (!ImGui::Begin("tarkov-help-hud", nullptr, flags)) {
+    if (!ImGui::Begin("kartograf-hud", nullptr, flags)) {
         ImGui::End();
         return;
     }

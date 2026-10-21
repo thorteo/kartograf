@@ -1,7 +1,7 @@
 <!-- The application icon, drawn for 32 px and up: the overlay's own player
      marker (a dot with a view cone) on a dark olive tile.
      icon-small.svg is the same picture fitted to the pixel grid for 16-24 px.
-     scripts/make_icon.py renders both into tarkov_help.ico. -->
+     scripts/make_icon.py renders both into kartograf.ico. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
  <defs>
   <radialGradient id="cone" cx="128" cy="150" r="118" gradientUnits="userSpaceOnUse">

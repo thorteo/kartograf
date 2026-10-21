@@ -335,7 +335,7 @@ TEST_CASE("hovering a quest marker explains it without making the overlay intera
             ui::drawMapView(state, map, snapshot, 1000, /*interactive=*/false,
                             tiles.provider(), overlays);
         });
-        const ImGuiWindow* tip = ImGui::FindWindowByName("tarkov-help-tip");
+        const ImGuiWindow* tip = ImGui::FindWindowByName("kartograf-tip");
         return tip != nullptr && tip->Active;
     };
 

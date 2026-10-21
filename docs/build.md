@@ -67,7 +67,7 @@ Note that WSL can execute the cross-compiled binary directly, so a build can be 
 without leaving the shell:
 
 ```sh
-cmake --build --preset windows-dev && ./build/windows-dev/tarkov_help.exe
+cmake --build --preset windows-dev && ./build/windows-dev/kartograf.exe
 ```
 
 ## Presets

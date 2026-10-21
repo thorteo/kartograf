@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 # C is needed for plutovg, lunasvg's rasteriser backend. Without it CMake
 # silently drops every .c file from the build and the link fails with hundreds
 # of undefined references.
-project(tarkov_help LANGUAGES C CXX)
+project(kartograf LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -185,12 +185,12 @@ add_library(tarkov_ui STATIC
 target_link_libraries(tarkov_ui PUBLIC tarkov_core tarkov_imgui)
 
 # ---------------------------------------------------------------------------
-# tarkov_help -- the overlay itself. Windows only.
+# kartograf -- the overlay itself. Windows only.
 # ---------------------------------------------------------------------------
 if(WIN32)
-    add_executable(tarkov_help WIN32
+    add_executable(kartograf WIN32
         src/app/main.cpp
-        src/app/tarkov_help.rc
+        src/app/kartograf.rc
         src/platform/win32/OverlayWindow.cpp
         src/platform/win32/GameWindow.cpp
         src/platform/win32/GameFiles.cpp
@@ -208,7 +208,7 @@ if(WIN32)
         third_party/imgui/backends/imgui_impl_dx11.cpp
     )
 
-    target_link_libraries(tarkov_help PRIVATE
+    target_link_libraries(kartograf PRIVATE
         tarkov_core
         tarkov_ui
         d3d11
@@ -224,13 +224,13 @@ if(WIN32)
     )
 
     if(MSVC)
-        target_compile_options(tarkov_help PRIVATE /W4 /permissive-)
+        target_compile_options(kartograf PRIVATE /W4 /permissive-)
     endif()
 
     # WIN32 gives the GUI subsystem, so no console window appears behind the
     # game. The CRT then looks for WinMain; pointing the entry at
     # mainCRTStartup keeps a plain main() with argc/argv instead.
-    target_link_options(tarkov_help PRIVATE /ENTRY:mainCRTStartup)
+    target_link_options(kartograf PRIVATE /ENTRY:mainCRTStartup)
 endif()
 
 if(TARKOV_BUILD_TESTS)

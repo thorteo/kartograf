@@ -4,9 +4,13 @@ Operational guide for working in this repository. Read this before making change
 
 ## What this is
 
-`tarkov-help` is a Windows overlay for Escape from Tarkov. It shows the player's live
-position on the map and the objectives of their active quests, drawn on top of the game
-as a transparent, click-through window.
+Kartograf (`kartograf`) is a Windows overlay for Escape from Tarkov. It shows the
+player's live position on the map and the objectives of their active quests, drawn on
+top of the game as a transparent, click-through window.
+
+It was called `tarkov-help` until 2026-10-21, and the old name survives on purpose in
+two places: the repository, and the first start's move of `%LOCALAPPDATA%\tarkov-help\`
+(with a check that no copy under the old name is running).
 
 It is comparable to TarkovQuestie / TarkovMonitor in purpose, and deliberately more
 capable — see `docs/features/roadmap.md`.
@@ -157,20 +161,20 @@ cmake --preset linux-dev && cmake --build --preset linux-dev   # core + tests
 ctest --preset linux-dev                                       # run tests
 cmake --preset linux-asan && ctest --preset linux-asan         # with sanitizers
 cmake --build --preset windows-dev                             # the overlay, cross-compiled
-./build/windows-dev/tarkov_help.exe                            # WSL runs it on Windows
+./build/windows-dev/kartograf.exe                              # WSL runs it on Windows
 scripts/install.sh                                             # install + desktop shortcut
 python3 scripts/verify_projection_tiles.py                     # network check, by hand
 scripts/make_icon.py                                           # after editing src/app/icon/*.svg
 ```
 
 The user starts the overlay from a desktop shortcut to an installed copy in
-`%LOCALAPPDATA%\Programs\tarkov-help\`. After a change they should see, run
+`%LOCALAPPDATA%\Programs\kartograf\`. After a change they should see, run
 `scripts/install.sh` to update that copy; it works while the overlay is open.
 
 Scripted runs should pass `--no-settings`, or the settings window stops at startup,
 and `--second-instance` if the player's own overlay may be running: a second start
 otherwise only shows the running one's settings and exits.
-User state lives in `%LOCALAPPDATA%\tarkov-help\`: `settings.json`, `progress.json`,
+User state lives in `%LOCALAPPDATA%\kartograf\`: `settings.json`, `progress.json`,
 and the `data`, `tiles`, `svg` and `icons` caches. Command-line flags (`--lang`,
 `--toggle-key`, `--map-opacity`, `--allow-capture`, …) override settings for one run.
 

@@ -17,7 +17,7 @@ struct ParsedUrl {
     bool valid = false;
 };
 
-constexpr wchar_t kUserAgent[] = L"tarkov-help/0.1";
+constexpr wchar_t kUserAgent[] = L"kartograf/0.1";
 
 ParsedUrl parseUrl(const std::string& url) {
     ParsedUrl parsed;

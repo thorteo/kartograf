@@ -175,12 +175,12 @@ constexpr Entry kTable[] = {
     {Str::ErrorInterfaceInit, "Could not initialise the interface layer.",
      "Не удалось запустить интерфейс."},
     {Str::ErrorAlreadyRunning,
-     "tarkov-help is already running; a second copy cannot be started. "
+     "Kartograf is already running; a second copy cannot be started. "
      "It is in the notification area, by the clock.",
-     "tarkov-help уже запущен, второй экземпляр запустить нельзя. "
+     "Kartograf уже запущен, второй экземпляр запустить нельзя. "
      "Он в области уведомлений, рядом с часами."},
 
-    {Str::SettingsTitle, "tarkov-help settings", "Настройки tarkov-help"},
+    {Str::SettingsTitle, "Kartograf settings", "Настройки Kartograf"},
     {Str::SectionHotkeys, "Hotkeys", "Горячие клавиши"},
     {Str::SectionMap, "Map", "Карта"},
     {Str::SectionGeneral, "General", "Общее"},
@@ -225,7 +225,7 @@ constexpr Entry kTable[] = {
     {Str::DoneHint, "The overlay keeps running in the system tray.", "Оверлей продолжит работать в трее."},
     {Str::TraySettings, "Settings", "Настройки"},
     {Str::TrayQuit, "Quit", "Выход"},
-    {Str::TrayRunning, "tarkov-help is running; %s opens the map", "tarkov-help работает; %s открывает карту"},
+    {Str::TrayRunning, "Kartograf is running; %s opens the map", "Kartograf работает; %s открывает карту"},
 };
 
 static_assert(sizeof(kTable) / sizeof(kTable[0]) == static_cast<std::size_t>(Str::Count_),

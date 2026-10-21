@@ -1,4 +1,4 @@
-// tarkov-help -- entry point.
+// Kartograf -- entry point.
 //
 // Wires the pieces together: a watcher thread reads the files the game writes
 // and is the sole writer to RaidState; the render thread takes an immutable
@@ -199,7 +199,7 @@ void drawStatus(unsigned long long nowMillis) {
         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoNav |
         ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoMove;
 
-    if (ImGui::Begin("tarkov-help-status", nullptr, flags)) {
+    if (ImGui::Begin("kartograf-status", nullptr, flags)) {
         g_status.forEachRecent(nowMillis, [](const std::string& text) {
             ImGui::TextColored(ImVec4(0.62f, 0.64f, 0.58f, 1.0f), "%s", text.c_str());
         });
@@ -268,6 +268,20 @@ bool raidUnderWay(const tarkov::game::RaidSnapshot& raid, std::int64_t nowMillis
 int main(int argc, char** argv) {
     using namespace tarkov;
 
+    // A copy under the old name, tarkov-help, still running would go on using
+    // the data folder this one is about to move, and two overlays would draw
+    // over the game. It holds a mutex of the old name; while it does, say so
+    // and stop, the same as for a second start below.
+    if (!hasFlag(argc, argv, "--second-instance")) {
+        if (HANDLE legacy = OpenMutexW(SYNCHRONIZE, FALSE, L"Local\\tarkov-help-overlay")) {
+            CloseHandle(legacy);
+            MessageBoxW(nullptr, widen(ui::tr(ui::Str::ErrorAlreadyRunning)).c_str(),
+                        L"Kartograf", MB_ICONWARNING | MB_OK | MB_SETFOREGROUND);
+            return 0;
+        }
+        win32::migrateLegacyAppData();
+    }
+
     // Settings first, before anything can report a status line, since the
     // language is one of them. Command-line flags are development aids and
     // override the file for this run only: `stored` is what the file holds,
@@ -320,14 +334,14 @@ int main(int argc, char** argv) {
     const bool afterDeviceLoss = hasFlag(argc, argv, "--after-device-loss");
     HANDLE instanceMutex = nullptr;
     if (!hasFlag(argc, argv, "--second-instance")) {
-        instanceMutex = CreateMutexW(nullptr, TRUE, L"Local\\tarkov-help-overlay");
+        instanceMutex = CreateMutexW(nullptr, TRUE, L"Local\\kartograf-overlay");
         if (instanceMutex != nullptr && GetLastError() == ERROR_ALREADY_EXISTS) {
             const DWORD waited =
                 afterDeviceLoss ? WaitForSingleObject(instanceMutex, 15000) : WAIT_TIMEOUT;
             if (waited != WAIT_OBJECT_0 && waited != WAIT_ABANDONED) {
                 if (!afterDeviceLoss) {
                     MessageBoxW(nullptr, widen(ui::tr(ui::Str::ErrorAlreadyRunning)).c_str(),
-                                L"tarkov-help",
+                                L"Kartograf",
                                 MB_ICONWARNING | MB_OK | MB_SETFOREGROUND);
                 }
                 CloseHandle(instanceMutex);
@@ -340,7 +354,7 @@ int main(int argc, char** argv) {
 
     win32::OverlayWindow overlay;
     if (!overlay.create(instance, 1920, 1080)) {
-        MessageBoxA(nullptr, overlay.lastError().c_str(), "tarkov-help",
+        MessageBoxA(nullptr, overlay.lastError().c_str(), "Kartograf",
                     MB_ICONERROR | MB_OK);
         return 1;
     }
@@ -351,7 +365,7 @@ int main(int argc, char** argv) {
         // MessageBoxW: the text may be Russian, which the ANSI variant would
         // mangle through the system code page.
         MessageBoxW(nullptr, widen(ui::tr(ui::Str::ErrorInterfaceInit)).c_str(),
-                    L"tarkov-help", MB_ICONERROR | MB_OK);
+                    L"Kartograf", MB_ICONERROR | MB_OK);
         return 1;
     }
 
@@ -582,7 +596,7 @@ int main(int argc, char** argv) {
             // The first time the window is closed, say where the program went;
             // otherwise closing it looks like quitting.
             toldAboutTray = true;
-            settingsWindow.notify(L"tarkov-help", trayTooltip());
+            settingsWindow.notify(L"Kartograf", trayTooltip());
         }
 
         if (settingsWindow.visible()) {
@@ -855,7 +869,7 @@ int main(int argc, char** argv) {
                 ImGui::SetNextWindowPos(
                     ImVec2(overlay.width() / 2.0f, overlay.height() / 2.0f),
                     ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-                if (ImGui::Begin("tarkov-help-nomap", nullptr,
+                if (ImGui::Begin("kartograf-nomap", nullptr,
                                  ImGuiWindowFlags_NoDecoration |
                                      ImGuiWindowFlags_AlwaysAutoResize |
                                      ImGuiWindowFlags_NoSavedSettings |

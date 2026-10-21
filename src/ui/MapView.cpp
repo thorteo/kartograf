@@ -372,7 +372,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
     // draws a frame around the whole monitor when the window is fullscreen.
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    const bool open = ImGui::Begin("tarkov-help-map", nullptr, flags);
+    const bool open = ImGui::Begin("kartograf-map", nullptr, flags);
     if (!open) {
         ImGui::End();
         ImGui::PopStyleVar(2);
@@ -710,7 +710,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
         if (hover.distanceSq < 1e29f && !hover.title.empty()) {
             ImGui::SetNextWindowPos(ImVec2(hover.at.x + 16.0f, hover.at.y + 16.0f));
             ImGui::SetNextWindowBgAlpha(0.92f);
-            if (ImGui::Begin("tarkov-help-tip", nullptr,
+            if (ImGui::Begin("kartograf-tip", nullptr,
                              ImGuiWindowFlags_NoDecoration |
                                  ImGuiWindowFlags_AlwaysAutoResize |
                                  ImGuiWindowFlags_NoSavedSettings |
@@ -774,7 +774,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
         ImGui::SetNextWindowPos(ImVec2(origin.x + 16.0f, origin.y + 16.0f),
                                 ImGuiCond_Always);
         ImGui::SetNextWindowBgAlpha(0.85f);
-        if (ImGui::Begin("tarkov-help-floors", nullptr,
+        if (ImGui::Begin("kartograf-floors", nullptr,
                          ImGuiWindowFlags_NoDecoration |
                              ImGuiWindowFlags_AlwaysAutoResize |
                              ImGuiWindowFlags_NoSavedSettings |

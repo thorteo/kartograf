@@ -39,7 +39,7 @@ src/ui/         ImGui views. Portable: ImGui's core builds on Linux, and
                 behaviour is tested without Windows or a GPU.
 src/platform/   win32/ only: windows, D3D11, file watching, WinHTTP, the stores
                 that own GPU textures.
-src/app/        main.cpp: wiring and the render loop. tarkov_help.rc and
+src/app/        main.cpp: wiring and the render loop. kartograf.rc and
                 icon/: the app icon, rendered from SVG by scripts/make_icon.py.
 ```
 

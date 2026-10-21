@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Renders src/app/icon/*.svg into src/app/icon/tarkov_help.ico.
+"""Renders src/app/icon/*.svg into src/app/icon/kartograf.ico.
 
 The .ico is committed, so a build needs neither this script nor its tools. Run
 it by hand after editing either SVG. Needs rsvg-convert (librsvg2-bin) and
@@ -65,7 +65,7 @@ def main() -> int:
     for _, data in images:
         out += data
 
-    target = ICON_DIR / "tarkov_help.ico"
+    target = ICON_DIR / "kartograf.ico"
     target.write_bytes(out)
     print(f"wrote {target.relative_to(ROOT)} ({len(out)} bytes, {len(images)} sizes)")
     return 0

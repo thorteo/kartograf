@@ -1,6 +1,6 @@
 #pragma once
 
-// Resource ids shared between src/app/tarkov_help.rc and the code that loads
+// Resource ids shared between src/app/kartograf.rc and the code that loads
 // them. Plain defines: the resource compiler reads this file too.
 
 /// The application icon. The lowest id, so Explorer and shortcuts show it as

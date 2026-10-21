@@ -8,9 +8,20 @@
 
 namespace tarkov::win32 {
 
-/// %LOCALAPPDATA%\tarkov-help\<leaf>: settings, progress and the caches.
-/// Falls back to the temporary directory if the known folder is unavailable.
+/// %LOCALAPPDATA%\kartograf\<leaf>: settings, progress and the caches.
+/// Falls back to the temporary directory if the known folder is unavailable,
+/// and to the folder of the program's old name while that has not been moved.
 std::filesystem::path appDataPath(std::wstring_view leaf);
+
+/// Moves %LOCALAPPDATA%\tarkov-help, the folder of the program's old name, to
+/// %LOCALAPPDATA%\kartograf, when only the old one exists.
+///
+/// Called once at startup, before anything is read from either, and only when
+/// no copy under the old name is running. A move that fails leaves everything
+/// where it was, and appDataPath keeps using the old folder: it holds quest
+/// corrections and the originals of the icons the price labels replaced, which
+/// exist nowhere else.
+void migrateLegacyAppData();
 
 /// The whole file, or empty when it cannot be read.
 std::string readTextFile(const std::filesystem::path& path);

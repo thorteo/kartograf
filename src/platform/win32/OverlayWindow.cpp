@@ -9,7 +9,7 @@
 namespace tarkov::win32 {
 namespace {
 
-constexpr wchar_t kWindowClass[] = L"TarkovHelpOverlay";
+constexpr wchar_t kWindowClass[] = L"KartografOverlay";
 
 // Not in every SDK's winuser.h, and we must not fail to build because of it.
 #ifndef WDA_EXCLUDEFROMCAPTURE
@@ -96,7 +96,7 @@ bool OverlayWindow::createWindow(HINSTANCE instance, int width, int height) {
     const DWORD exStyle = WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE |
                           WS_EX_TOOLWINDOW | WS_EX_TOPMOST;
 
-    hwnd_ = CreateWindowExW(exStyle, kWindowClass, L"tarkov-help", WS_POPUP, 0, 0,
+    hwnd_ = CreateWindowExW(exStyle, kWindowClass, L"Kartograf", WS_POPUP, 0, 0,
                             width, height, nullptr, nullptr, instance, this);
     if (hwnd_ == nullptr) {
         return fail("CreateWindowExW", HRESULT_FROM_WIN32(GetLastError()));

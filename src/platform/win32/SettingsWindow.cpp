@@ -9,7 +9,7 @@
 namespace tarkov::win32 {
 namespace {
 
-constexpr wchar_t kWindowClass[] = L"TarkovHelpSettings";
+constexpr wchar_t kWindowClass[] = L"KartografSettings";
 constexpr UINT kTrayMessage = WM_APP + 1;
 constexpr UINT kMenuSettings = 1;
 constexpr UINT kMenuQuit = 2;

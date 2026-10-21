@@ -212,7 +212,7 @@ the rest are presumably event or removed quests and are ignored.
 ### The game only keeps about five days of logs
 
 Eight session folders here, spanning 2026-09-16 to 2026-09-20. Anything older is gone.
-So progress has to be **persisted by us** — `%LOCALAPPDATA%\tarkov-help\progress.json`
+So progress has to be **persisted by us** — `%LOCALAPPDATA%\kartograf\progress.json`
 — and on first run everything still on disk is imported. Events are merged by their
 own `dt` timestamp, so import order cannot roll a quest back.
 

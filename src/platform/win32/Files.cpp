@@ -12,7 +12,12 @@ namespace tarkov::win32 {
 
 namespace fs = std::filesystem;
 
-fs::path appDataPath(std::wstring_view leaf) {
+namespace {
+
+constexpr wchar_t kAppFolder[] = L"kartograf";
+constexpr wchar_t kLegacyAppFolder[] = L"tarkov-help";
+
+fs::path localAppData() {
     fs::path root;
     PWSTR raw = nullptr;
     if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &raw))) {
@@ -23,7 +28,30 @@ fs::path appDataPath(std::wstring_view leaf) {
         std::error_code ec;
         root = fs::temp_directory_path(ec);
     }
-    return root / L"tarkov-help" / leaf;
+    return root;
+}
+
+}  // namespace
+
+fs::path appDataPath(std::wstring_view leaf) {
+    const fs::path root = localAppData();
+    std::error_code ec;
+    if (!fs::exists(root / kAppFolder, ec) && fs::exists(root / kLegacyAppFolder, ec)) {
+        return root / kLegacyAppFolder / leaf;
+    }
+    return root / kAppFolder / leaf;
+}
+
+void migrateLegacyAppData() {
+    const fs::path root = localAppData();
+    const fs::path current = root / kAppFolder;
+    const fs::path legacy = root / kLegacyAppFolder;
+    std::error_code ec;
+    if (fs::exists(current, ec) || !fs::exists(legacy, ec)) {
+        return;
+    }
+    // One rename on one volume: the folder moves whole or not at all.
+    MoveFileExW(legacy.c_str(), current.c_str(), 0);
 }
 
 std::string readTextFile(const fs::path& path) {

@@ -1,4 +1,4 @@
-# tarkov-help
+# Kartograf
 
 A Windows overlay for Escape from Tarkov: your live position and your active quest
 objectives, drawn on top of the game.

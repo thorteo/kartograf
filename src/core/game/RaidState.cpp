@@ -67,6 +67,7 @@ void RaidState::apply(const RaidEvent& event, std::int64_t nowMillis) {
             break;
 
         case RaidEventType::RaidCreated:
+        case RaidEventType::LocationNamed:
             // Authoritative: this overrides whatever the scene preset implied.
             if (!event.mapId.empty()) {
                 state_.mapId = event.mapId;
@@ -75,8 +76,12 @@ void RaidState::apply(const RaidEvent& event, std::int64_t nowMillis) {
                     state_.mapNormalized = std::string(*normalized);
                 }
             }
-            state_.raidMode = event.raidMode;
-            state_.shortId = event.shortId;
+            // Only the server says which mode this is; an offline raid's
+            // name for its location must not reset the quest dataset.
+            if (event.type == RaidEventType::RaidCreated) {
+                state_.raidMode = event.raidMode;
+                state_.shortId = event.shortId;
+            }
             break;
 
         case RaidEventType::RaidStarted:

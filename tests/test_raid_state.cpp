@@ -87,6 +87,22 @@ TEST_CASE("the server assignment overrides the scene preset's map") {
     CHECK(snap->shortId == "ABC123");
 }
 
+TEST_CASE("an offline raid's location sets the map and leaves the raid mode alone") {
+    RaidState state;
+    RaidEvent created = event(RaidEventType::RaidCreated, "bigmap");
+    created.raidMode = "Online";
+    state.apply(created, 500);
+
+    // Training, later in the session.
+    state.apply(event(RaidEventType::MapLoading, "Shopping_Mall"), 1000);
+    state.apply(event(RaidEventType::LocationNamed, "Interchange"), 2000);
+
+    const auto snap = state.snapshot();
+    CHECK(snap->mapId == "Interchange");
+    CHECK(snap->mapNormalized == "interchange");
+    CHECK(snap->raidMode.empty());  // cleared by the new raid, not set offline
+}
+
 TEST_CASE("an unrecognised map leaves the normalized name empty") {
     // Better an empty name the UI can report than a silent fallback to the
     // wrong map.

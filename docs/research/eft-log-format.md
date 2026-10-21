@@ -161,9 +161,40 @@ Internal id → tarkov.dev `normalizedName`:
 | `terminal` | `terminal` |
 | `icebreaker` | `icebreaker` |
 
-Only `bigmap`, `shoreline` and `sandbox` are confirmed from local logs; the rest are
-from community sources and each should be confirmed the first time it is seen. Log an
-unknown id loudly rather than silently falling back to a default map.
+Confirmed from this machine's logs (2026-09-16 to 10-22): all but `factory4_night`,
+`terminal` and `icebreaker`. Log an unknown id loudly rather than silently falling back
+to a default map.
+
+### Scene ids are not location ids, and offline raids have only those at first
+
+The `rcid:` in the scene preset line names the *scene*, which for four maps is not the
+location id at all. Every pair seen on this machine, scene preset line against the
+server assignment that followed:
+
+| `rcid:` (scene) | `Location:` | tarkov.dev |
+|---|---|---|
+| `city` | `TarkovStreets` | `streets-of-tarkov` |
+| `factory_day` | `factory4_day` | `factory` |
+| `Shopping_Mall` | `Interchange` | `interchange` |
+| `Rezerv_Base` | `RezervBase` | `reserve` |
+| `Sandbox_SL` | `Sandbox_start` (offline only) | the first-run tutorial; no map |
+
+Online this never showed, because `TRACE-NetworkGameCreate` arrives a minute later
+with the real location and overrides the scene. **An offline raid -- training -- has no
+`NetworkGameCreate` line**, so a training raid on Streets stayed on "city" and drew no
+map (2026-10-22). What an offline raid does write, once, between `GameCreated` and
+`GameStarted`:
+
+```
+…|Info|application|[Transit] Flag:None, RaidId:<SID>, Count:0, Locations:TarkovStreets -> 
+```
+
+`Locations:` holds the location id, followed by ` -> ` and an empty transit target.
+Present in all 16 offline raids in the logs, on Customs, Shoreline, Interchange, Streets
+and the tutorial. Online raids write a `[Transit]` line of another shape that names no
+location -- ``[Transit] `<PROFILE_ID>` Count:0, EventPlayer:False`` -- so it cannot be
+mistaken for one. The overlay takes the offline line as the map (`LocationNamed`), and
+the scene ids are in the table as well, for the minute before it.
 
 ## Watching strategy
 

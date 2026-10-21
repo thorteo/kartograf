@@ -61,6 +61,10 @@ enum class RaidEventType {
     LocationLoaded,
     /// Server assigned. Authoritative map and raid mode.
     RaidCreated,
+    /// An offline raid -- training -- naming its location. There is no server
+    /// assignment offline, so this is what corrects the scene preset's map;
+    /// it carries no raid mode.
+    LocationNamed,
     /// Raid is live; the in-raid clock starts here.
     RaidStarted,
     /// Result screen shown.

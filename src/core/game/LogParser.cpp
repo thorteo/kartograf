@@ -11,6 +11,8 @@ constexpr std::string_view kRcid = "rcid:";
 constexpr std::string_view kMatching = "TRACE-NetworkGameMatching ";
 constexpr std::string_view kLocationLoaded = "LocationLoaded:";
 constexpr std::string_view kGameCreate = "TRACE-NetworkGameCreate profileStatus:";
+constexpr std::string_view kTransit = "[Transit] ";
+constexpr std::string_view kTransitLocations = "Locations:";
 constexpr std::string_view kGameStarted = "GameStarted:";
 constexpr std::string_view kSessionResult = "EFT.SessionResultShowOperation:Execute(";
 
@@ -201,6 +203,25 @@ std::optional<RaidEvent> LogParser::feedLine(std::string_view raw) {
         event.mapId = fieldValue(message, "Location");
         event.raidMode = fieldValue(message, "RaidMode");
         event.shortId = fieldValue(message, "shortId");
+        return event;
+    }
+
+    if (message.find(kTransit) != std::string_view::npos) {
+        // Offline: "[Transit] Flag:None, RaidId:..., Count:0, Locations:TarkovStreets -> "
+        // Online the line reads "[Transit] `<profile id>` Count:0, ..." and
+        // names no location.
+        const std::size_t at = message.find(kTransitLocations);
+        if (at == std::string_view::npos) {
+            return std::nullopt;
+        }
+        const std::size_t start = at + kTransitLocations.size();
+        const std::size_t end = message.find(' ', start);
+        event.mapId = std::string(message.substr(
+            start, end == std::string_view::npos ? std::string_view::npos : end - start));
+        if (event.mapId.empty()) {
+            return std::nullopt;
+        }
+        event.type = RaidEventType::LocationNamed;
         return event;
     }
 

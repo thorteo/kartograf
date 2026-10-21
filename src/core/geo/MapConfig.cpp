@@ -184,9 +184,14 @@ std::optional<std::string_view> mapIdToNormalizedName(std::string_view gameMapId
         std::string_view gameId;
         std::string_view normalized;
     };
-    // Confirmed from this machine's own logs: bigmap, shoreline, sandbox.
-    // The rest come from community sources and should each be confirmed the
-    // first time the overlay actually sees them.
+    // Location ids, from the server's assignment and an offline raid's
+    // transit line. Confirmed from this machine's own logs: all but
+    // factory4_night, rezervbase's lowercase, terminal and icebreaker.
+    //
+    // Then scene ids, from "rcid:" in the scene preset line, where they differ
+    // -- the only name an offline raid has until its transit line. Every one
+    // seen on this machine from 2026-09-16 to 10-22. "Sandbox_SL" is the
+    // first-run tutorial ("Sandbox_start"), which has no map here.
     static constexpr Entry kTable[] = {
         {"bigmap", "customs"},
         {"factory4_day", "factory"},
@@ -203,6 +208,11 @@ std::optional<std::string_view> mapIdToNormalizedName(std::string_view gameMapId
         {"labyrinth", "the-labyrinth"},
         {"terminal", "terminal"},
         {"icebreaker", "icebreaker"},
+
+        {"city", "streets-of-tarkov"},
+        {"factory_day", "factory"},
+        {"shopping_mall", "interchange"},
+        {"rezerv_base", "reserve"},
     };
     for (const auto& entry : kTable) {
         if (iequals(entry.gameId, gameMapId)) {

@@ -117,6 +117,12 @@ TEST_CASE("map ids resolve despite inconsistent capitalisation") {
     CHECK(mapIdToNormalizedName("sandbox") == "ground-zero");
     CHECK(mapIdToNormalizedName("TarkovStreets") == "streets-of-tarkov");
 
+    // Scene ids, the only name an offline raid has before its transit line.
+    CHECK(mapIdToNormalizedName("city") == "streets-of-tarkov");
+    CHECK(mapIdToNormalizedName("factory_day") == "factory");
+    CHECK(mapIdToNormalizedName("Shopping_Mall") == "interchange");
+    CHECK(mapIdToNormalizedName("Rezerv_Base") == "reserve");
+
     // An unknown id must not silently resolve to some default map.
     CHECK_FALSE(mapIdToNormalizedName("not_a_map").has_value());
     CHECK_FALSE(mapIdToNormalizedName("").has_value());
@@ -205,4 +211,28 @@ TEST_CASE("a line cut short inside its timestamp is not a record") {
         CHECK_FALSE(game::parseLogLine(std::string_view(full.data(), length)).has_value());
     }
     CHECK(game::parseLogLine(full).has_value());
+}
+
+TEST_CASE("a training raid names its location in its transit line") {
+    // A training raid on Streets, 2026-10-22: no server assignment follows the
+    // scene preset, whose "city" is not a location id. The transit line is.
+    game::LogParser parser;
+    const auto scene = parser.feedLine(
+        "2026-10-22 02:30:12.565|1.2.5.0.48146|Info|application|"
+        "scene preset path:maps/city_preset.bundle rcid:city.scenespreset.asset");
+    REQUIRE(scene);
+    CHECK(scene->mapId == "city");
+
+    const auto named = parser.feedLine(
+        "2026-10-22 02:31:33.359|1.2.5.0.48146|Info|application|"
+        "[Transit] Flag:None, RaidId:<SID>, Count:0, Locations:TarkovStreets -> ");
+    REQUIRE(named);
+    CHECK(named->type == game::RaidEventType::LocationNamed);
+    CHECK(named->mapId == "TarkovStreets");
+    CHECK(named->raidMode.empty());
+
+    // Online, the transit line names the profile and no location.
+    CHECK_FALSE(parser.feedLine(
+        "2026-10-22 01:36:25.715|1.2.5.0.48146|Info|application|"
+        "[Transit] `<PROFILE_ID>` Count:0, EventPlayer:False"));
 }

@@ -276,7 +276,9 @@ void GameDataWatcher::pumpLogs(game::RaidState& state) {
         for (const auto& line : source.tail.readNewLines()) {
             if (auto event = source.parser.feedLine(line)) {
                 state.apply(*event, millisAt(event->timestamp));
-                if (event->type == game::RaidEventType::RaidCreated && !catchingUp_) {
+                const bool named = event->type == game::RaidEventType::RaidCreated ||
+                                   event->type == game::RaidEventType::LocationNamed;
+                if (named && !catchingUp_) {
                     const auto normalized = geo::mapIdToNormalizedName(event->mapId);
                     say(ui::trf(ui::Str::StatusRaidOn,
                                 normalized ? ui::mapDisplayName(*normalized).c_str()

@@ -26,7 +26,8 @@ hooking. That is a hard design constraint, not a current limitation:
 - Your active quests' objectives, from the game's own logs — no account linking;
   each marker says what to do there (locate, mark, plant, pick up, kill, use), and
   hovering one from the inventory or a menu explains it
-- Extracts by faction, transits, and PMC and boss spawns, with the same icons as tarkov.dev
+- Extracts by faction, transits, PMC and boss spawns, and hidden stashes, with the same
+  icons as tarkov.dev
 - Abstract vector maps by default, satellite tiles where no drawing exists
 - Raid timer and in-game clock
 - Transparent and see-through, click-through, excluded from screen capture

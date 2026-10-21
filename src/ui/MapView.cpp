@@ -145,6 +145,8 @@ ImU32 fallbackColour(MarkerIcon icon, float alpha) {
         case MarkerIcon::Transit: return rgba(0.90f, 0.30f, 0.25f, alpha);
         case MarkerIcon::SpawnPmc: return rgba(0.95f, 0.90f, 0.30f, alpha);
         case MarkerIcon::SpawnBoss: return rgba(0.95f, 0.95f, 0.95f, alpha);
+        case MarkerIcon::CacheBarrel: return rgba(0.25f, 0.45f, 0.95f, alpha);
+        case MarkerIcon::CacheGround: return rgba(0.85f, 0.72f, 0.50f, alpha);
     }
     return rgba(1.0f, 1.0f, 1.0f, alpha);
 }
@@ -557,7 +559,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
         }
     }
 
-    // Points of interest, drawn bottom to top by importance: spawns, extracts,
+    // Points of interest, drawn bottom to top by importance: stashes, spawns, extracts,
     // transits, quests, then the player, so the player is never hidden.
     {
         // Faded when not on the floor shown -- the player's own, unless one
@@ -632,6 +634,7 @@ MapViewResult drawMapView(MapViewState& state, const geo::MapVariant& map,
             }
         };
 
+        if (state.showCaches) drawPoints(overlays.caches, kSpawnSize, false);
         if (state.showSpawns) drawPoints(overlays.spawns, kSpawnSize, false);
         if (state.showExtracts) drawPoints(overlays.extracts, kExtractSize, true);
         if (state.showTransits) drawPoints(overlays.transits, kExtractSize, true);

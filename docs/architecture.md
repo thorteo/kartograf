@@ -92,7 +92,7 @@ positions in `tests/fixtures/` can validate it directly. See
 
 - **`TaskModel`** — tasks, objectives, zones, required items, from the JSON API's
   `/tasks` document and its locales (`research/tarkov-dev-rest-api.md`).
-- **`MapFeatures`** — extracts, spawns and transits from `/maps`.
+- **`MapFeatures`** — extracts, spawns, transits and hidden stashes from `/maps`.
 - **`MapIds`** — BSG map ids to the map each one is drawn as.
 - **`QuestProgress`** — the player's progress: log events, the player's own
   corrections, and prerequisites inferred from both.

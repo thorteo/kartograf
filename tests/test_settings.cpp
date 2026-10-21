@@ -30,6 +30,7 @@ TEST_CASE("every field survives a round trip") {
     s.showExtracts = false;
     s.showTransits = false;
     s.showSpawns = true;
+    s.showCaches = true;
     s.dimOtherFloors = false;
     s.showHud = true;
     s.excludeFromCapture = false;

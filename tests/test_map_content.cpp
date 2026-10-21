@@ -38,6 +38,12 @@ TEST_CASE("map points come from every id that draws as the map") {
 
     ui::buildMapPoints(features, mapIds(), "customs", overlays);
     CHECK(overlays.extracts.size() == 27);  // the fixture's count, stale ones gone
+    CHECK(overlays.caches.size() == 65);
+    for (const auto& cache : overlays.caches) {
+        CHECK((cache.icon == ui::MarkerIcon::CacheBarrel ||
+               cache.icon == ui::MarkerIcon::CacheGround));
+        CHECK_FALSE(cache.label.empty());
+    }
     CHECK_FALSE(overlays.spawns.empty());
     for (const auto& spawn : overlays.spawns) {
         CHECK((spawn.icon == ui::MarkerIcon::SpawnPmc ||
@@ -46,6 +52,7 @@ TEST_CASE("map points come from every id that draws as the map") {
 
     ui::buildMapPoints(features, mapIds(), "woods", overlays);
     CHECK(overlays.extracts.empty());  // no Woods data in the fixture
+    CHECK(overlays.caches.empty());
 }
 
 TEST_CASE("quest places are filtered to active quests when progress is known") {

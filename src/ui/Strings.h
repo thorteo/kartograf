@@ -36,6 +36,7 @@ enum class Str {
     LayerExtracts,
     LayerTransits,
     LayerSpawns,
+    LayerCaches,
     NoUpperFloors,
     FloorAuto,
     AutoSuffix,
@@ -52,6 +53,8 @@ enum class Str {
     ObjectivesCount,     // %d
     BossSpawn,
     PmcSpawn,
+    CacheBarrel,
+    CacheGround,
     TransitTo,           // %s
     WaitingForRaid,
     WaitingForRaidDetail,

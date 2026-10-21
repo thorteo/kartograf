@@ -241,8 +241,8 @@ bool TarkovDataRepository::downloadAndCache(const std::string& mode) {
     }
 
     // The maps document is large (8.5 MB, mostly loot positions we do not
-    // draw) but it is fetched rarely and is the only source of extracts and
-    // spawns. A failure here costs those layers, not the quests.
+    // draw) but it is fetched rarely and is the only source of extracts,
+    // spawns and stashes. A failure here costs those layers, not the quests.
     std::string mapsBody;
     std::string mapsLocaleBody;
     const auto mapsResponse = client.get(base + "/maps", 64u * 1024 * 1024);

@@ -412,7 +412,7 @@ int main(int argc, char** argv) {
     icons.start(overlay.device(),
                 {"quest_objective", "extract_pmc",
                  "extract_scav", "extract_shared", "extract_transit", "spawn_pmc",
-                 "spawn_boss"});
+                 "spawn_boss", "container_buried-barrel-cache", "container_ground-cache"});
 
     // Quest glyphs are ours, not downloaded: rasterise them now, at twice the
     // size they are drawn so they stay sharp.
@@ -487,6 +487,7 @@ int main(int argc, char** argv) {
         state.showExtracts = config.showExtracts;
         state.showTransits = config.showTransits;
         state.showSpawns = config.showSpawns;
+        state.showCaches = config.showCaches;
         state.dimOtherFloors = config.dimOtherFloors;
     };
     applyMapSettings(mapState);
@@ -519,6 +520,8 @@ int main(int argc, char** argv) {
             case ui::MarkerIcon::Transit: name = "extract_transit"; break;
             case ui::MarkerIcon::SpawnPmc: name = "spawn_pmc"; break;
             case ui::MarkerIcon::SpawnBoss: name = "spawn_boss"; break;
+            case ui::MarkerIcon::CacheBarrel: name = "container_buried-barrel-cache"; break;
+            case ui::MarkerIcon::CacheGround: name = "container_ground-cache"; break;
         }
         return reinterpret_cast<ImTextureID>(icons.get(name));
     };

@@ -93,3 +93,27 @@ TEST_CASE("malformed map data yields nothing rather than a crash") {
         CHECK(parseMapFeatures(bad, TaskLocale{}).empty());
     }
 }
+
+TEST_CASE("Customs' stashes parse, and other containers are left out") {
+    const auto& features = customs();
+    // The fixture holds Customs' 65 stashes from the data of 2026-10-21, and
+    // three safes that must not come through.
+    REQUIRE(features.caches.size() == 65);
+
+    std::map<CacheKind, int> kinds;
+    for (const auto& cache : features.caches) {
+        ++kinds[cache.kind];
+    }
+    CHECK(kinds[CacheKind::BuriedBarrel] == 56);
+    CHECK(kinds[CacheKind::Ground] == 9);
+
+    for (const auto& cache : features.caches) {
+        if (cache.kind == CacheKind::Ground) {
+            // "Закопанный ящик"
+            CHECK(cache.name == "\xd0\x97\xd0\xb0\xd0\xba\xd0\xbe\xd0\xbf\xd0\xb0"
+                                "\xd0\xbd\xd0\xbd\xd1\x8b\xd0\xb9 "
+                                "\xd1\x8f\xd1\x89\xd0\xb8\xd0\xba");
+            break;
+        }
+    }
+}

@@ -138,6 +138,8 @@ SettingsViewResult drawSettings(settings::Settings& s, SettingsViewState& state,
     result.changed |= ImGui::Checkbox(tr(Str::LayerTransits), &s.showTransits);
     ImGui::SameLine();
     result.changed |= ImGui::Checkbox(tr(Str::LayerSpawns), &s.showSpawns);
+    ImGui::SameLine();
+    result.changed |= ImGui::Checkbox(tr(Str::LayerCaches), &s.showCaches);
     result.changed |= ImGui::Checkbox(tr(Str::DimOtherFloors), &s.dimOtherFloors);
 
     // --- General -------------------------------------------------------------

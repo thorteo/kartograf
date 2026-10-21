@@ -62,6 +62,34 @@ std::string translated(const TaskLocale& locale, const std::string& key) {
     return value.empty() ? key : std::string(value);
 }
 
+/// A stash container type: its kind, and its name already translated.
+struct CacheType {
+    CacheKind kind;
+    std::string name;
+};
+
+/// The container types that are stashes, by container id, from the
+/// document's own `lootContainers` table. Matched by normalizedName rather
+/// than by id: a map added later can bring its own id for the same container.
+std::map<std::string, CacheType, std::less<>> cacheTypes(const json* table,
+                                                         const TaskLocale& locale) {
+    std::map<std::string, CacheType, std::less<>> out;
+    if (table == nullptr || !table->is_object()) {
+        return out;
+    }
+    for (const auto& [id, entry] : table->items()) {
+        const std::string kind = text(entry, "normalizedName");
+        if (kind != "buried-barrel-cache" && kind != "ground-cache") {
+            continue;
+        }
+        CacheType type;
+        type.kind = kind == "ground-cache" ? CacheKind::Ground : CacheKind::BuriedBarrel;
+        type.name = std::string(locale.lookup(text(entry, "name")));
+        out.emplace(id, std::move(type));
+    }
+    return out;
+}
+
 }  // namespace
 
 MapFeatureSet parseMapFeatures(std::string_view source, const TaskLocale& locale) {
@@ -72,6 +100,7 @@ MapFeatureSet parseMapFeatures(std::string_view source, const TaskLocale& locale
     if (maps == nullptr || !maps->is_object()) {
         return out;
     }
+    const auto caches = cacheTypes(child(*data, "lootContainers"), locale);
 
     for (const auto& [id, entry] : maps->items()) {
         MapFeatures features;
@@ -130,6 +159,25 @@ MapFeatureSet parseMapFeatures(std::string_view source, const TaskLocale& locale
                 transit.description = std::string(locale.lookup(key));
                 transit.targetMapId = text(t, "map");
                 features.transits.push_back(std::move(transit));
+            }
+        }
+
+        if (const json* containers = child(entry, "lootContainers");
+            containers != nullptr && containers->is_array()) {
+            for (const auto& c : *containers) {
+                const auto type = caches.find(text(c, "lootContainer"));
+                if (type == caches.end()) {
+                    continue;
+                }
+                const auto where = position(c);
+                if (!where) {
+                    continue;
+                }
+                MapCache cache;
+                cache.position = *where;
+                cache.kind = type->second.kind;
+                cache.name = type->second.name;
+                features.caches.push_back(std::move(cache));
             }
         }
 

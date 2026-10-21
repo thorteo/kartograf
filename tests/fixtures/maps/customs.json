@@ -1771,7 +1771,570 @@
       ],
       "zoneName": "ZoneCustoms"
      }
+    ],
+    "lootContainers": [
+     {
+      "lootContainer": "5d6d2b5486f774785c2ba8ea",
+      "position": {
+       "x": 277.826,
+       "y": -1.865,
+       "z": 72.766
+      }
+     },
+     {
+      "lootContainer": "5d6d2b5486f774785c2ba8ea",
+      "position": {
+       "x": 428.027466,
+       "y": 1.08973241,
+       "z": -10.7794647
+      }
+     },
+     {
+      "lootContainer": "5d6d2b5486f774785c2ba8ea",
+      "position": {
+       "x": 560.603,
+       "y": 11.678,
+       "z": 115.131
+      }
+     },
+     {
+      "lootContainer": "5d6d2b5486f774785c2ba8ea",
+      "position": {
+       "x": 554.848,
+       "y": 11.399,
+       "z": 192.654
+      }
+     },
+     {
+      "lootContainer": "5d6d2b5486f774785c2ba8ea",
+      "position": {
+       "x": 607.301636,
+       "y": 1.15767312,
+       "z": -37.1151123
+      }
+     },
+     {
+      "lootContainer": "5d6d2b5486f774785c2ba8ea",
+      "position": {
+       "x": 670.25,
+       "y": 1.04399991,
+       "z": -47.57
+      }
+     },
+     {
+      "lootContainer": "5d6d2b5486f774785c2ba8ea",
+      "position": {
+       "x": 656.736,
+       "y": 1.109,
+       "z": -149.654
+      }
+     },
+     {
+      "lootContainer": "5d6d2b5486f774785c2ba8ea",
+      "position": {
+       "x": -40.483,
+       "y": -8.267,
+       "z": -76.69699
+      }
+     },
+     {
+      "lootContainer": "5d6d2b5486f774785c2ba8ea",
+      "position": {
+       "x": 184.295,
+       "y": 1.18199992,
+       "z": -227.100983
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 204.007874,
+       "y": -2.931658,
+       "z": 70.91833
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 212.011856,
+       "y": -1.26669383,
+       "z": 38.5095177
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 152.2533,
+       "y": -1.784694,
+       "z": 47.81419
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 162.350433,
+       "y": -1.19808316,
+       "z": 14.7094307
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 257.505249,
+       "y": -1.18825078,
+       "z": 32.8986664
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 218.338867,
+       "y": 0.5405748,
+       "z": 18.0747032
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 314.861267,
+       "y": -0.513181,
+       "z": 26.6847248
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 335.8783,
+       "y": 1.89209354,
+       "z": 75.9049
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 341.884338,
+       "y": 1.91606355,
+       "z": 79.4533
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 368.0431,
+       "y": -1.40473962,
+       "z": 31.83318
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 418.0852,
+       "y": 0.9943428,
+       "z": 56.400177
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 410.227051,
+       "y": 3.090856,
+       "z": 81.10801
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 391.809,
+       "y": 15.2763653,
+       "z": 204.783112
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 407.3587,
+       "y": 13.2218771,
+       "z": 211.221558
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 430.1357,
+       "y": 12.86352,
+       "z": 207.753891
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 452.8422,
+       "y": 7.017599,
+       "z": 220.203308
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 403.752533,
+       "y": 1.29847038,
+       "z": 63.75535
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 376.4537,
+       "y": 0.214396954,
+       "z": 23.3787861
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 403.2805,
+       "y": 1.21703172,
+       "z": -8.128334
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 436.550232,
+       "y": 1.09599555,
+       "z": 29.1125336
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 429.403625,
+       "y": -1.53239989,
+       "z": -84.72633
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 425.120117,
+       "y": 1.2389617,
+       "z": -91.85288
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 438.90863,
+       "y": 2.062275,
+       "z": -101.461662
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 465.459045,
+       "y": 1.09217918,
+       "z": -102.9959
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 515.665344,
+       "y": 13.7958956,
+       "z": 127.0757
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 504.552368,
+       "y": 13.4092131,
+       "z": 131.761581
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 458.937866,
+       "y": 12.1957674,
+       "z": 100.923149
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 522.8997,
+       "y": 13.395956,
+       "z": 117.0268
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 660.5046,
+       "y": 0.792645335,
+       "z": 125.893753
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 642.5672,
+       "y": -0.165466309,
+       "z": 117.880547
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 617.052246,
+       "y": -0.0802121162,
+       "z": 74.2924042
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 588.9445,
+       "y": 8.566159,
+       "z": 139.452072
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 616.1579,
+       "y": 1.28816712,
+       "z": -120.158791
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 583.525452,
+       "y": 1.21252847,
+       "z": -130.298
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 580.234436,
+       "y": 1.13402915,
+       "z": -78.29914
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 647.9005,
+       "y": -0.42653513,
+       "z": -64.90734
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": -46.0551,
+       "y": -7.92914,
+       "z": -102.672783
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": -41.1875763,
+       "y": -8.416024,
+       "z": -74.70531
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": -79.00282,
+       "y": -9.649792,
+       "z": -46.75732
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": -49.2335663,
+       "y": -11.8996477,
+       "z": -25.5060158
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 96.4383545,
+       "y": 1.36613774,
+       "z": -86.3659058
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 73.64198,
+       "y": 1.165641,
+       "z": -102.4106
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 89.3344955,
+       "y": 1.12408328,
+       "z": -70.77135
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 85.9944153,
+       "y": 1.07997394,
+       "z": -84.21442
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 227.151,
+       "y": 1.22100019,
+       "z": -241.808014
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 211.565521,
+       "y": 1.11536133,
+       "z": -270.26355
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 177.44252,
+       "y": 1.22836137,
+       "z": -232.092545
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 169.868515,
+       "y": 1.12096131,
+       "z": -208.132553
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 286.395,
+       "y": 1.681,
+       "z": -205.56601
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 294.105042,
+       "y": 1.18947423,
+       "z": -191.005234
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 289.6825,
+       "y": 3.49204254,
+       "z": -175.49292
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 252.440033,
+       "y": 4.11835861,
+       "z": -192.6765
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 226.995,
+       "y": 1.31349993,
+       "z": -54.3379974
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 231.76651,
+       "y": 1.18946135,
+       "z": -45.7285461
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 241.714523,
+       "y": 1.14436138,
+       "z": -38.2765465
+      }
+     },
+     {
+      "lootContainer": "5d6d2bb386f774785b07a77a",
+      "position": {
+       "x": 211.084518,
+       "y": 1.14036131,
+       "z": 12.290453
+      }
+     },
+     {
+      "lootContainer": "578f8782245977354405a1e3",
+      "position": {
+       "x": 226.868713,
+       "y": 0.337000132,
+       "z": 136.745
+      }
+     },
+     {
+      "lootContainer": "578f8782245977354405a1e3",
+      "position": {
+       "x": 96.62907,
+       "y": -0.627653837,
+       "z": 45.44298
+      }
+     },
+     {
+      "lootContainer": "578f8782245977354405a1e3",
+      "position": {
+       "x": -201.471878,
+       "y": 7.51100159,
+       "z": -101.93679
+      }
+     }
     ]
+   }
+  },
+  "lootContainers": {
+   "578f8782245977354405a1e3": {
+    "id": "578f8782245977354405a1e3",
+    "name": "578f8782245977354405a1e3 Name",
+    "normalizedName": "safe"
+   },
+   "5d6d2b5486f774785c2ba8ea": {
+    "id": "5d6d2b5486f774785c2ba8ea",
+    "name": "5d6d2b5486f774785c2ba8ea Name",
+    "normalizedName": "ground-cache"
+   },
+   "5d6d2bb386f774785b07a77a": {
+    "id": "5d6d2bb386f774785b07a77a",
+    "name": "5d6d2bb386f774785b07a77a Name",
+    "normalizedName": "buried-barrel-cache"
    }
   }
  }

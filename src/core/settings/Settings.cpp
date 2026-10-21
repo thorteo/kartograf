@@ -58,6 +58,7 @@ std::string serialize(const Settings& s) {
     root["showExtracts"] = s.showExtracts;
     root["showTransits"] = s.showTransits;
     root["showSpawns"] = s.showSpawns;
+    root["showCaches"] = s.showCaches;
     root["dimOtherFloors"] = s.dimOtherFloors;
     root["showHud"] = s.showHud;
     root["excludeFromCapture"] = s.excludeFromCapture;
@@ -85,6 +86,7 @@ Settings parse(std::string_view text, std::vector<Issue>* issues) {
     readValue(root, "showExtracts", s.showExtracts, issues);
     readValue(root, "showTransits", s.showTransits, issues);
     readValue(root, "showSpawns", s.showSpawns, issues);
+    readValue(root, "showCaches", s.showCaches, issues);
     readValue(root, "dimOtherFloors", s.dimOtherFloors, issues);
     readValue(root, "showHud", s.showHud, issues);
     readValue(root, "excludeFromCapture", s.excludeFromCapture, issues);
@@ -112,6 +114,7 @@ bool applyEdits(Settings& stored, const Settings& before, const Settings& after)
     carry(&Settings::showExtracts);
     carry(&Settings::showTransits);
     carry(&Settings::showSpawns);
+    carry(&Settings::showCaches);
     carry(&Settings::dimOtherFloors);
     carry(&Settings::showHud);
     carry(&Settings::excludeFromCapture);

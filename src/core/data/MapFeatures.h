@@ -38,12 +38,26 @@ struct MapTransit {
     std::string targetMapId;
 };
 
+/// A hidden stash: a container buried in the ground, found by looking for it.
+enum class CacheKind {
+    BuriedBarrel,  ///< "buried-barrel-cache", a blue barrel under the grass.
+    Ground,        ///< "ground-cache", a wooden box under the grass.
+};
+
+/// One possible place for a hidden stash.
+struct MapCache {
+    geo::Vec3 position;
+    CacheKind kind = CacheKind::BuriedBarrel;
+    std::string name;  ///< The container's name, resolved through the locale.
+};
+
 /// The static features of one map worth drawing.
 struct MapFeatures {
     std::string mapId;
     std::vector<MapExtract> extracts;
     std::vector<MapSpawn> spawns;
     std::vector<MapTransit> transits;
+    std::vector<MapCache> caches;
 };
 
 /// Every map's features, keyed by BSG map id.
@@ -51,10 +65,11 @@ using MapFeatureSet = std::map<std::string, MapFeatures, std::less<>>;
 
 /// Parses a `/{gameMode}/maps` response.
 ///
-/// Only extracts, spawns and transits are read. The document also carries loot
-/// positions, which are most of its 8.5 MB and not something this overlay
-/// draws. Names arrive as translation keys, resolved through `locale` from
-/// `/{gameMode}/maps_{lang}`, the same scheme as tasks.
+/// Extracts, spawns, transits and hidden stashes are read. The document's loot
+/// positions are most of its 8.5 MB; of the containers among them only the two
+/// kinds of stash are kept -- 318 places in the data of 2026-10-21, against
+/// 7098 containers in all. Names arrive as translation keys, resolved through
+/// `locale` from `/{gameMode}/maps_{lang}`, the same scheme as tasks.
 ///
 /// Keyed by BSG map id. Malformed input yields an empty map.
 MapFeatureSet parseMapFeatures(std::string_view json, const TaskLocale& locale);

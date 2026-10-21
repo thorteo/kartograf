@@ -20,7 +20,7 @@ namespace tarkov::ui {
 /// that draws as it is included. Night Factory and Factory share a picture,
 /// and a quest on either belongs on it.
 
-/// Extracts, notable spawns and transits, replacing whatever `out` held.
+/// Extracts, notable spawns, transits and stashes, replacing whatever `out` held.
 void buildMapPoints(const data::MapFeatureSet& features, const data::MapIdTable& mapIds,
                     std::string_view drawnAsName, MapOverlays& out);
 

@@ -27,6 +27,7 @@ struct Settings {
     bool showExtracts = true;
     bool showTransits = true;
     bool showSpawns = false;
+    bool showCaches = false;
     bool dimOtherFloors = true;
 
     bool showHud = false;

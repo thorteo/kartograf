@@ -105,6 +105,8 @@ enum class MarkerIcon {
     Transit,
     SpawnPmc,
     SpawnBoss,
+    CacheBarrel,
+    CacheGround,
 };
 
 /// Supplies an icon texture, or 0 while it is not available.
@@ -113,7 +115,7 @@ using IconProvider = std::function<ImTextureID(MarkerIcon)>;
 /// Supplies the white glyph for a quest objective kind, or 0 when there is none.
 using GlyphProvider = std::function<ImTextureID(data::ObjectiveKind)>;
 
-/// A fixed point of interest: an extract, a spawn, a transit.
+/// A fixed point of interest: an extract, a spawn, a transit, a stash.
 struct MapPoint {
     geo::Vec3 world;
     MarkerIcon icon = MarkerIcon::ExtractShared;
@@ -126,6 +128,7 @@ struct MapOverlays {
     std::vector<MapPoint> extracts;
     std::vector<MapPoint> spawns;
     std::vector<MapPoint> transits;
+    std::vector<MapPoint> caches;
     IconProvider icons;
     GlyphProvider glyphs;
 };
@@ -146,6 +149,9 @@ struct MapViewState {
     /// Off by default: even filtered to player and boss spawns these are
     /// dozens of markers, useful at the start of a raid and noise after.
     bool showSpawns = false;
+    /// Hidden stashes. Off by default for the same reason: Customs alone has
+    /// 65 places, and they matter to someone out looting, not to everyone.
+    bool showCaches = false;
     /// Fade quest markers that are not on the floor shown rather than hiding
     /// them: knowing an objective is directly above you is useful.
     bool dimOtherFloors = true;

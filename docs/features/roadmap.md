@@ -105,6 +105,8 @@ and complexity.
   ahead: which quests are on this map, which keys to bring, which extracts qualify
 - **Spawn awareness** — spawn zones and boss spawn chances for the current map
 - **Loot layer** — containers and loose loot spawns, toggleable
+- [x] **Hidden stashes** — buried barrels and ground caches, the first piece of the
+      loot layer: a layer off by default, with tarkov.dev's icons
 - **Raid history** — every raid, map, duration and route, from data we already parse
 - **Profile-free operation** — everything works with no account linked anywhere
 

@@ -29,6 +29,7 @@ void buildMapPoints(const data::MapFeatureSet& features, const data::MapIdTable&
     out.extracts.clear();
     out.spawns.clear();
     out.transits.clear();
+    out.caches.clear();
     for (const auto id : mapIds.idsFor(drawnAsName)) {
         const auto it = features.find(id);
         if (it == features.end()) {
@@ -60,6 +61,16 @@ void buildMapPoints(const data::MapFeatureSet& features, const data::MapIdTable&
             }
             point.icon = MarkerIcon::Transit;
             out.transits.push_back(std::move(point));
+        }
+        for (const auto& cache : it->second.caches) {
+            const bool barrel = cache.kind == data::CacheKind::BuriedBarrel;
+            MapPoint point;
+            point.world = cache.position;
+            point.label = !cache.name.empty() ? cache.name
+                          : barrel            ? tr(Str::CacheBarrel)
+                                              : tr(Str::CacheGround);
+            point.icon = barrel ? MarkerIcon::CacheBarrel : MarkerIcon::CacheGround;
+            out.caches.push_back(std::move(point));
         }
     }
 }

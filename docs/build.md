@@ -46,7 +46,8 @@ added by patches over time. Only the real SDK headers, which is what `xwin` fetc
 are dependable here.
 
 **In use:** Route B. Route A stays available for when a real Windows debugger is
-needed.
+needed. CI (`.github/workflows/ci.yml`) takes route B too, on GitHub's Ubuntu runners,
+with the SDK cached between runs; the built `.exe` is kept as a run artifact.
 
 Set up once:
 

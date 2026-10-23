@@ -191,6 +191,10 @@ edit-build-run loop stays in one shell. **Build the Windows target too before
 committing** — it catches portability problems the Linux build cannot, such as `M_PI`
 not existing under MSVC.
 
+CI (`.github/workflows/ci.yml`) runs `linux-dev`, `linux-asan` and `linux-tsan` and
+cross-builds `windows-dev` on every push to master, pinned to LLVM 21 and xwin 0.10.0
+like this machine; bump those there when they change here.
+
 Always run the tests after touching anything under `src/core/`. They are fast and they
 are validated against real game data, so a failure means something real.
 

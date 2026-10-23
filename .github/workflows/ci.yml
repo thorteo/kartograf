@@ -1,0 +1,100 @@
+# Builds and tests on every push and pull request.
+#
+# Linux runs the portable core and UI tests three ways: plain, under
+# AddressSanitizer + UBSan, and under ThreadSanitizer (docs/adr/0004).
+# Windows is cross-compiled from Linux exactly as on the development machine
+# (docs/build.md, route B): clang-cl against the Microsoft CRT and Windows SDK
+# that xwin fetches. It catches what the Linux build cannot, such as M_PI not
+# existing under MSVC. The overlay itself needs the game and a GPU, so it is
+# built here, not run.
+
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  LLVM_VERSION: 21
+  XWIN_VERSION: 0.10.0
+
+jobs:
+  linux:
+    name: Linux (${{ matrix.preset }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [linux-dev, linux-asan, linux-tsan]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install LLVM and Ninja
+        run: |
+          wget -qO llvm.sh https://apt.llvm.org/llvm.sh
+          sudo bash llvm.sh "$LLVM_VERSION"
+          sudo apt-get install -y ninja-build
+          sudo ln -sf "/usr/bin/clang++-$LLVM_VERSION" /usr/local/bin/clang++
+
+      # The runner's kernel randomises mmap with more bits than the sanitizers'
+      # shadow memory layout allows, and they abort at startup without this.
+      - name: Make room for sanitizer shadow memory
+        if: matrix.preset != 'linux-dev'
+        run: sudo sysctl vm.mmap_rnd_bits=28
+
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }}
+      - name: Build
+        run: cmake --build --preset ${{ matrix.preset }}
+      - name: Test
+        run: ctest --preset ${{ matrix.preset }}
+
+  windows:
+    name: Windows (cross-compiled)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install LLVM and Ninja
+        run: |
+          wget -qO llvm.sh https://apt.llvm.org/llvm.sh
+          sudo bash llvm.sh "$LLVM_VERSION"
+          sudo apt-get install -y ninja-build
+          for tool in clang-cl lld-link llvm-rc llvm-lib llvm-mt; do
+            sudo ln -sf "/usr/bin/$tool-$LLVM_VERSION" "/usr/local/bin/$tool"
+          done
+
+      - name: Cache the Windows SDK
+        id: sdk
+        uses: actions/cache@v6
+        with:
+          path: ~/.xwin-sdk
+          key: xwin-${{ env.XWIN_VERSION }}-x86_64-desktop
+
+      - name: Fetch the Windows SDK with xwin
+        if: steps.sdk.outputs.cache-hit != 'true'
+        run: |
+          archive="xwin-$XWIN_VERSION-x86_64-unknown-linux-musl.tar.gz"
+          base="https://github.com/Jake-Shadle/xwin/releases/download/$XWIN_VERSION"
+          curl -fsSLO "$base/$archive"
+          curl -fsSLO "$base/$archive.sha256"
+          echo "$(cut -d' ' -f1 "$archive.sha256")  $archive" | sha256sum -c -
+          tar -xzf "$archive"
+          "./xwin-$XWIN_VERSION-x86_64-unknown-linux-musl/xwin" --accept-license \
+            --arch x86_64 --variant desktop splat --output ~/.xwin-sdk
+
+      - name: Configure
+        run: cmake --preset windows-dev
+      - name: Build
+        run: cmake --build --preset windows-dev
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: kartograf-windows-x64
+          path: build/windows-dev/kartograf.exe
+          retention-days: 14

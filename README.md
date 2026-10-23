@@ -154,3 +154,8 @@ lunasvg and plutovg (all MIT or public domain), doctest for tests.
 
 Kartograf is not affiliated with or endorsed by Battlestate Games. Escape from Tarkov
 is a trademark of Battlestate Games Limited.
+
+## License
+
+[MIT](LICENSE). Vendored code under `third_party/` keeps its own licence, as do the
+quest glyphs (CC BY 3.0) and tarkov.dev's `maps.json` (MIT).

@@ -9,8 +9,9 @@ player's live position on the map and the objectives of their active quests, dra
 top of the game as a transparent, click-through window.
 
 It was called `tarkov-help` until 2026-10-21, and the old name survives on purpose in
-two places: the repository, and the first start's move of `%LOCALAPPDATA%\tarkov-help\`
-(with a check that no copy under the old name is running).
+two places: the first start's move of `%LOCALAPPDATA%\tarkov-help\` (with a check
+that no copy under the old name is running), and `scripts/install.sh`'s removal of
+the old install.
 
 It is comparable to TarkovQuestie / TarkovMonitor in purpose, and deliberately more
 capable — see `docs/features/roadmap.md`.

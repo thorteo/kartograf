@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 # C is needed for plutovg, lunasvg's rasteriser backend. Without it CMake
 # silently drops every .c file from the build and the link fails with hundreds
 # of undefined references.
-project(kartograf LANGUAGES C CXX)
+project(kartograf VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -207,6 +207,10 @@ if(WIN32)
         third_party/imgui/backends/imgui_impl_win32.cpp
         third_party/imgui/backends/imgui_impl_dx11.cpp
     )
+
+    # The version from project() above, for the exe's version resource.
+    configure_file(src/app/Version.h.in generated/app/Version.h @ONLY)
+    target_include_directories(kartograf PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
     target_link_libraries(kartograf PRIVATE
         tarkov_core

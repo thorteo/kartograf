@@ -14,9 +14,9 @@ objectives, drawn on the map on top of the game.
 
 </details>
 
-> **Status: working, pre-release.** The overlay runs in the game on its author's
-> machine. There are no binary releases yet; build it from source (below). See
-> [docs/features/roadmap.md](docs/features/roadmap.md) for what is done and what is next.
+> **Status: 0.1, the first release.** Used in the game by its author so far, so expect
+> rough edges. See [docs/features/roadmap.md](docs/features/roadmap.md) for what is
+> done and what is next.
 
 ## How it works
 
@@ -54,7 +54,13 @@ hooking. That is a hard design constraint, not a current limitation:
 
 ## Installing
 
-Build the Windows binary (see [Building](#building)), then
+Download `kartograf.exe` from the
+[latest release](https://github.com/thorteo/kartograf/releases/latest), put it
+anywhere and run it. It is a single file with nothing to install and no runtime to add.
+The exe is not code-signed, so Windows SmartScreen may call it an unrecognised app:
+**More info → Run anyway**. Each release lists the file's SHA-256.
+
+From source: build the Windows binary (see [Building](#building)), then
 
 ```sh
 scripts/install.sh

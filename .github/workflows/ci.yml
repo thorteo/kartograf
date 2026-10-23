@@ -13,6 +13,8 @@ name: CI
 on:
   push:
     branches: [master]
+    # A release tag builds the exe that is attached to the release.
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
